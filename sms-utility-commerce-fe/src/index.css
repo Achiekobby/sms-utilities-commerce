@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("./assets/fonts/Onest-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --container-8xl: 90rem;
+
+  --color-navy: #0b1f5b;
+  --color-blue: #1473e6;
+  --color-green: #159447;
+  --color-canvas: #f7f9fc;
+  --color-white: #ffffff;
+  --color-ink: #10213d;
+
+  --color-sms: var(--color-blue);
+  --color-utility: var(--color-green);
+  --color-wallet: var(--color-navy);
+  --color-success: var(--color-green);
+  --color-background: var(--color-canvas);
+  --color-surface: var(--color-white);
+  --color-foreground: var(--color-ink);
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes border-spin {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+/* Side drawer built on a native modal <dialog>: slides in from the left over a fading scrim. */
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+/* Indeterminate progress bar: a segment sweeping across its track. */
+@keyframes slide {
+  from {
+    left: -33%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.drawer-left {
+  animation: drawer-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drawer-right {
+  animation: drawer-in-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drawer-left::backdrop,
+.drawer-right::backdrop {
+  animation: scrim-in 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-left,
+  .drawer-right,
+  .drawer-left::backdrop,
+  .drawer-right::backdrop {
+    animation: none;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  /* Custom scrollbar in the brand palette: a blue thumb on a faint blue track,
+     deepening to navy while dragging. */
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: rgb(20 115 230 / 0.07);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-blue);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    transition: background-color 0.2s;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #0f64cf;
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background-color: var(--color-navy);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: rgb(20 115 230 / 0.07);
+  }
+
+  /* Firefox does not support the pseudo-elements above. */
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-blue) rgb(20 115 230 / 0.07);
+    }
+  }
+}
