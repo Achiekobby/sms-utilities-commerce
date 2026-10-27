@@ -37,13 +37,13 @@ export function Sidebar({ open, onClose, collapsed }) {
           aria-label="Close menu"
           tabIndex={-1}
           onClick={onClose}
-          className="fixed inset-x-0 top-18 bottom-0 z-20 cursor-default bg-navy/30 lg:hidden"
+          className="fixed inset-x-0 top-14 bottom-0 z-20 cursor-default bg-navy/30 lg:hidden"
         />
       ) : null}
 
       <aside
         id="workspace-nav"
-        className={`fixed top-18 bottom-0 left-0 z-30 flex w-72 max-w-[85vw] flex-col overflow-hidden bg-white transition-[width,transform,visibility] duration-200 ease-out motion-reduce:transition-none lg:visible lg:top-0 lg:z-50 lg:translate-x-0 lg:shadow-[1px_0_0_rgba(16,33,61,0.05),14px_0_32px_-14px_rgba(11,31,91,0.26),28px_0_56px_-28px_rgba(20,115,230,0.32)] ${
+        className={`fixed top-14 bottom-0 left-0 z-30 flex w-72 max-w-[85vw] flex-col overflow-hidden bg-white transition-[width,transform,visibility] duration-200 ease-out motion-reduce:transition-none lg:visible lg:top-0 lg:z-50 lg:translate-x-0 lg:shadow-[1px_0_0_rgba(16,33,61,0.05),14px_0_32px_-14px_rgba(11,31,91,0.26),28px_0_56px_-28px_rgba(20,115,230,0.32)] ${
           collapsed ? 'lg:w-18' : 'lg:w-64 lg:max-w-none'
         } ${
           open ? 'translate-x-0 shadow-[0_24px_48px_-12px_rgba(11,31,91,0.35)]' : '-translate-x-full invisible'

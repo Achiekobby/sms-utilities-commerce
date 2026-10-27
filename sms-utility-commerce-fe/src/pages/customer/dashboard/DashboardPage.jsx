@@ -6,6 +6,7 @@ import { MessageCharts } from './sections/MessageCharts'
 import { ModuleCards } from './sections/ModuleCards'
 import { MetricCards } from './sections/MetricCards'
 import { RecentCampaigns } from './sections/RecentCampaigns'
+import { WalletPanel } from './sections/WalletPanel'
 
 export function DashboardPage() {
   useDocumentTitle('Dashboard')
@@ -14,6 +15,7 @@ export function DashboardPage() {
   return (
     <div>
       <DashboardHeader range={range} onRangeChange={setRange} />
+      <WalletPanel />
       <MetricCards compare={range.compare} />
       <MessageCharts />
       <RecentCampaigns />

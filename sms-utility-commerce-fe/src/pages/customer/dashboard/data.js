@@ -1,4 +1,4 @@
-import { RiBarChartFill, RiChat3Fill, RiGroupFill, RiSendPlaneFill, RiWallet3Fill } from 'react-icons/ri'
+import { RiBarChartFill, RiChat3Fill, RiGroupFill, RiSendPlaneFill } from 'react-icons/ri'
 
 // Illustrative figures matching the client dashboard reference, until live traffic is connected.
 
@@ -19,15 +19,6 @@ export const metrics = [
     icon: RiSendPlaneFill,
     color: '#008859',
     tint: '#C8F3DE',
-  },
-  {
-    label: 'Wallet Balance',
-    prefix: 'GHS',
-    value: '482,750',
-    change: 5,
-    icon: RiWallet3Fill,
-    color: '#B34D00',
-    tint: '#FFD0A8',
   },
   {
     label: 'Active Sender IDs',

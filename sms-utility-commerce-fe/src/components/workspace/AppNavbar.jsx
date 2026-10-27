@@ -5,9 +5,10 @@ import Images from '../../utils/Images'
 import { AccountMenu } from './account/AccountMenu'
 import { getNavigation } from './navigation'
 import { GlobalSearch } from './search/GlobalSearch'
+import { WalletBalance } from './WalletBalance'
 
 const iconButton =
-  'flex size-10 items-center justify-center rounded-lg text-ink/70 transition-colors hover:bg-canvas hover:text-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+  'flex size-8 items-center justify-center rounded-lg text-ink/70 transition-colors hover:bg-canvas hover:text-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 function useCurrentSection() {
   const { pathname } = useLocation()
@@ -25,7 +26,7 @@ export function AppNavbar({ menuOpen, onMenu, collapsed, onToggleCollapse }) {
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-[0_1px_0_rgba(16,33,61,0.04),0_14px_32px_-14px_rgba(11,31,91,0.26)]">
-      <div className="flex h-18 items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8 xl:px-10">
+      <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-6">
         <button
           type="button"
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -34,7 +35,7 @@ export function AppNavbar({ menuOpen, onMenu, collapsed, onToggleCollapse }) {
           onClick={onMenu}
           className={`-ml-2 lg:hidden ${iconButton}`}
         >
-          {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          {menuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
         </button>
 
         <button
@@ -45,18 +46,18 @@ export function AppNavbar({ menuOpen, onMenu, collapsed, onToggleCollapse }) {
           onClick={onToggleCollapse}
           className={`-ml-2 hidden lg:flex ${iconButton}`}
         >
-          <CollapseIcon size={20} strokeWidth={1.8} aria-hidden="true" />
+          <CollapseIcon size={18} strokeWidth={1.8} aria-hidden="true" />
         </button>
 
         <NavLink
           to={paths.dashboard}
           className="shrink-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue lg:hidden"
         >
-          <img src={Images.logo} alt="UtiliSMS" className="h-10 w-auto sm:h-13" />
+          <img src={Images.logo} alt="UtiliSMS" className="h-8 w-auto" />
         </NavLink>
 
         {section ? (
-          <nav aria-label="Breadcrumb" className="hidden shrink-0 items-center gap-2 text-sm xl:flex">
+          <nav aria-label="Breadcrumb" className="hidden shrink-0 items-center gap-1.5 text-[13px] xl:flex">
             <span className="text-ink/45">Workspace</span>
             <span aria-hidden="true" className="text-ink/25">
               /
@@ -67,10 +68,11 @@ export function AppNavbar({ menuOpen, onMenu, collapsed, onToggleCollapse }) {
           </nav>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 justify-end md:justify-center md:px-4">
+        <div className="flex min-w-0 flex-1 justify-end md:justify-center md:px-3">
           <GlobalSearch />
         </div>
 
+        <WalletBalance />
         <AccountMenu />
       </div>
     </header>

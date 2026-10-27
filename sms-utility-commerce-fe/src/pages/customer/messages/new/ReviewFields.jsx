@@ -1,5 +1,7 @@
 import { formatCount } from '../../dashboard/format'
 import { formatSendAt, sampleMessage, segmentCount, typeLabel } from '../../campaigns/model'
+import { formatUnits } from '../../wallet/money'
+import { SmsChargeNote } from '../../wallet/sections/SmsChargeNote'
 import { activeRecipients, formatStoredNumber, kindLabel } from '../model'
 
 function Fact({ label, value }) {
@@ -11,7 +13,7 @@ function Fact({ label, value }) {
   )
 }
 
-export function ReviewFields({ values, groups, numbers }) {
+export function ReviewFields({ values, groups, numbers, cost, balance, onTopUp }) {
   const segments = segmentCount(values.body.trim())
   const when = values.when === 'later' ? formatSendAt(values.sendAt) : 'Sending now'
   const recipients = values.kind === 'numbers' ? numbers.length : activeRecipients(groups)
@@ -30,8 +32,12 @@ export function ReviewFields({ values, groups, numbers }) {
         <Fact label="Recipients" value={formatCount(recipients)} />
         <Fact label="Sender" value={values.sender} />
         <Fact label="Segments" value={String(segments)} />
+        <Fact label="Cost" value={formatUnits(cost)} />
+        <Fact label="Wallet" value={formatUnits(balance)} />
         <Fact label="When" value={when} />
       </dl>
+
+      <SmsChargeNote cost={cost} balance={balance} onTopUp={onTopUp} />
 
       {values.kind === 'numbers' ? (
         <p className="mt-4 text-sm leading-6 text-ink/70">

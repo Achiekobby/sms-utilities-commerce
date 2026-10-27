@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import { useDispatch } from 'react-redux'
@@ -108,25 +108,9 @@ export function AccountMenu() {
         aria-expanded={menu.isOpen}
         aria-label="Account menu"
         onClick={menu.toggle}
-        className="flex items-center gap-2.5 rounded-lg p-1 pr-2 transition-colors hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+        className="flex size-8 items-center justify-center rounded-lg bg-navy text-[11px] font-semibold tracking-wide text-white transition-colors hover:bg-navy/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
       >
-        <span
-          aria-hidden="true"
-          className="flex size-9 items-center justify-center rounded-lg bg-navy text-xs font-semibold tracking-wide text-white"
-        >
-          {identity.initials}
-        </span>
-        <span className="hidden max-w-40 truncate text-sm font-medium text-navy sm:block">
-          {identity.person}
-        </span>
-        <ChevronDown
-          size={16}
-          strokeWidth={2}
-          aria-hidden="true"
-          className={`hidden text-ink/50 transition-transform duration-200 sm:block ${
-            menu.isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <span aria-hidden="true">{identity.initials}</span>
       </button>
 
       {menu.isOpen ? (

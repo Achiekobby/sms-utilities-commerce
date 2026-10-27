@@ -20,6 +20,8 @@ import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
 import { RequestSenderPage } from '../pages/customer/sender-ids/RequestSenderPage'
 import { SenderIdsPage } from '../pages/customer/sender-ids/SenderIdsPage'
 import { ScheduledSmsPage } from '../pages/customer/scheduled/ScheduledSmsPage'
+import { TopUpPage } from '../pages/customer/wallet/TopUpPage'
+import { WalletPage } from '../pages/customer/wallet/WalletPage'
 import { HelpPage } from '../pages/guest/HelpPage'
 import { HomePage } from '../pages/guest/HomePage'
 import { PricingPage } from '../pages/guest/PricingPage'
@@ -99,6 +101,8 @@ export const router = createBrowserRouter([
           { path: 'messages', element: <MessagesPage /> },
           { path: 'messages/new', element: <NewMessagePage /> },
           { path: 'messages/:messageId', element: <MessageDetailPage /> },
+          { path: 'wallet', element: <WalletPage /> },
+          { path: 'wallet/top-up', element: <TopUpPage /> },
         ],
       },
     ],

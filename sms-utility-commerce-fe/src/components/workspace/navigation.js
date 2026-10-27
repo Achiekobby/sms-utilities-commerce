@@ -80,7 +80,12 @@ export function getNavigation({ isBusiness }) {
       id: 'payments',
       label: 'Payments',
       items: [
-        { label: 'Wallet', icon: Wallet, keywords: 'fund balance momo card top up payments' },
+        {
+          label: 'Wallet',
+          icon: Wallet,
+          to: paths.wallet,
+          keywords: 'fund balance momo card top up payments hubtel paystack',
+        },
         {
           label: 'Utilities',
           icon: Smartphone,

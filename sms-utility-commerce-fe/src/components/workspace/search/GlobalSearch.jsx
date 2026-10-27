@@ -33,9 +33,9 @@ export function GlobalSearch() {
         onClick={search.open}
         aria-label="Search"
         aria-keyshortcuts="Control+K Meta+K"
-        className="hidden h-10 w-full max-w-md items-center 2xl:max-w-lg gap-3 rounded-lg bg-canvas px-3 text-sm text-ink/50 ring-1 ring-ink/[0.08] transition-colors hover:bg-white hover:text-ink/70 hover:ring-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue md:flex"
+        className="hidden h-8 w-full max-w-sm items-center gap-2 rounded-lg bg-canvas px-2.5 text-[13px] text-ink/50 ring-1 ring-ink/[0.08] transition-colors hover:bg-white hover:text-ink/70 hover:ring-ink/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue md:flex lg:max-w-md"
       >
-        <Search size={16} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
+        <Search size={15} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
         <span>Search pages and tools</span>
         <kbd className="ml-auto shrink-0 rounded border border-ink/15 bg-white px-1.5 py-0.5 text-[11px] font-medium text-ink/50">
           {shortcut}
@@ -46,9 +46,9 @@ export function GlobalSearch() {
         type="button"
         onClick={search.open}
         aria-label="Search"
-        className="flex size-10 items-center justify-center rounded-lg text-ink/70 transition-colors hover:bg-canvas hover:text-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue md:hidden"
+        className="flex size-8 items-center justify-center rounded-lg text-ink/70 transition-colors hover:bg-canvas hover:text-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue md:hidden"
       >
-        <Search size={20} strokeWidth={1.8} aria-hidden="true" />
+        <Search size={18} strokeWidth={1.8} aria-hidden="true" />
       </button>
 
       {search.isOpen ? <SearchDialog entries={entries} onClose={search.close} /> : null}

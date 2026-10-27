@@ -1,13 +1,17 @@
 import { ArrowLeft, ArrowRight, CalendarClock, Send } from 'lucide-react'
 import { useState } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { campaignCreated } from '../../../../features/campaigns/campaignsSlice'
+import { selectWalletBalance, walletDebited } from '../../../../features/wallet/walletSlice'
 import { paths } from '../../../../routes/paths'
 import { useDocumentTitle } from '../../../../utils/hooks/useDocumentTitle'
+import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
 import { useGroups } from '../../contacts/useGroups'
 import { approvedSenderNames } from '../../sender-ids/model'
 import { useSenderIds } from '../../sender-ids/useSenderIds'
+import { smsCostUnits } from '../../wallet/money'
+import { TopUpDrawer } from '../../wallet/sections/TopUpDrawer'
 import { segmentCount } from '../model'
 import { AudienceStep } from './AudienceStep'
 import { MessageStep } from './MessageStep'
@@ -78,6 +82,11 @@ export function NewCampaignPage() {
   const [attempt, setAttempt] = useState(0)
   const summaryRef = useErrorFocus(attempt)
   const selectedGroups = groups.filter((group) => values.groupIds.includes(group.id))
+  const balance = useSelector(selectWalletBalance)
+  const topUp = useDisclosure()
+  const recipients = selectedGroups.reduce((sum, group) => sum + group.breakdown.active, 0)
+  const cost = smsCostUnits({ segments: segmentCount(values.body.trim()), recipients })
+  const short = cost > balance
 
   function toggleGroup(id) {
     const next = values.groupIds.includes(id)
@@ -135,12 +144,29 @@ export function NewCampaignPage() {
     }
 
     const body = values.body.trim()
+    if (short) {
+      topUp.open()
+      return
+    }
     const id = crypto.randomUUID()
     const audience = selectedGroups.map((group) => ({
       id: group.id,
       name: group.name,
       active: group.breakdown.active,
     }))
+    if (cost > 0) {
+      dispatch(
+        walletDebited({
+          id: crypto.randomUUID(),
+          reference: crypto.randomUUID(),
+          amount: cost,
+          description: `SMS · ${values.name.trim()}`,
+          createdAt: new Date().toISOString(),
+          relatedId: id,
+          relatedKind: 'campaign',
+        }),
+      )
+    }
     dispatch(
       campaignCreated({
         id,
@@ -200,7 +226,9 @@ export function NewCampaignPage() {
               <MessageStep values={values} errors={errors} onChange={change} senders={approved} />
             </>
           ) : null}
-          {step === 3 ? <ReviewStep values={values} groups={selectedGroups} /> : null}
+          {step === 3 ? (
+            <ReviewStep values={values} groups={selectedGroups} cost={cost} balance={balance} onTopUp={topUp.open} />
+          ) : null}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3 border-t border-ink/10 pt-5">
@@ -220,7 +248,7 @@ export function NewCampaignPage() {
             <span />
           )}
           {step > 0 ? (
-            <button type="submit" className={primary}>
+            <button type="submit" disabled={step === 3 && short} className={`${primary} disabled:cursor-not-allowed disabled:bg-ink/20`}>
               {step < 3 ? (
                 <>
                   Continue
@@ -241,6 +269,7 @@ export function NewCampaignPage() {
           ) : null}
         </div>
       </form>
+      {topUp.isOpen ? <TopUpDrawer onClose={topUp.close} /> : null}
     </div>
   )
 }

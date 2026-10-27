@@ -16,6 +16,7 @@ import campaignsReducer from '../features/campaigns/campaignsSlice'
 import contactsReducer from '../features/contacts/contactsSlice'
 import messagesReducer from '../features/messages/messagesSlice'
 import senderIdsReducer from '../features/sender-ids/senderIdsSlice'
+import walletReducer from '../features/wallet/walletSlice'
 
 const authPersistConfig = {
   key: 'auth',
@@ -42,11 +43,17 @@ const senderIdsPersistConfig = {
   storage,
 }
 
+const walletPersistConfig = {
+  key: 'wallet',
+  storage,
+}
+
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer)
 const persistedContactsReducer = persistReducer(contactsPersistConfig, contactsReducer)
 const persistedCampaignsReducer = persistReducer(campaignsPersistConfig, campaignsReducer)
 const persistedMessagesReducer = persistReducer(messagesPersistConfig, messagesReducer)
 const persistedSenderIdsReducer = persistReducer(senderIdsPersistConfig, senderIdsReducer)
+const persistedWalletReducer = persistReducer(walletPersistConfig, walletReducer)
 
 export const store = configureStore({
   reducer: {
@@ -56,6 +63,7 @@ export const store = configureStore({
     campaigns: persistedCampaignsReducer,
     messages: persistedMessagesReducer,
     senderIds: persistedSenderIdsReducer,
+    wallet: persistedWalletReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

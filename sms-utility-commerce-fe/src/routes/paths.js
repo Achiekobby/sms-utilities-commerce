@@ -20,6 +20,8 @@ export const paths = {
   messages: '/app/messages',
   newMessage: '/app/messages/new',
   message: (messageId) => `/app/messages/${messageId}`,
+  wallet: '/app/wallet',
+  walletTopUp: '/app/wallet/top-up',
   contactGroup: (groupId) => `/app/contacts/${groupId}`,
   contactUpload: (groupId) => `/app/contacts/${groupId}/upload`,
 }

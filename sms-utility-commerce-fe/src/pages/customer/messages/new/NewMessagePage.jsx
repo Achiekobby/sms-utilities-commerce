@@ -1,10 +1,12 @@
 import { ArrowLeft, ArrowRight, CalendarClock, Send } from 'lucide-react'
 import { useState } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router'
 import { messageCreated } from '../../../../features/messages/messagesSlice'
+import { selectWalletBalance, walletDebited } from '../../../../features/wallet/walletSlice'
 import { paths } from '../../../../routes/paths'
 import { useDocumentTitle } from '../../../../utils/hooks/useDocumentTitle'
+import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
 import { segmentCount } from '../../campaigns/model'
 import { MessageStep } from '../../campaigns/new/MessageStep'
 import { StepError, useErrorFocus } from '../../campaigns/new/StepError'
@@ -12,6 +14,8 @@ import { validateMessage } from '../../campaigns/new/validate'
 import { useGroups } from '../../contacts/useGroups'
 import { approvedSenderNames } from '../../sender-ids/model'
 import { useSenderIds } from '../../sender-ids/useSenderIds'
+import { smsCostUnits } from '../../wallet/money'
+import { TopUpDrawer } from '../../wallet/sections/TopUpDrawer'
 import { parseNumberList, validateGroups, validateNumbers } from '../model'
 import { AudienceFields } from './AudienceFields'
 import { ReviewFields } from './ReviewFields'
@@ -76,6 +80,11 @@ export function NewMessagePage() {
 
   const selectedGroups = groups.filter((group) => values.groupIds.includes(group.id))
   const parsed = parseNumberList(values.numbers)
+  const balance = useSelector(selectWalletBalance)
+  const topUp = useDisclosure()
+  const recipients = values.kind === 'numbers' ? parsed.valid.length : selectedGroups.reduce((sum, group) => sum + group.breakdown.active, 0)
+  const cost = smsCostUnits({ segments: segmentCount(values.body.trim()), recipients })
+  const short = cost > balance
 
   function change(key, value) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -136,7 +145,24 @@ export function NewMessagePage() {
     }
 
     const body = values.body.trim()
+    if (short) {
+      topUp.open()
+      return
+    }
     const id = crypto.randomUUID()
+    if (cost > 0) {
+      dispatch(
+        walletDebited({
+          id: crypto.randomUUID(),
+          reference: crypto.randomUUID(),
+          amount: cost,
+          description: `SMS · ${values.name.trim()}`,
+          createdAt: new Date().toISOString(),
+          relatedId: id,
+          relatedKind: 'message',
+        }),
+      )
+    }
     dispatch(
       messageCreated({
         id,
@@ -184,7 +210,9 @@ export function NewMessagePage() {
           <StepError errors={errors} summaryRef={summaryRef} fields={errorFields} />
           {step === 0 ? <AudienceFields groups={groups} values={values} errors={errors} onChange={change} /> : null}
           {step === 1 ? <MessageStep values={values} errors={errors} onChange={change} nameLabel="Message name" senders={approved} /> : null}
-          {step === 2 ? <ReviewFields values={values} groups={selectedGroups} numbers={parsed.valid} /> : null}
+          {step === 2 ? (
+            <ReviewFields values={values} groups={selectedGroups} numbers={parsed.valid} cost={cost} balance={balance} onTopUp={topUp.open} />
+          ) : null}
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-3 border-t border-ink/10 pt-5">
@@ -203,7 +231,7 @@ export function NewMessagePage() {
           ) : (
             <span />
           )}
-          <button type="submit" className={primary}>
+          <button type="submit" disabled={step === 2 && short} className={`${primary} disabled:cursor-not-allowed disabled:bg-ink/20`}>
             {step < 2 ? (
               <>
                 Continue
@@ -223,6 +251,7 @@ export function NewMessagePage() {
           </button>
         </div>
       </form>
+      {topUp.isOpen ? <TopUpDrawer onClose={topUp.close} /> : null}
     </div>
   )
 }

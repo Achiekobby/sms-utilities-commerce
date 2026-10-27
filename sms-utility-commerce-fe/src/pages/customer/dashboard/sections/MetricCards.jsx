@@ -52,12 +52,11 @@ export function MetricCards({ compare = 'vs last month' }) {
   const reduce = useReducedMotion()
 
   return (
-    <section aria-label="This month" className="@container/grid mt-6 sm:mt-7">
-      <div className="grid grid-cols-2 gap-3 @2xl/grid:grid-cols-3 @2xl/grid:gap-4 @4xl/grid:grid-cols-5">
+    <section aria-label="This month" className="@container/grid mt-4 sm:mt-5">
+      <div className="grid grid-cols-2 gap-3 @2xl/grid:grid-cols-4 @2xl/grid:gap-4">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.label}
-            className={index === metrics.length - 1 ? 'col-span-2 @2xl/grid:col-span-1' : undefined}
             initial={reduce ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease, delay: reduce ? 0 : index * 0.05 }}

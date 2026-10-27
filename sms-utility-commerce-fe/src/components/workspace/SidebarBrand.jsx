@@ -6,7 +6,7 @@ import Images from '../../utils/Images'
 export function SidebarBrand({ collapsed }) {
   return (
     <div
-      className={`hidden h-18 shrink-0 items-center lg:flex ${
+      className={`hidden h-14 shrink-0 items-center lg:flex ${
         collapsed ? 'justify-center' : 'px-5'
       }`}
     >
@@ -16,9 +16,9 @@ export function SidebarBrand({ collapsed }) {
         className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue"
       >
         {collapsed ? (
-          <img src={Images.favicon} alt="" className="size-9 object-contain" />
+          <img src={Images.favicon} alt="" className="size-7 object-contain" />
         ) : (
-          <img src={Images.logo} alt="UtiliSMS" className="h-13 w-auto" />
+          <img src={Images.logo} alt="UtiliSMS" className="h-8 w-auto" />
         )}
       </NavLink>
     </div>

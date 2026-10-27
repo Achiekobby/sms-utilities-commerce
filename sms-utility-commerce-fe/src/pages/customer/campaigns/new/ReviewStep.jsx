@@ -1,5 +1,7 @@
 import { formatCount } from '../../dashboard/format'
 import { formatSendAt, sampleMessage, segmentCount, typeLabel } from '../model'
+import { formatUnits } from '../../wallet/money'
+import { SmsChargeNote } from '../../wallet/sections/SmsChargeNote'
 
 function Fact({ label, value }) {
   return (
@@ -10,7 +12,7 @@ function Fact({ label, value }) {
   )
 }
 
-export function ReviewStep({ values, groups }) {
+export function ReviewStep({ values, groups, cost, balance, onTopUp }) {
   const segments = segmentCount(values.body.trim())
   const recipients = groups.reduce((sum, group) => sum + group.breakdown.active, 0)
   const when = values.when === 'later' ? formatSendAt(values.sendAt) : 'Sending now'
@@ -30,8 +32,12 @@ export function ReviewStep({ values, groups }) {
         <Fact label="Recipients" value={formatCount(recipients)} />
         <Fact label="Sender" value={values.sender} />
         <Fact label="Segments" value={String(segments)} />
+        <Fact label="Cost" value={formatUnits(cost)} />
+        <Fact label="Wallet" value={formatUnits(balance)} />
         <Fact label="When" value={when} />
       </dl>
+
+      <SmsChargeNote cost={cost} balance={balance} onTopUp={onTopUp} />
 
       <div className="mt-5 rounded-xl bg-canvas px-4 py-4">
         <p className="text-xs font-semibold tracking-wide text-ink/45">SAMPLE FOR AMA MENSAH</p>
