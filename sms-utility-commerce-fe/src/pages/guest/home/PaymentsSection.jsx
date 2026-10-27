@@ -47,7 +47,7 @@ export function PaymentsSection() {
                     fill="currentColor"
                     d="M4 6.5A2.5 2.5 0 0 1 6.5 4H17v2.5H6.5a.5.5 0 0 0 0 1H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6.5z"
                   />
-                  <circle cx="16.5" cy="13.5" r="1.4" fill="#159447" />
+                  <circle cx="16.5" cy="13.5" r="1.4" fill="#008859" />
                 </svg>
               </span>
               <p className="text-xs font-semibold tracking-[0.16em] text-ink/45">WALLET & PAYMENTS</p>
@@ -61,7 +61,7 @@ export function PaymentsSection() {
             </p>
             <Link
               to={paymentPath}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue px-5 py-2.5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-green px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
             >
               Fund Wallet
               <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />

@@ -6,14 +6,14 @@ const card =
   '@container/mod flex h-full min-w-0 flex-col rounded-xl border border-ink/[0.06] bg-white p-4 shadow-[0_1px_2px_rgba(16,33,61,0.04),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-5'
 
 const action =
-  'mt-4 h-10 w-full rounded-lg border border-blue/25 text-sm font-semibold text-blue transition-colors hover:bg-blue/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+  'mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-blue/25 text-sm font-semibold text-blue transition-colors hover:bg-blue/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 const rewardBars = [22, 28, 32, 38, 42, 48, 46, 54, 60, 66, 72, 78, 86, 94]
 const surveyBars = [48, 70, 42, 88, 56, 96, 64, 78, 52, 84, 60, 92, 74]
 
 const utilities = [
-  { label: 'Airtime', icon: Smartphone, color: '#0E8A3E', tint: '#E5F6EC' },
-  { label: 'Data', icon: Smartphone, color: '#1473E6', tint: '#E7F1FC' },
+  { label: 'Airtime', icon: Smartphone, color: '#008859', tint: '#E5F6EC' },
+  { label: 'Data', icon: Smartphone, color: '#0B63F6', tint: '#E7F1FC' },
   { label: 'Electricity', icon: Lightbulb, color: '#E26A00', tint: '#FFF1E4' },
   { label: 'TV', icon: Tv, color: '#7C3AED', tint: '#F3E8FF' },
 ]
@@ -24,7 +24,7 @@ const activity = [
     name: 'John Doe',
     action: 'Created campaign "Product Launch"',
     time: '2h ago',
-    color: '#1473E6',
+    color: '#0B63F6',
     tint: '#E7F1FC',
   },
   {
@@ -48,7 +48,7 @@ const activity = [
     name: 'Aisha T.',
     action: 'Generated campaign report',
     time: '1d ago',
-    color: '#0E8A3E',
+    color: '#008859',
     tint: '#E5F6EC',
   },
 ]
@@ -116,6 +116,7 @@ function Action({ children }) {
   return (
     <button type="button" className={action}>
       {children}
+      <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
     </button>
   )
 }
@@ -125,7 +126,7 @@ export function ModuleCards() {
     <section aria-label="Rewards, utilities, surveys and team" className="@container/modules mt-6 sm:mt-7">
       <div className="grid items-stretch gap-4 @xl/modules:grid-cols-2 @4xl/modules:grid-cols-4">
         <article className={card}>
-          <CardTitle icon={Gift} color="#1473E6">
+          <CardTitle icon={Gift} color="#0B63F6">
             Rewards & Loyalty
           </CardTitle>
           <Stat value={12450} label="Points Earned" change={18} />
@@ -137,7 +138,7 @@ export function ModuleCards() {
         </article>
 
         <article className={card}>
-          <CardTitle icon={Zap} color="#1473E6">
+          <CardTitle icon={Zap} color="#0B63F6">
             Utility Marketplace
           </CardTitle>
           <Stat value={1240} label="Transactions" change={28} />
@@ -177,7 +178,7 @@ export function ModuleCards() {
         </article>
 
         <article className={card}>
-          <CardTitle icon={Users} color="#1473E6">
+          <CardTitle icon={Users} color="#0B63F6">
             Team Activity
           </CardTitle>
           <ul className="mt-4 flex-1 space-y-3.5">

@@ -124,7 +124,7 @@ function Activity({ group, onViewAll }) {
         <button
           type="button"
           onClick={onViewAll}
-          className="inline-flex items-center gap-1 rounded text-[13px] font-semibold text-blue hover:text-[#0F5FC4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+          className="inline-flex items-center gap-1 rounded text-[13px] font-semibold text-blue hover:text-[#0056D6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
         >
           View All
           <ArrowRight size={14} strokeWidth={2.2} aria-hidden="true" />

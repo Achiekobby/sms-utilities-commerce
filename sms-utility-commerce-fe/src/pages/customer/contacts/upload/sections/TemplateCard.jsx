@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Loader2 } from 'lucide-react'
+import { Asterisk, CheckCircle2, Circle, Download, Loader2 } from 'lucide-react'
 import { MAX_ROWS, columns } from '../rules'
 import { card, secondaryButton } from '../ui'
 
@@ -38,10 +38,15 @@ export function TemplateCard({ downloaded, busy, onDownload }) {
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-navy">{column.label}</span>
               <span
-                className={`rounded-full px-2 py-px text-[11px] font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-semibold ${
                   column.required ? 'bg-[#FFE4E6] text-[#B8141F]' : 'bg-[#E4ECFA] text-ink/60'
                 }`}
               >
+                {column.required ? (
+                  <Asterisk size={11} strokeWidth={2.4} aria-hidden="true" />
+                ) : (
+                  <Circle size={11} strokeWidth={2.2} aria-hidden="true" />
+                )}
                 {column.required ? 'Required' : 'Optional'}
               </span>
             </div>

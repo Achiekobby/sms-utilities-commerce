@@ -2,7 +2,7 @@ import { Plus } from 'lucide-react'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
-const primary = `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#0F5FC4] ${focusClass}`
+const primary = `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`
 
 export function ContactsHeader({ onCreateGroup }) {
   return (

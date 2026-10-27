@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { Check, CloudUpload, Info, X } from 'lucide-react'
+import { ArrowRight, Check, CloudUpload, Info, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router'
@@ -14,7 +14,7 @@ const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus
 const fieldClass =
   'w-full rounded-lg border bg-white px-3 text-sm text-navy placeholder:text-ink/40 transition-colors focus-visible:border-blue/60 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue'
 
-const primaryButton = `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#0F5FC4] ${focusClass}`
+const primaryButton = `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`
 
 const secondaryButton = `inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-4 text-sm font-semibold whitespace-nowrap text-navy transition-colors hover:border-blue/40 hover:bg-canvas ${focusClass}`
 
@@ -151,9 +151,11 @@ function GroupForm({ existingNames, onCancel, onCreate }) {
 
       <footer className="flex items-center justify-end gap-2 border-t border-ink/10 px-5 py-4">
         <button type="button" onClick={onCancel} className={secondaryButton}>
+          <X size={15} strokeWidth={2.2} aria-hidden="true" />
           Cancel
         </button>
         <button type="submit" className={primaryButton}>
+          <Plus size={16} strokeWidth={2.3} aria-hidden="true" />
           Create group
         </button>
       </footer>
@@ -193,6 +195,7 @@ function SuccessView({ group, onUpload, onView, onClose }) {
           </button>
           <button type="button" onClick={onView} className={`${secondaryButton} h-11 w-full`}>
             View group
+            <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </div>
 

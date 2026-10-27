@@ -1,4 +1,4 @@
-import { ArrowUpDown, ChevronLeft, ChevronRight, CloudUpload, Ellipsis, MessageCircle, Pencil, Search } from 'lucide-react'
+import { ArrowUpDown, Ban, ChevronLeft, ChevronRight, CircleCheck, ClipboardList, Clock, CloudUpload, Crown, Ellipsis, Gem, Megaphone, MessageCircle, Moon, Pencil, Search, Sparkles, UserMinus, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { SelectMenu } from '../../../../components/SelectMenu'
@@ -20,28 +20,28 @@ import {
 const activityDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 const statusStyle = {
-  active: { dot: '#159447', pill: 'bg-[#DDF3E6] text-[#0E7A38]' },
-  pending: { dot: '#F59E0B', pill: 'bg-[#FFEBCB] text-[#B45F06]' },
-  unsubscribed: { dot: '#E0287D', pill: 'bg-[#FFDDE8] text-[#C21F67]' },
-  blocked: { dot: '#D7192A', pill: 'bg-[#FFDFE1] text-[#B8141F]' },
+  active: { icon: CircleCheck, pill: 'bg-[#DDF3E6] text-[#0E7A38]' },
+  pending: { icon: Clock, pill: 'bg-[#FFEBCB] text-[#B45F06]' },
+  unsubscribed: { icon: UserMinus, pill: 'bg-[#FFDDE8] text-[#C21F67]' },
+  blocked: { icon: Ban, pill: 'bg-[#FFDFE1] text-[#B8141F]' },
 }
 
 const tagStyle = {
-  Promo: 'bg-[#E3EFFD] text-[#1160C7]',
-  Utility: 'bg-[#DDF3E6] text-[#0E7A38]',
-  Survey: 'bg-[#EEE3FB] text-[#7A35C9]',
-  'High Value': 'bg-[#FCE0EC] text-[#C21F67]',
-  Engaged: 'bg-[#DDF3E6] text-[#0E7A38]',
-  New: 'bg-[#E3EFFD] text-[#1160C7]',
-  Inactive: 'bg-[#FFE0E0] text-[#C0262D]',
-  VIP: 'bg-[#FFE8D2] text-[#C25B0A]',
+  Promo: { icon: Megaphone, pill: 'bg-[#E3EFFD] text-[#1160C7]' },
+  Utility: { icon: Zap, pill: 'bg-[#DDF3E6] text-[#0E7A38]' },
+  Survey: { icon: ClipboardList, pill: 'bg-[#EEE3FB] text-[#7A35C9]' },
+  'High Value': { icon: Gem, pill: 'bg-[#FCE0EC] text-[#C21F67]' },
+  Engaged: { icon: Sparkles, pill: 'bg-[#DDF3E6] text-[#0E7A38]' },
+  New: { icon: Sparkles, pill: 'bg-[#E3EFFD] text-[#1160C7]' },
+  Inactive: { icon: Moon, pill: 'bg-[#FFE0E0] text-[#C0262D]' },
+  VIP: { icon: Crown, pill: 'bg-[#FFE8D2] text-[#C25B0A]' },
 }
 
 const avatarTones = [
-  ['#DCEBFD', '#1473E6'],
+  ['#DCEBFD', '#0B63F6'],
   ['#FDE1EC', '#D6246E'],
   ['#E7DCFA', '#7B3FD6'],
-  ['#DDF3E6', '#159447'],
+  ['#DDF3E6', '#008859'],
   ['#FFE8D0', '#D9750B'],
   ['#D9F0F5', '#0E8AA6'],
 ]
@@ -59,12 +59,13 @@ const rowButton =
 
 function StatusPill({ status }) {
   const tone = statusStyle[status]
+  const Icon = tone?.icon
 
   return (
     <span
-      className={`inline-flex items-center gap-[0.45em] rounded-lg px-[0.75em] py-[0.3em] text-[0.86em] font-semibold whitespace-nowrap ${tone.pill}`}
+      className={`inline-flex items-center gap-[0.4em] rounded-lg px-[0.7em] py-[0.3em] text-[0.86em] font-semibold whitespace-nowrap ${tone?.pill ?? 'bg-canvas text-navy'}`}
     >
-      <span aria-hidden="true" className="size-1.5 rounded-full" style={{ backgroundColor: tone.dot }} />
+      {Icon ? <Icon size={13} strokeWidth={2.3} aria-hidden="true" /> : null}
       {statusLabels[status]}
     </span>
   )
@@ -73,14 +74,19 @@ function StatusPill({ status }) {
 function Tags({ tags }) {
   return (
     <span className="flex flex-nowrap gap-[0.4em] whitespace-nowrap">
-      {tags.map((tag) => (
-        <span
-          key={tag}
-          className={`rounded-md px-[0.6em] py-[0.15em] text-[0.86em] font-medium whitespace-nowrap ${tagStyle[tag] ?? 'bg-canvas text-navy'}`}
-        >
-          {tag}
-        </span>
-      ))}
+      {tags.map((tag) => {
+        const tone = tagStyle[tag]
+        const Icon = tone?.icon ?? Sparkles
+        return (
+          <span
+            key={tag}
+            className={`inline-flex items-center gap-[0.35em] rounded-md px-[0.55em] py-[0.15em] text-[0.86em] font-medium whitespace-nowrap ${tone?.pill ?? 'bg-canvas text-navy'}`}
+          >
+            <Icon size={12} strokeWidth={2.3} aria-hidden="true" />
+            {tag}
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -460,7 +466,7 @@ export function MembersTable({ group }) {
           </p>
           <Link
             to={paths.contactUpload(group.id)}
-            className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-blue px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#0F5FC4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-green px-3.5 text-[13px] font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
           >
             Upload contacts
           </Link>

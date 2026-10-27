@@ -2,8 +2,8 @@ import { formatCount } from '../../../dashboard/format'
 import { card } from '../ui'
 
 const tiles = [
-  { key: 'total', label: 'Rows in your file', color: '#1473E6', tint: '#E3EFFD', hint: 'Every row under the column names' },
-  { key: 'valid', label: 'Ready to import', color: '#159447', tint: '#DDF3E6', hint: 'Passed every check' },
+  { key: 'total', label: 'Rows in your file', color: '#0B63F6', tint: '#E3EFFD', hint: 'Every row under the column names' },
+  { key: 'valid', label: 'Ready to import', color: '#008859', tint: '#DDF3E6', hint: 'Passed every check' },
   { key: 'failed', label: 'Need attention', color: '#D7192A', tint: '#FFDFE1', hint: 'Something is missing or wrong' },
   { key: 'empty', label: 'Blank rows', color: '#6B7A90', tint: '#EAEFF6', hint: 'Skipped automatically' },
 ]
@@ -11,7 +11,7 @@ const tiles = [
 // The headline numbers: total rows split into good, bad and blank. The three parts always add up to the total.
 export function ReviewSummary({ result }) {
   const parts = [
-    { key: 'valid', value: result.valid, color: '#159447', label: 'ready' },
+    { key: 'valid', value: result.valid, color: '#008859', label: 'ready' },
     { key: 'failed', value: result.failed, color: '#E5384F', label: 'need attention' },
     { key: 'empty', value: result.empty, color: '#C5CFDD', label: 'blank' },
   ]

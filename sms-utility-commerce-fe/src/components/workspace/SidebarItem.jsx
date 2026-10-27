@@ -33,7 +33,7 @@ export function SidebarItem({ item, collapsed, onNavigate }) {
       className={({ isActive }) =>
         `${base} ${align} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue ${
           isActive
-            ? 'bg-blue/[0.08] font-semibold text-blue'
+            ? 'bg-mint/15 font-semibold text-blue'
             : 'font-medium text-ink/70 hover:bg-canvas hover:text-navy'
         }`
       }
@@ -43,7 +43,7 @@ export function SidebarItem({ item, collapsed, onNavigate }) {
           {isActive ? (
             <span
               aria-hidden="true"
-              className="absolute top-1/2 -left-3 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-blue"
+              className="absolute top-1/2 -left-3 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-green"
             />
           ) : null}
           <Icon

@@ -1,4 +1,5 @@
 import { motion, MotionConfig } from 'framer-motion'
+import { ArrowRight, LogOut } from 'lucide-react'
 import { useDispatch } from 'react-redux'
 import { Link, NavLink } from 'react-router'
 import { logout } from '../features/auth/authSlice'
@@ -16,8 +17,8 @@ const linkTransition = { duration: 0.22, ease: [0.22, 1, 0.36, 1] }
 
 const linkVariants = {
   rest: { color: 'rgba(16, 33, 61, 0.55)' },
-  hover: { color: '#1473E6' },
-  active: { color: '#1473E6' },
+  hover: { color: '#0B63F6' },
+  active: { color: '#0B63F6' },
 }
 
 const underlineVariants = {
@@ -85,17 +86,18 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => dispatch(logout())}
-                className="text-sm font-medium text-ink/70 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-ink/70 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
               >
+                <LogOut size={15} strokeWidth={2.2} aria-hidden="true" />
                 Sign out
               </button>
             ) : (
               <Link
                 to={paths.signup}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue px-4 py-2 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                className="inline-flex items-center gap-2 rounded-lg bg-green px-4 py-2 text-sm font-medium text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
               >
                 Get Started
-                <span aria-hidden="true">→</span>
+                <ArrowRight size={16} strokeWidth={2.3} aria-hidden="true" />
               </Link>
             )}
           </div>

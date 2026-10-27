@@ -20,6 +20,13 @@ const authSlice = createSlice({
       if (!state.token) return
       state.verified = true
     },
+    updateProfile(state, action) {
+      if (!state.user) return
+      Object.assign(state.user, action.payload)
+      if (state.user.provider !== 'google' && state.user.email) {
+        state.user.identifier = state.user.email
+      }
+    },
     logout(state) {
       state.user = null
       state.token = null
@@ -28,7 +35,7 @@ const authSlice = createSlice({
   },
 })
 
-export const { setCredentials, markVerified, logout } = authSlice.actions
+export const { setCredentials, markVerified, updateProfile, logout } = authSlice.actions
 
 export const selectCurrentUser = (state) => state.auth.user
 export const selectCurrentToken = (state) => state.auth.token

@@ -3,7 +3,7 @@ import { formatCount } from '../dashboard/format'
 
 // Status colours shared by the donut and its legend.
 export const insightStatuses = [
-  { key: 'active', label: 'Active', color: '#159447' },
+  { key: 'active', label: 'Active', color: '#008859' },
   { key: 'pending', label: 'Pending', color: '#F5A70B' },
   { key: 'unsubscribed', label: 'Unsubscribed', color: '#F27BAA' },
   { key: 'blocked', label: 'Blocked', color: '#E5384F' },
@@ -26,9 +26,9 @@ export function getGroupActivity(group) {
       detail: `From "Q1_${group.tag.replace(/\s+/g, '')}_2024.csv"`,
       when: '2 hours ago',
       icon: RiUploadCloud2Fill,
-      color: '#159447',
+      color: '#008859',
       tint: '#DDF3E6',
-      dot: '#1473E6',
+      dot: '#0B63F6',
     },
     {
       id: 'members',
@@ -36,9 +36,9 @@ export function getGroupActivity(group) {
       detail: 'Via signup form',
       when: '5 hours ago',
       icon: RiUserAddFill,
-      color: '#1473E6',
+      color: '#0B63F6',
       tint: '#E3EFFD',
-      dot: '#1473E6',
+      dot: '#0B63F6',
     },
     {
       id: 'campaign',
@@ -48,7 +48,7 @@ export function getGroupActivity(group) {
       icon: RiSendPlaneFill,
       color: '#8B3FE0',
       tint: '#EEE3FB',
-      dot: '#1473E6',
+      dot: '#0B63F6',
     },
     {
       id: 'duplicates',

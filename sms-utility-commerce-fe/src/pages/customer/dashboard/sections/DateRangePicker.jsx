@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { Calendar, ChevronDown } from 'lucide-react'
+import { Calendar, Check, ChevronDown, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useClickOutside } from '../../../../utils/hooks/useClickOutside'
 import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
@@ -170,15 +170,17 @@ export function DateRangePicker({ range, onChange }) {
               <button
                 type="button"
                 onClick={finish}
-                className={`h-9 rounded-lg px-3.5 text-sm font-semibold text-ink/70 transition-colors hover:bg-canvas hover:text-navy ${focusClass}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-sm font-semibold text-ink/70 transition-colors hover:bg-canvas hover:text-navy ${focusClass}`}
               >
+                <X size={15} strokeWidth={2.2} aria-hidden="true" />
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!complete}
-                className={`h-9 rounded-lg bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/40 ${focusClass}`}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/40 ${focusClass}`}
               >
+                <Check size={15} strokeWidth={2.4} aria-hidden="true" />
                 Apply range
               </button>
             </div>

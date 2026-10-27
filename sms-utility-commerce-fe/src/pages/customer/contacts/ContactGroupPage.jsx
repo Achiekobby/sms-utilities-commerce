@@ -9,7 +9,7 @@ import { GroupInsightsDrawer } from './sections/GroupInsightsDrawer'
 import { useGroups } from './useGroups'
 
 const backLink =
-  'inline-flex items-center gap-1.5 rounded text-sm font-semibold text-blue hover:text-[#0F5FC4] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue'
+  'inline-flex items-center gap-1.5 rounded text-sm font-semibold text-blue hover:text-[#0056D6] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue'
 
 export function ContactGroupPage() {
   const { groupId } = useParams()

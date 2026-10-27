@@ -76,10 +76,11 @@
   --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
   --container-8xl: 90rem;
 
-  --color-navy: #0b1f5b;
-  --color-blue: #1473e6;
-  --color-green: #159447;
-  --color-canvas: #f7f9fc;
+  --color-navy: #062047;
+  --color-blue: #0b63f6;
+  --color-green: #008859;
+  --color-mint: #00c078;
+  --color-canvas: #f6f8f7;
   --color-white: #ffffff;
   --color-ink: #10213d;
 
@@ -180,7 +181,7 @@
   }
 
   *::-webkit-scrollbar-track {
-    background: rgb(20 115 230 / 0.07);
+    background: rgb(11 99 246 / 0.08);
   }
 
   *::-webkit-scrollbar-thumb {
@@ -192,7 +193,7 @@
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: #0f64cf;
+    background-color: #0056D6;
   }
 
   *::-webkit-scrollbar-thumb:active {
@@ -200,14 +201,14 @@
   }
 
   *::-webkit-scrollbar-corner {
-    background: rgb(20 115 230 / 0.07);
+    background: rgb(11 99 246 / 0.08);
   }
 
   /* Firefox does not support the pseudo-elements above. */
   @supports (-moz-appearance: none) {
     * {
       scrollbar-width: thin;
-      scrollbar-color: var(--color-blue) rgb(20 115 230 / 0.07);
+      scrollbar-color: var(--color-blue) rgb(11 99 246 / 0.08);
     }
   }
 }

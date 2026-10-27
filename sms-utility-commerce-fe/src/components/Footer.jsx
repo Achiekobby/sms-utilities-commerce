@@ -1,3 +1,4 @@
+import { ArrowRight, LogIn } from 'lucide-react'
 import { Link } from 'react-router'
 import { paths } from '../routes/paths'
 import Images from '../utils/Images'
@@ -89,8 +90,9 @@ export function Footer() {
               {isVerified ? 'WORKSPACE' : 'GET STARTED'}
             </p>
             {isVerified ? (
-              <Link to={paths.app} className={`${linkClass} mt-4 inline-block`}>
+              <Link to={paths.app} className={`${linkClass} mt-4 inline-flex items-center gap-1.5`}>
                 Open your workspace
+                <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
               </Link>
             ) : (
               <>
@@ -100,11 +102,13 @@ export function Footer() {
                 <div className="mt-4 flex items-center gap-4">
                   <Link
                     to={paths.signup}
-                    className="inline-flex items-center rounded-lg bg-blue px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-green px-4 py-2 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
                   >
                     Sign up
+                    <ArrowRight size={16} strokeWidth={2.3} aria-hidden="true" />
                   </Link>
-                  <Link to={paths.login} className={linkClass}>
+                  <Link to={paths.login} className={`${linkClass} inline-flex items-center gap-1.5`}>
+                    <LogIn size={15} strokeWidth={2.2} aria-hidden="true" />
                     Log in
                   </Link>
                 </div>

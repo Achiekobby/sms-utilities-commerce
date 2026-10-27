@@ -127,7 +127,7 @@ function AccountTypeStep({ accountType, error, onSelect, onContinue, onGoogle, r
       <button
         type="button"
         onClick={onContinue}
-        className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(20,115,230,0.7)] transition-all duration-200 hover:bg-[#0f64cf] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue active:scale-[0.99]"
+        className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(0,136,89,0.65)] transition-all duration-200 hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue active:scale-[0.99]"
       >
         Continue
         <ArrowRight
@@ -265,7 +265,7 @@ function DetailsStep({ accountType, values, errors, onChange, onBack, onSubmit }
 
       <button
         type="submit"
-        className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(20,115,230,0.7)] transition-all duration-200 hover:bg-[#0f64cf] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue active:scale-[0.99]"
+        className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-green text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(0,136,89,0.65)] transition-all duration-200 hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue active:scale-[0.99]"
       >
         Create account
         <ArrowRight

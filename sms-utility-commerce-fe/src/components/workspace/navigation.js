@@ -44,11 +44,36 @@ export function getNavigation({ isBusiness }) {
           to: paths.contacts,
           keywords: 'groups upload numbers birthdays',
         },
-        { label: 'Campaigns', icon: Megaphone, keywords: 'bulk sms send blast' },
-        { label: 'Messages', icon: MessageSquare, keywords: 'sms inbox sent delivery' },
-        { label: 'Scheduled', icon: CalendarClock, keywords: 'schedule later queue' },
-        { label: 'Templates', icon: FileText, keywords: 'saved message personalize' },
-        { label: 'Sender IDs', icon: IdCard, keywords: 'sender name brand' },
+        {
+          label: 'Campaigns',
+          icon: Megaphone,
+          to: paths.campaigns,
+          keywords: 'bulk sms send blast create',
+        },
+        {
+          label: 'Messages',
+          icon: MessageSquare,
+          to: paths.messages,
+          keywords: 'numbers groups send report direct',
+        },
+        {
+          label: 'Scheduled',
+          icon: CalendarClock,
+          to: paths.scheduled,
+          keywords: 'schedule later queue waiting send time',
+        },
+        {
+          label: 'Templates',
+          icon: FileText,
+          to: paths.templates,
+          keywords: 'saved message personalize',
+        },
+        {
+          label: 'Sender IDs',
+          icon: IdCard,
+          to: paths.senderIds,
+          keywords: 'sender name brand approve reject pending',
+        },
       ],
     },
     {
@@ -88,7 +113,12 @@ export function getNavigation({ isBusiness }) {
       label: 'Account',
       items: [
         ...(isBusiness ? [{ label: 'Team', icon: UsersRound, keywords: 'members roles invite' }] : []),
-        { label: 'Settings', icon: Settings, keywords: 'preferences security notifications' },
+        {
+          label: 'Settings',
+          icon: Settings,
+          to: paths.profile,
+          keywords: 'preferences security notifications',
+        },
       ],
     },
   ]
@@ -98,7 +128,7 @@ export function getNavigation({ isBusiness }) {
 export function getAccountMenu() {
   return [
     [
-      { label: 'Profile', icon: UserRound },
+      { label: 'Profile', icon: UserRound, to: paths.profile },
       { label: 'Settings', icon: Settings },
     ],
     [{ label: 'Developer portal', icon: Code }],
@@ -122,6 +152,7 @@ export function getSearchEntries({ isBusiness }) {
     {
       label: 'Profile',
       icon: UserRound,
+      to: paths.profile,
       group: 'Account',
       keywords: 'name email phone details',
     },

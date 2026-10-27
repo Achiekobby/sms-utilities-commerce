@@ -56,8 +56,8 @@ export function SmsCampaignsSection() {
                     fill="currentColor"
                     d="M5 3h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-7l-5 4v-4H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"
                   />
-                  <rect x="6" y="7.6" width="10" height="1.7" rx="0.85" fill="#1473E6" />
-                  <rect x="6" y="11" width="6.5" height="1.7" rx="0.85" fill="#1473E6" />
+                  <rect x="6" y="7.6" width="10" height="1.7" rx="0.85" fill="#D6E6FF" />
+                  <rect x="6" y="11" width="6.5" height="1.7" rx="0.85" fill="#00C078" />
                 </svg>
               </span>
               <p className="text-xs font-semibold tracking-[0.16em] text-ink/45">SMS CAMPAIGNS</p>
@@ -82,7 +82,7 @@ export function SmsCampaignsSection() {
                   variants={stepVariants}
                   className="flex items-center gap-2.5 text-sm font-medium text-navy"
                 >
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-blue text-white">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-green text-white">
                     <Check size={12} strokeWidth={3} aria-hidden="true" />
                   </span>
                   {item}
@@ -91,7 +91,7 @@ export function SmsCampaignsSection() {
             </motion.ul>
             <Link
               to={campaignPath}
-              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-green px-6 py-3 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
             >
               Create Campaign
               <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />

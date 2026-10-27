@@ -1,4 +1,4 @@
-import { ArrowLeft, ChartPie, CloudUpload, UserPlus } from 'lucide-react'
+import { ArrowLeft, ChartPie, CloudUpload, UserPlus, Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { RiForbid2Line, RiGroupFill, RiProhibited2Fill, RiTimeFill } from 'react-icons/ri'
 import { paths } from '../../../../routes/paths'
@@ -13,10 +13,10 @@ const actionLabel = 'hidden @3xl/detail:inline'
 
 const secondary = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ink/15 bg-white px-2 text-xs font-semibold whitespace-nowrap text-navy shadow-[0_1px_2px_rgba(16,33,61,0.05)] transition-colors hover:border-blue/40 hover:bg-canvas @3xl/detail:h-9 @3xl/detail:gap-2 @3xl/detail:px-3 @3xl/detail:text-[13px] ${focusClass}`
 
-const primary = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-blue px-2 text-xs font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#0F5FC4] @3xl/detail:h-9 @3xl/detail:gap-2 @3xl/detail:px-3.5 @3xl/detail:text-[13px] ${focusClass}`
+const primary = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-green px-2 text-xs font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] @3xl/detail:h-9 @3xl/detail:gap-2 @3xl/detail:px-3.5 @3xl/detail:text-[13px] ${focusClass}`
 
 const breakdownTiles = [
-  { key: 'active', label: 'Active', icon: RiGroupFill, color: '#159447', tint: '#DDF3E6' },
+  { key: 'active', label: 'Active', icon: RiGroupFill, color: '#008859', tint: '#DDF3E6' },
   { key: 'pending', label: 'Pending', icon: RiTimeFill, color: '#E8890C', tint: '#FFEBCB' },
   { key: 'unsubscribed', label: 'Unsubscribed', icon: RiProhibited2Fill, color: '#E0287D', tint: '#FFDDE8' },
   { key: 'blocked', label: 'Blocked', icon: RiForbid2Line, color: '#D7192A', tint: '#FFDFE1' },
@@ -44,7 +44,8 @@ export function GroupDetail({ group, onAddContact, onOpenInsights }) {
               <h2 id="group-heading" className="truncate text-base font-bold tracking-tight text-navy @3xl/detail:text-lg @5xl/detail:text-xl">
                 {group.name}
               </h2>
-              <span className="shrink-0 rounded-full bg-[#E4ECFA] px-2.5 py-0.5 text-[11px] font-semibold text-navy tabular-nums @3xl/detail:px-3 @3xl/detail:py-1 @3xl/detail:text-xs">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E4ECFA] px-2.5 py-0.5 text-[11px] font-semibold text-navy tabular-nums @3xl/detail:px-3 @3xl/detail:py-1 @3xl/detail:text-xs">
+                <Users size={12} strokeWidth={2.3} aria-hidden="true" />
                 {formatCount(group.count)} contacts
               </span>
             </div>

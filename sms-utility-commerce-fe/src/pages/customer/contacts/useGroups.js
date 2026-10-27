@@ -5,9 +5,9 @@ import { groups as seededGroups } from './data'
 
 // Groups the user creates cycle through these looks so each one is easy to tell apart.
 const looks = [
-  { icon: RiGroupFill, color: '#1473E6', tint: '#E3EFFD' },
+  { icon: RiGroupFill, color: '#0B63F6', tint: '#E3EFFD' },
   { icon: RiBookmarkFill, color: '#8B3FE0', tint: '#EEE3FB' },
-  { icon: RiPriceTag3Fill, color: '#159447', tint: '#DDF3E6' },
+  { icon: RiPriceTag3Fill, color: '#008859', tint: '#DDF3E6' },
   { icon: RiHeartFill, color: '#E0287D', tint: '#FCE0EC' },
   { icon: RiStarFill, color: '#F26B1D', tint: '#FFE8D8' },
 ]

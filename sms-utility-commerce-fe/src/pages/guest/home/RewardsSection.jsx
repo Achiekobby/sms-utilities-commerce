@@ -109,7 +109,7 @@ export function RewardsSection() {
             </div>
             <Link
               to={surveyPath}
-              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-green px-6 py-3 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
             >
               Create Survey
               <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />

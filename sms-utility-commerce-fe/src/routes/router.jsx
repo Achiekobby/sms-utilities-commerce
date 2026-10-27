@@ -5,10 +5,21 @@ import { WorkspaceLayout } from '../components/workspace/WorkspaceLayout'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { SignupPage } from '../pages/auth/SignupPage'
 import { VerifyPage } from '../pages/auth/VerifyPage'
+import { CampaignDetailPage } from '../pages/customer/campaigns/CampaignDetailPage'
+import { CampaignsPage } from '../pages/customer/campaigns/CampaignsPage'
+import { NewCampaignPage } from '../pages/customer/campaigns/new/NewCampaignPage'
+import { MessageDetailPage } from '../pages/customer/messages/MessageDetailPage'
+import { MessagesPage } from '../pages/customer/messages/MessagesPage'
+import { NewMessagePage } from '../pages/customer/messages/new/NewMessagePage'
 import { ContactGroupPage } from '../pages/customer/contacts/ContactGroupPage'
 import { ContactsPage } from '../pages/customer/contacts/ContactsPage'
 import { ContactsUploadPage } from '../pages/customer/contacts/upload/ContactsUploadPage'
 import { DashboardPage } from '../pages/customer/dashboard/DashboardPage'
+import { ProfilePage } from '../pages/customer/profile/ProfilePage'
+import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
+import { RequestSenderPage } from '../pages/customer/sender-ids/RequestSenderPage'
+import { SenderIdsPage } from '../pages/customer/sender-ids/SenderIdsPage'
+import { ScheduledSmsPage } from '../pages/customer/scheduled/ScheduledSmsPage'
 import { HelpPage } from '../pages/guest/HelpPage'
 import { HomePage } from '../pages/guest/HomePage'
 import { PricingPage } from '../pages/guest/PricingPage'
@@ -77,6 +88,17 @@ export const router = createBrowserRouter([
           { path: 'contacts', element: <ContactsPage /> },
           { path: 'contacts/:groupId', element: <ContactGroupPage /> },
           { path: 'contacts/:groupId/upload', element: <ContactsUploadPage /> },
+          { path: 'profile', element: <ProfilePage /> },
+          { path: 'campaigns', element: <CampaignsPage /> },
+          { path: 'campaigns/new', element: <NewCampaignPage /> },
+          { path: 'campaigns/:campaignId', element: <CampaignDetailPage /> },
+          { path: 'templates', element: <TemplatesPage /> },
+          { path: 'sender-ids', element: <SenderIdsPage /> },
+          { path: 'sender-ids/new', element: <RequestSenderPage /> },
+          { path: 'scheduled', element: <ScheduledSmsPage /> },
+          { path: 'messages', element: <MessagesPage /> },
+          { path: 'messages/new', element: <NewMessagePage /> },
+          { path: 'messages/:messageId', element: <MessageDetailPage /> },
         ],
       },
     ],

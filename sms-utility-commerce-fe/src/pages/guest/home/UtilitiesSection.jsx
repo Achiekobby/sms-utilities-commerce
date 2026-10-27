@@ -75,7 +75,7 @@ function UtilityVisual({ reduce }) {
           cy="120"
           r="104"
           fill="none"
-          stroke="#1473E6"
+          stroke="#0B63F6"
           strokeOpacity="0.35"
           strokeWidth="1.5"
           strokeDasharray="5 7"
@@ -272,7 +272,7 @@ export function UtilitiesSection() {
         >
           <Link
             to={utilityPath}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            className="inline-flex items-center gap-2 rounded-lg bg-green px-6 py-3 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
           >
             Purchase Utility
             <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
-import { ArrowRight, Check, Minus, Plus } from 'lucide-react'
+import { ArrowRight, Check, Minus, Plus, Sparkles } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router'
@@ -21,7 +21,7 @@ const plans = [
     rate: 'GH₵0.070',
     cta: 'Start for free',
     intro: 'What you get',
-    accent: '#159447',
+    accent: '#008859',
     perks: [
       '50 SMS credits on signup',
       '100 contacts in 1 group',
@@ -44,7 +44,7 @@ const plans = [
     rate: 'GH₵0.055',
     cta: 'Choose Individual',
     intro: 'Everything in Free, plus',
-    accent: '#1473E6',
+    accent: '#0B63F6',
     perks: [
       '300 SMS credits every month',
       '2,000 contacts in 10 groups',
@@ -261,7 +261,8 @@ function PlanCard({ plan, index, yearly, ctaTo }) {
       }`}
     >
       {dark ? (
-        <span className="absolute -top-3 left-7 rounded-full bg-blue px-3 py-1 text-xs font-semibold text-white">
+        <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-green px-3 py-1 text-xs font-semibold text-white">
+          <Sparkles size={12} strokeWidth={2.3} aria-hidden="true" />
           Most popular
         </span>
       ) : null}
@@ -284,7 +285,7 @@ function PlanCard({ plan, index, yearly, ctaTo }) {
           dark
             ? 'bg-white text-navy hover:bg-white/90'
             : plan.id === 'free'
-              ? 'bg-blue text-white hover:bg-[#0f64cf]'
+              ? 'bg-green text-white hover:bg-[#006B46]'
               : 'bg-navy/[0.06] text-navy hover:bg-navy/10'
         }`}
       >

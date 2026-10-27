@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft, ChevronRight, Pencil, Search } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Clock, Pencil, Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { SelectMenu } from '../../../../components/SelectMenu'
@@ -102,12 +102,12 @@ function GroupCard({ group, onEdit }) {
 
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-ink/[0.08] pt-3">
           <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-ink/50">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-green" />
+            <Clock size={13} strokeWidth={2.2} aria-hidden="true" className="text-green" />
             Updated {updatedFormat.format(parseISODate(group.updated))}
           </span>
           <Link
             to={paths.contactGroup(group.id)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-blue px-3 text-[13px] font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#0F5FC4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-green px-3 text-[13px] font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
           >
             View contacts
             <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
