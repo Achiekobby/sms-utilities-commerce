@@ -12,6 +12,8 @@ import {
 import storage from 'redux-persist/es/storage'
 import accessReducer from '../features/auth/accessSlice'
 import authReducer from '../features/auth/authSlice'
+import { baseApi } from '../services/api/baseApi'
+import '../services/api/auth/authApi'
 import campaignsReducer from '../features/campaigns/campaignsSlice'
 import contactsReducer from '../features/contacts/contactsSlice'
 import messagesReducer from '../features/messages/messagesSlice'
@@ -57,6 +59,7 @@ const persistedWalletReducer = persistReducer(walletPersistConfig, walletReducer
 
 export const store = configureStore({
   reducer: {
+    [baseApi.reducerPath]: baseApi.reducer,
     auth: persistedAuthReducer,
     access: accessReducer,
     contacts: persistedContactsReducer,
@@ -69,8 +72,16 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        ignoredPaths: ['api'],
+        ignoredActionPaths: [
+          'meta.arg',
+          'meta.baseQueryMeta',
+          'meta.baseQueryMeta.request',
+          'meta.baseQueryMeta.response',
+          'payload',
+        ],
       },
-    }),
+    }).concat(baseApi.middleware),
 })
 
 export const persistor = persistStore(store)

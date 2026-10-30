@@ -1,4 +1,5 @@
 import { useAuth } from '../../utils/hooks/useAuth'
+import { IdentityAvatar } from './IdentityAvatar'
 import { getIdentity } from './identity'
 
 // The account the user is working in, shown directly under the logo.
@@ -21,12 +22,12 @@ export function WorkspaceCard({ collapsed }) {
           collapsed ? 'lg:justify-center lg:bg-transparent lg:p-0 lg:ring-0' : ''
         }`}
       >
-        <span
-          aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-navy text-sm font-semibold tracking-wide text-white"
-        >
-          {identity.initials}
-        </span>
+        <IdentityAvatar
+          key={user?.profileImage || identity.initials}
+          src={user?.profileImage}
+          initials={identity.initials}
+          size="md"
+        />
         <span className={`min-w-0 ${collapsed ? 'lg:hidden' : ''}`}>
           <span className="block truncate text-sm leading-5 font-semibold text-navy">
             {identity.name}

@@ -6,6 +6,7 @@ import {
   logout,
   selectIsAuthenticated,
   selectIsVerified,
+  selectPendingVerification,
 } from '../features/auth/authSlice'
 import { paths, safeCustomerReturn } from './paths'
 
@@ -34,11 +35,12 @@ function GuestHome() {
 export function GuestGuard() {
   const isAuthenticated = useSelector(selectIsAuthenticated)
   const isVerified = useSelector(selectIsVerified)
+  const pending = useSelector(selectPendingVerification)
   const forceLogin = useSelector(selectForceLogin)
   const location = useLocation()
   const matches = useMatches()
   const allowAuthenticated = matches.some((match) => match.handle?.allowAuthenticated)
-  const mustClear = isAuthenticated && !isVerified
+  const mustClear = (isAuthenticated && !isVerified) || Boolean(pending)
   const isHome = location.pathname === paths.home
 
   if (mustClear) return <ClearUnverifiedSession />
@@ -58,12 +60,22 @@ export function AuthGuard() {
   const dispatch = useDispatch()
   const isAuthenticated = useSelector(selectIsAuthenticated)
   const isVerified = useSelector(selectIsVerified)
+  const pending = useSelector(selectPendingVerification)
   const forceLogin = useSelector(selectForceLogin)
   const location = useLocation()
+  const switchingAccount = location.state?.switchAccount === true
 
   useEffect(() => {
     if (!isAuthenticated && forceLogin) dispatch(clearForceLogin())
   }, [dispatch, forceLogin, isAuthenticated])
+
+  useEffect(() => {
+    if (switchingAccount) dispatch(logout())
+  }, [dispatch, switchingAccount])
+
+  if (pending && !switchingAccount) {
+    return <Navigate to={paths.verify} replace state={{ from: location.state?.from }} />
+  }
 
   if (!isAuthenticated) return <Outlet />
 
@@ -77,13 +89,14 @@ export function AuthGuard() {
 export function VerifyGuard() {
   const isAuthenticated = useSelector(selectIsAuthenticated)
   const isVerified = useSelector(selectIsVerified)
+  const pending = useSelector(selectPendingVerification)
   const location = useLocation()
-
-  if (!isAuthenticated) return <Navigate to={paths.login} replace />
 
   if (isVerified) {
     return <Navigate to={safeCustomerReturn(location.state?.from)} replace />
   }
+
+  if (!pending && !isAuthenticated) return <Navigate to={paths.login} replace />
 
   return <Outlet />
 }
@@ -91,7 +104,12 @@ export function VerifyGuard() {
 export function CustomerGuard() {
   const isAuthenticated = useSelector(selectIsAuthenticated)
   const isVerified = useSelector(selectIsVerified)
+  const pending = useSelector(selectPendingVerification)
   const location = useLocation()
+
+  if (pending && !isAuthenticated) {
+    return <Navigate to={paths.verify} replace state={{ from: location }} />
+  }
 
   if (!isAuthenticated) {
     return <Navigate to={paths.login} replace state={{ from: location }} />

@@ -1,7 +1,11 @@
-import { countryCode, emailPattern, toPhoneIdentifier } from '../../../features/auth/validation'
+import { countryCode, toPhoneIdentifier } from '../../../features/auth/validation'
 
-const personKeys = ['firstName', 'lastName', 'email', 'phone']
-const businessKeys = ['businessName', 'address']
+const photoTypes = ['image/jpeg', 'image/png', 'image/webp']
+const photoMaxBytes = 2 * 1024 * 1024
+
+const locationKeys = ['region', 'city', 'address']
+const individualKeys = ['firstName', 'lastName', 'phone', 'gender', 'dateOfBirth', ...locationKeys]
+const businessKeys = ['businessName', 'phone', ...locationKeys]
 
 export function nationalPhone(stored) {
   if (!stored) return ''
@@ -25,9 +29,26 @@ export function profileFromUser(user) {
     lastName: user?.lastName ?? '',
     email: user?.email || (identifierIsEmail ? identifier : ''),
     phone: nationalPhone(user?.phone || (!identifierIsEmail ? identifier : '')),
+    gender: user?.gender ?? '',
+    dateOfBirth: user?.dateOfBirth ? String(user.dateOfBirth).slice(0, 10) : '',
+    region: user?.region ?? '',
+    city: user?.city ?? '',
     businessName: user?.businessName ?? '',
     address: user?.address ?? '',
   }
+}
+
+export function formatProfileDate(value) {
+  if (!value) return ''
+  const date = new Date(String(value).replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return String(value)
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+export function formatMoney(amount, currency = 'GHS') {
+  const number = Number(amount)
+  if (!Number.isFinite(number)) return '—'
+  return new Intl.NumberFormat('en-GH', { style: 'currency', currency }).format(number)
 }
 
 export function signInLabel(user) {
@@ -41,39 +62,31 @@ function normalize(key, value) {
 }
 
 export function isProfileDirty(current, saved, isBusiness) {
-  const keys = isBusiness ? [...personKeys, ...businessKeys] : personKeys
-  return keys.some((key) => normalize(key, current[key]) !== normalize(key, saved[key]))
+  const keys = isBusiness ? businessKeys : individualKeys
+  return keys.some((key) => normalize(key, current[key] ?? '') !== normalize(key, saved[key] ?? ''))
 }
 
 export function validateProfile(isBusiness, values) {
   const errors = {}
   const trimmed = (key) => values[key].trim()
 
-  if (trimmed('firstName').length < 2) errors.firstName = 'Enter your first name.'
-  if (trimmed('lastName').length < 2) errors.lastName = 'Enter your last name.'
-  if (!emailPattern.test(trimmed('email'))) errors.email = 'Enter a valid email address.'
-  if (!toPhoneIdentifier(values.phone)) errors.phone = 'Enter a valid number, for example 024 123 4567.'
-
-  if (isBusiness) {
-    if (trimmed('businessName').length < 2) errors.businessName = 'Enter your business name.'
-    if (trimmed('address').length < 5) errors.address = 'Enter your business address.'
+  if (!isBusiness) {
+    if (trimmed('firstName').length < 2) errors.firstName = 'Enter your first name.'
+    if (trimmed('lastName').length < 2) errors.lastName = 'Enter your last name.'
+    if (!values.gender) errors.gender = 'Select a gender.'
+    if (!values.dateOfBirth) errors.dateOfBirth = 'Enter your date of birth.'
   }
+
+  if (!toPhoneIdentifier(values.phone)) errors.phone = 'Enter a valid number, for example 024 123 4567.'
+  if (!values.region) errors.region = 'Select your region.'
+  if (trimmed('city').length < 2) errors.city = 'Enter your city.'
+  if (trimmed('address').length < 5) errors.address = isBusiness ? 'Enter your business address.' : 'Enter your address.'
+
+  if (isBusiness && trimmed('businessName').length < 2) errors.businessName = 'Enter your business name.'
+
+  const photo = values.profileImage
+  if (photo instanceof File && !photoTypes.includes(photo.type)) errors.profileImage = 'Use a JPG, PNG, or WebP photo.'
+  else if (photo instanceof File && photo.size > photoMaxBytes) errors.profileImage = 'Use a photo smaller than 2 MB.'
 
   return errors
-}
-
-export function profilePayload(isBusiness, values) {
-  const payload = {
-    firstName: values.firstName.trim(),
-    lastName: values.lastName.trim(),
-    email: values.email.trim().toLowerCase(),
-    phone: toPhoneIdentifier(values.phone),
-  }
-
-  if (isBusiness) {
-    payload.businessName = values.businessName.trim()
-    payload.address = values.address.trim()
-  }
-
-  return payload
 }

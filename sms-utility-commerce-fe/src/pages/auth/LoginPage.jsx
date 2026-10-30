@@ -6,7 +6,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Welcome back"
-      subtitle="Sign in with Google, or use your email or mobile number. We will send a one-time code, so there is no password to remember."
+      subtitle="Sign in with Google, or use your email. We will send a one-time code, so there is no password to remember."
       image={Images.auth}
       caption={{
         title: 'Pick up where you left off.',

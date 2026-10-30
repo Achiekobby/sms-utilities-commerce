@@ -1,8 +1,9 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { env } from '../../config/env'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { axiosBaseQuery } from './http'
 
 export const baseApi = createApi({
   reducerPath: 'api',
-  baseQuery: fetchBaseQuery({ baseUrl: env.apiBaseUrl }),
+  baseQuery: axiosBaseQuery,
+  tagTypes: ['Profile'],
   endpoints: () => ({}),
 })

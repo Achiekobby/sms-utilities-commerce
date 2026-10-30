@@ -2,7 +2,7 @@ import { motion, MotionConfig } from 'framer-motion'
 import { ArrowRight, LogOut } from 'lucide-react'
 import { useDispatch } from 'react-redux'
 import { Link, NavLink } from 'react-router'
-import { logout } from '../features/auth/authSlice'
+import { signOut } from '../features/auth/signOut'
 import { paths } from '../routes/paths'
 import Images from '../utils/Images'
 import { useAuth } from '../utils/hooks/useAuth'
@@ -85,7 +85,7 @@ export function Navbar() {
             {isVerified ? (
               <button
                 type="button"
-                onClick={() => dispatch(logout())}
+                onClick={() => dispatch(signOut())}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-ink/70 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
               >
                 <LogOut size={15} strokeWidth={2.2} aria-hidden="true" />

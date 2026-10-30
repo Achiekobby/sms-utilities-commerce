@@ -3,10 +3,11 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import { Link } from 'react-router'
-import { logout } from '../../../features/auth/authSlice'
+import { signOut } from '../../../features/auth/signOut'
 import { useAuth } from '../../../utils/hooks/useAuth'
 import { useClickOutside } from '../../../utils/hooks/useClickOutside'
 import { useDisclosure } from '../../../utils/hooks/useDisclosure'
+import { IdentityAvatar } from '../IdentityAvatar'
 import { getIdentity } from '../identity'
 import { getAccountMenu } from '../navigation'
 
@@ -71,7 +72,7 @@ export function AccountMenu() {
 
   const sections = [
     ...getAccountMenu(),
-    [{ label: 'Sign out', icon: LogOut, onClick: () => dispatch(logout()) }],
+    [{ label: 'Sign out', icon: LogOut, onClick: () => { close(); dispatch(signOut()) } }],
   ]
   const contact = user?.email || user?.identifier || ''
 
@@ -108,9 +109,14 @@ export function AccountMenu() {
         aria-expanded={menu.isOpen}
         aria-label="Account menu"
         onClick={menu.toggle}
-        className="flex size-8 items-center justify-center rounded-lg bg-navy text-[11px] font-semibold tracking-wide text-white transition-colors hover:bg-navy/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+        className="flex size-8 items-center justify-center overflow-hidden rounded-lg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
       >
-        <span aria-hidden="true">{identity.initials}</span>
+        <IdentityAvatar
+          key={user?.profileImage || identity.initials}
+          src={user?.profileImage}
+          initials={identity.initials}
+          size="sm"
+        />
       </button>
 
       {menu.isOpen ? (
@@ -121,12 +127,12 @@ export function AccountMenu() {
           className="absolute top-full right-0 z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-xl bg-white shadow-[0_1px_2px_rgba(16,33,61,0.08),0_20px_48px_-12px_rgba(11,31,91,0.4)] ring-1 ring-ink/[0.06]"
         >
           <div className="flex items-center gap-3 px-4 py-4">
-            <span
-              aria-hidden="true"
-              className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-navy text-sm font-semibold tracking-wide text-white"
-            >
-              {identity.initials}
-            </span>
+            <IdentityAvatar
+              key={user?.profileImage || identity.initials}
+              src={user?.profileImage}
+              initials={identity.initials}
+              size="lg"
+            />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-navy">{identity.person}</p>
               {contact ? <p className="truncate text-xs text-ink/55">{contact}</p> : null}

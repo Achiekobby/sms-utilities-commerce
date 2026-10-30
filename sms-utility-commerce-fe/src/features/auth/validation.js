@@ -6,3 +6,9 @@ export function toPhoneIdentifier(raw) {
   const digits = raw.replace(/\D/g, '').replace(/^0/, '')
   return digits.length === 9 ? `${countryCode}${digits}` : null
 }
+
+// The signup form posts the local number, for example 0241234567.
+export function toLocalPhone(raw) {
+  const digits = raw.replace(/\D/g, '').replace(/^0/, '')
+  return digits.length === 9 ? `0${digits}` : null
+}
