@@ -28,7 +28,7 @@ function ViewAll({ to }) {
 
 function Panel({ title, to, children }) {
   return (
-    <article className={card}>
+    <article className={`${card} min-w-0`}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-bold text-navy sm:text-lg">{title}</h2>
         <ViewAll to={to} />
@@ -53,7 +53,9 @@ export function RecentCampaigns() {
 
   return (
     <section aria-label="Campaigns and scheduled messages" className="@container/lists mt-6 sm:mt-7">
-      <div className="grid items-start gap-4 @4xl/lists:grid-cols-2">
+      {/* The tables need about 40rem and 32rem. Side by side only when both fit, otherwise each takes the full
+          width, instead of two half-width panels that scroll sideways. */}
+      <div className="grid items-start gap-4 @min-[84rem]/lists:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <Panel title="Recent Campaigns" to={paths.campaigns}>
           <table className="w-full min-w-[40rem] border-separate border-spacing-0 text-left">
             <thead>

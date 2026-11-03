@@ -1,9 +1,10 @@
-import { ArrowLeft, ChartPie, CloudUpload, UserPlus, Users } from 'lucide-react'
+import { Archive, ArrowLeft, ChartPie, CloudUpload, Files, Loader2, Pencil, UserPlus, Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { RiForbid2Line, RiGroupFill, RiProhibited2Fill, RiTimeFill } from 'react-icons/ri'
 import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
-import { MembersTable } from './MembersTable'
+import { GroupContacts } from './GroupContacts'
+import { useUploadWatch } from '../uploads/useUploadWatch'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
@@ -22,7 +23,28 @@ const breakdownTiles = [
   { key: 'blocked', label: 'Blocked', icon: RiForbid2Line, color: '#D7192A', tint: '#FFDFE1' },
 ]
 
-export function GroupDetail({ group, onAddContact, onOpenInsights }) {
+function RunningUploads({ groupId }) {
+  const list = useUploadWatch(groupId, 1)
+  const running = (list.data?.rows ?? []).filter((item) => item.running)
+  if (!running.length) return null
+  const lead = running[0]
+
+  return (
+    <Link
+      to={paths.contactUploads(groupId)}
+      className={`mt-4 flex items-center gap-3 rounded-xl border border-blue/20 bg-[#F0F6FE] px-4 py-3 ${focusClass}`}
+    >
+      <Loader2 size={18} className="shrink-0 animate-spin text-blue motion-reduce:animate-none" aria-hidden="true" />
+      <span className="min-w-0 flex-1 text-sm text-navy">
+        <span className="font-semibold">{lead.fileName}</span> is being added
+        {running.length > 1 ? ` · ${running.length - 1} more still running` : ''} · {lead.progress}%
+      </span>
+      <span className="shrink-0 text-sm font-semibold text-blue">View uploads</span>
+    </Link>
+  )
+}
+
+export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsights, notice, onNotice }) {
   const Icon = group.icon
 
   return (
@@ -54,6 +76,20 @@ export function GroupDetail({ group, onAddContact, onOpenInsights }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 @3xl/detail:gap-2">
+          <button type="button" onClick={onEdit} aria-label="Edit group" className={secondary}>
+            <Pencil strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
+            <span className={actionLabel}>Edit</span>
+          </button>
+          {onArchive ? (
+            <button type="button" onClick={onArchive} aria-label="Archive group" className={secondary}>
+              <Archive strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-[#B45F06]`} />
+              <span className={actionLabel}>Archive</span>
+            </button>
+          ) : null}
+          <Link to={paths.contactUploads(group.id)} aria-label="View uploads" className={secondary}>
+            <Files strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
+            <span className={actionLabel}>Uploads</span>
+          </Link>
           <Link to={paths.contactUpload(group.id)} aria-label="Import contacts" className={secondary}>
             <CloudUpload strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
             <span className={actionLabel}>Import Contacts</span>
@@ -99,8 +135,8 @@ export function GroupDetail({ group, onAddContact, onOpenInsights }) {
         })}
       </dl>
 
-      {/* Keyed by group so search, filters, selection and page reset when another group is chosen. */}
-      <MembersTable key={group.id} group={group} />
+      <RunningUploads groupId={group.id} />
+      <GroupContacts key={group.id} group={group} onAdd={onAddContact} notice={notice} onNotice={onNotice} />
     </section>
   )
 }

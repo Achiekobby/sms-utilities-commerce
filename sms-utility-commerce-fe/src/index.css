@@ -171,9 +171,23 @@
   animation: profile-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+@keyframes upload-slide {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+.upload-slide {
+  animation: upload-slide 1.15s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton,
-  .profile-in {
+  .profile-in,
+  .upload-slide {
     animation: none;
   }
 }
@@ -191,11 +205,34 @@
   animation: scrim-in 220ms ease-out;
 }
 
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+.confirm-dialog {
+  border: 0;
+  padding: 0;
+}
+
+.confirm-dialog::backdrop {
+  background-color: rgba(11, 31, 91, 0.4);
+  animation: scrim-in 200ms ease-out;
+}
+
+.confirm-panel {
+  animation: confirm-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .drawer-left,
   .drawer-right,
   .drawer-left::backdrop,
-  .drawer-right::backdrop {
+  .drawer-right::backdrop,
+  .confirm-dialog::backdrop,
+  .confirm-panel {
     animation: none;
   }
 }

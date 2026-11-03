@@ -5,6 +5,8 @@ const fieldNames = {
   last_name: 'lastName',
   phone_number: 'phone',
   date_of_birth: 'dateOfBirth',
+  gps_address: 'gpsAddress',
+  dnd_status: 'dnd',
   profile_image: 'profileImage',
   business_name: 'businessName',
   account_type: 'accountType',

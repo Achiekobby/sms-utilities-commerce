@@ -24,6 +24,7 @@ export const paths = {
   walletTopUp: '/app/wallet/top-up',
   contactGroup: (groupId) => `/app/contacts/${groupId}`,
   contactUpload: (groupId) => `/app/contacts/${groupId}/upload`,
+  contactUploads: (groupId) => `/app/contacts/${groupId}/uploads`,
 }
 
 export function safeCustomerReturn(from) {

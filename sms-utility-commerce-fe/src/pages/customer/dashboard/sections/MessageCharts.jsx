@@ -336,7 +336,7 @@ function DeliveryStatus() {
 export function MessageCharts() {
   return (
     <section aria-label="Message volume and delivery status" className="@container/charts mt-6 min-w-0 sm:mt-7">
-      <div className="grid min-w-0 items-stretch gap-4 @4xl/charts:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)]">
+      <div className="grid min-w-0 items-stretch gap-4 @min-[75rem]/charts:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)]">
         <VolumeChart />
         <DeliveryStatus />
       </div>

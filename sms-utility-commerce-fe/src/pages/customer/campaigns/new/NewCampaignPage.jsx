@@ -74,7 +74,7 @@ export function NewCampaignPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const applied = fromTemplate(location.state?.template)
-  const groups = useGroups()
+  const { groups } = useGroups()
   const approved = approvedSenderNames(useSenderIds())
   const [step, setStep] = useState(applied ? 2 : 0)
   const [values, setValues] = useState(applied ?? empty)

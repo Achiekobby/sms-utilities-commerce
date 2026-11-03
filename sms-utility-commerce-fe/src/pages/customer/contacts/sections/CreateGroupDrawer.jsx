@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router'
 import { Drawer } from '../../../../components/Drawer'
+import { apiErrorMessage, fieldErrors } from '../../../../features/auth/client'
 import { groupCreated } from '../../../../features/contacts/contactsSlice'
 import { paths } from '../../../../routes/paths'
-import { toISODate } from '../../dashboard/dateRanges'
+import { useCreateContactGroupMutation } from '../../../../services/api/contacts/contactsApi'
 import { groupDescriptionMax, groupNameMax } from '../limits'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -17,17 +18,6 @@ const fieldClass =
 const primaryButton = `inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`
 
 const secondaryButton = `inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-4 text-sm font-semibold whitespace-nowrap text-navy transition-colors hover:border-blue/40 hover:bg-canvas ${focusClass}`
-
-function makeId(name) {
-  const slug = name
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 30)
-
-  return `${slug || 'group'}-${Date.now().toString(36)}`
-}
 
 function CharCount({ id, length, max }) {
   const near = length >= max * 0.9
@@ -63,10 +53,11 @@ function DrawerHeader({ title, subtitle, onClose }) {
   )
 }
 
-function GroupForm({ existingNames, onCancel, onCreate }) {
+function GroupForm({ existingNames, submitting, serverErrors = {}, formError = '', onCancel, onCreate }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [showErrors, setShowErrors] = useState(false)
+  const [dismissed, setDismissed] = useState({ name: false, description: false })
 
   const trimmed = name.trim()
   let nameError = ''
@@ -75,14 +66,17 @@ function GroupForm({ existingNames, onCancel, onCreate }) {
 
   function submit(event) {
     event.preventDefault()
+    if (submitting) return
     if (nameError) {
       setShowErrors(true)
       return
     }
+    setDismissed({ name: false, description: false })
     onCreate({ name: trimmed, description: description.trim() })
   }
 
-  const visibleError = showErrors ? nameError : ''
+  const visibleError = (showErrors ? nameError : '') || (dismissed.name ? '' : serverErrors.name || '')
+  const descriptionError = dismissed.description ? '' : serverErrors.description || ''
 
   return (
     <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
@@ -103,7 +97,11 @@ function GroupForm({ existingNames, onCancel, onCreate }) {
             required
             maxLength={groupNameMax}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value)
+              setDismissed((current) => ({ ...current, name: true }))
+            }}
+            disabled={submitting}
             onBlur={() => name && setShowErrors(true)}
             placeholder="e.g. Church members, Spring customers"
             aria-invalid={visibleError ? true : undefined}
@@ -134,12 +132,28 @@ function GroupForm({ existingNames, onCancel, onCreate }) {
             rows={4}
             maxLength={groupDescriptionMax}
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={(event) => {
+              setDescription(event.target.value)
+              setDismissed((current) => ({ ...current, description: true }))
+            }}
+            disabled={submitting}
             placeholder="Who is in this group, or what will you use it for?"
-            aria-describedby="group-description-count"
-            className={`${fieldClass} mt-1.5 resize-none border-ink/15 py-2.5 leading-6`}
+            aria-invalid={descriptionError ? true : undefined}
+            aria-describedby={descriptionError ? 'group-description-error' : 'group-description-count'}
+            className={`${fieldClass} mt-1.5 resize-none py-2.5 leading-6 ${descriptionError ? 'border-[#D7192A]' : 'border-ink/15'}`}
           />
+          {descriptionError ? (
+            <p id="group-description-error" role="alert" className="mt-1.5 text-[13px] text-[#C21F2D]">
+              {descriptionError}
+            </p>
+          ) : null}
         </div>
+
+        {formError ? (
+          <p role="alert" className="rounded-lg bg-[#FDECEE] px-3 py-2 text-[13px] leading-5 text-[#9F1C26]">
+            {formError}
+          </p>
+        ) : null}
 
         <div className="flex gap-3 rounded-xl bg-[#EEF5FE] p-3.5 text-[13px] leading-5 text-navy/80">
           <Info size={17} aria-hidden="true" className="mt-0.5 shrink-0 text-blue" />
@@ -150,13 +164,13 @@ function GroupForm({ existingNames, onCancel, onCreate }) {
       </div>
 
       <footer className="flex items-center justify-end gap-2 border-t border-ink/10 px-5 py-4">
-        <button type="button" onClick={onCancel} className={secondaryButton}>
+        <button type="button" onClick={onCancel} disabled={submitting} className={`${secondaryButton} disabled:opacity-60`}>
           <X size={15} strokeWidth={2.2} aria-hidden="true" />
           Cancel
         </button>
-        <button type="submit" className={primaryButton}>
+        <button type="submit" disabled={submitting} className={`${primaryButton} disabled:cursor-wait disabled:opacity-70`}>
           <Plus size={16} strokeWidth={2.3} aria-hidden="true" />
-          Create group
+          {submitting ? 'Creating group' : 'Create group'}
         </button>
       </footer>
     </form>
@@ -222,14 +236,30 @@ function SuccessView({ group, onUpload, onView, onClose }) {
 export function CreateGroupDrawer({ groups, onClose }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [createGroup, { isLoading: submitting }] = useCreateContactGroupMutation()
   const [created, setCreated] = useState(null)
+  const [serverErrors, setServerErrors] = useState({})
+  const [formError, setFormError] = useState('')
 
   const existingNames = new Set(groups.map((group) => group.name.trim().toLowerCase()))
 
-  function create({ name, description }) {
-    const entry = { id: makeId(name), name, description, createdAt: toISODate(new Date()) }
-    dispatch(groupCreated(entry))
-    setCreated(entry)
+  async function create(values) {
+    setServerErrors({})
+    setFormError('')
+
+    try {
+      const group = await createGroup(values).unwrap()
+      if (!group?.id) {
+        setFormError('Something went wrong. Try again.')
+        return
+      }
+      dispatch(groupCreated(group))
+      setCreated(group)
+    } catch (error) {
+      const fields = fieldErrors(error)
+      setServerErrors(fields)
+      setFormError(fields.name || fields.description ? '' : apiErrorMessage(error))
+    }
   }
 
   return (
@@ -249,7 +279,14 @@ export function CreateGroupDrawer({ groups, onClose }) {
             onClose={onClose}
           />
         ) : (
-          <GroupForm existingNames={existingNames} onCancel={onClose} onCreate={create} />
+          <GroupForm
+            existingNames={existingNames}
+            submitting={submitting}
+            serverErrors={serverErrors}
+            formError={formError}
+            onCancel={onClose}
+            onCreate={create}
+          />
         )}
       </div>
     </Drawer>

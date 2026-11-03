@@ -70,7 +70,7 @@ export function NewMessagePage() {
   useDocumentTitle('New message')
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const groups = useGroups()
+  const { groups } = useGroups()
   const approved = approvedSenderNames(useSenderIds())
   const [step, setStep] = useState(0)
   const [values, setValues] = useState(empty)

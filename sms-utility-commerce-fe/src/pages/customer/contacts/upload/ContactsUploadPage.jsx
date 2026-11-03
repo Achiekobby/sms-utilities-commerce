@@ -11,15 +11,13 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { Link, useParams } from 'react-router'
-import { contactsImported } from '../../../../features/contacts/contactsSlice'
+import { Link, useNavigate, useParams } from 'react-router'
+import { apiErrorMessage } from '../../../../features/auth/client'
 import { paths } from '../../../../routes/paths'
+import { useUploadContactsMutation } from '../../../../services/api/contacts/contactRecordsApi'
 import { useDocumentTitle } from '../../../../utils/hooks/useDocumentTitle'
-import { toISODate } from '../../dashboard/dateRanges'
 import { formatCount } from '../../dashboard/format'
-import { useGroups } from '../useGroups'
-import { importContacts } from './importContacts'
+import { useContactGroup } from '../useGroups'
 import { MAX_FILE_BYTES, formatBytes } from './rules'
 import { CheckProgress } from './sections/CheckProgress'
 import { FileDropzone } from './sections/FileDropzone'
@@ -183,9 +181,10 @@ function ImportDone({ added, skipped, group, onAnother }) {
 
 export function ContactsUploadPage() {
   const { groupId } = useParams()
-  const groups = useGroups()
-  const group = groups.find((item) => item.id === groupId)
-  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { group, isLoading, isFetching, isError, error, refetch } = useContactGroup(groupId)
+  const waiting = !group && !isError && (isLoading || isFetching)
+  const [uploadContacts] = useUploadContactsMutation()
   const check = useSheetCheck()
 
   const formRef = useRef(null)
@@ -196,11 +195,51 @@ export function ContactsUploadPage() {
   const [templateBusy, setTemplateBusy] = useState(false)
   const [importState, setImportState] = useState({ status: 'idle', added: 0, error: '' })
 
-  useDocumentTitle(group ? `Upload contacts · ${group.name}` : 'Group not found')
+  useDocumentTitle(group ? `Upload contacts · ${group.name}` : waiting ? 'Upload contacts' : 'Group not found')
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [groupId])
+
+  if (waiting) {
+    return (
+      <div role="status" aria-live="polite" className="mx-auto max-w-md py-16 text-center">
+        <span className="skeleton mx-auto block h-6 w-40 rounded" />
+        <span className="sr-only">Loading group</span>
+      </div>
+    )
+  }
+
+  if (!group && isError) {
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <h1 className="text-xl font-bold text-navy">Could not load this group</h1>
+        <p className="mt-2 text-sm text-ink/60">{apiErrorMessage(error)}</p>
+        <button
+          type="button"
+          onClick={refetch}
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+        >
+          Try again
+        </button>
+      </div>
+    )
+  }
+
+  if (group?.deletedAt) {
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <h1 className="text-xl font-bold text-navy">{group.name} is archived</h1>
+        <p className="mt-2 text-sm leading-6 text-ink/60">
+          Restore the group before uploading contacts. Contacts already in it were not removed.
+        </p>
+        <Link to={`${paths.contacts}?view=archived`} className={`${backLink} mt-5`}>
+          <ArrowLeft size={16} strokeWidth={2.2} aria-hidden="true" />
+          Back to archived groups
+        </Link>
+      </div>
+    )
+  }
 
   if (!group) {
     return (
@@ -289,15 +328,15 @@ export function ContactsUploadPage() {
 
     setImportState({ status: 'importing', added: 0, error: '' })
     try {
-      const formData = new FormData(formRef.current)
-      const { added } = await importContacts({ formData, expected: result.valid })
-      dispatch(contactsImported({ groupId, added, at: toISODate(new Date()) }))
-      setImportState({ status: 'done', added, error: '' })
-    } catch {
+      const uploaded = await uploadContacts({ groupId: group.id, file }).unwrap()
+      navigate(paths.contactUploads(group.id), {
+        state: { importId: uploaded.item?.id ?? '', notice: uploaded.message },
+      })
+    } catch (uploadError) {
       setImportState({
         status: 'error',
         added: 0,
-        error: "We couldn't add your contacts just now. Nothing was changed, so you can safely try again.",
+        error: apiErrorMessage(uploadError),
       })
     }
   }
@@ -305,7 +344,7 @@ export function ContactsUploadPage() {
   const dropzoneError = fileError || (phase === 'failed' ? check.error : '')
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="w-full min-w-0">
       <Link to={paths.contactGroup(group.id)} className={backLink}>
         <ArrowLeft size={16} strokeWidth={2.2} aria-hidden="true" />
         Back to {group.name}
@@ -420,11 +459,12 @@ export function ContactsUploadPage() {
                 <div className="min-w-0 flex-1">
                   <h2 id="import-heading" className="text-base font-bold text-navy">
                     {result.failed === 0 && !cleaned ? 'Everything looks good. ' : ''}
-                    Ready to add {formatCount(result.valid)} {result.valid === 1 ? 'contact' : 'contacts'}
+                    Ready to upload {formatCount(result.valid)} {result.valid === 1 ? 'contact' : 'contacts'}
                   </h2>
                   <p className="mt-0.5 text-[13px] text-ink/60">
-                    They&apos;ll be added to <span className="font-semibold text-navy">{group.name}</span>
-                    {result.empty ? `. ${formatCount(result.empty)} blank ${result.empty === 1 ? 'row is' : 'rows are'} skipped.` : '.'}
+                    The file is checked here, then added to <span className="font-semibold text-navy">{group.name}</span> in
+                    the background. You can leave the uploads page while it finishes.
+                    {result.empty ? ` ${formatCount(result.empty)} blank ${result.empty === 1 ? 'row is' : 'rows are'} skipped.` : ''}
                   </p>
                   {importState.status === 'error' ? (
                     <p role="alert" className="mt-2 text-[13px] text-[#C21F2D]">
@@ -434,7 +474,7 @@ export function ContactsUploadPage() {
                 </div>
                 <button type="submit" disabled={importing} className={primaryButton}>
                   {importing ? <Loader2 size={17} aria-hidden="true" className="animate-spin" /> : null}
-                  {importing ? 'Adding contacts…' : `Add ${formatCount(result.valid)} ${result.valid === 1 ? 'contact' : 'contacts'}`}
+                  {importing ? 'Uploading file…' : 'Upload file'}
                 </button>
               </section>
             ) : null}

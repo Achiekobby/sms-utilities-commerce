@@ -6,12 +6,12 @@ export const MAX_ROWS = 100_000
 export const NAME_MAX = 50
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-// Required columns are the ones a contact cannot be messaged without.
+// Only the phone number is required. A contact can be messaged without a name or email.
 export const columns = [
   {
     key: 'firstName',
     label: 'First Name',
-    required: true,
+    required: false,
     aliases: ['first name', 'firstname', 'first_name', 'given name'],
     help: `The contact's first name, up to ${NAME_MAX} characters.`,
     example: 'Ama',

@@ -14,6 +14,7 @@ import { NewMessagePage } from '../pages/customer/messages/new/NewMessagePage'
 import { ContactGroupPage } from '../pages/customer/contacts/ContactGroupPage'
 import { ContactsPage } from '../pages/customer/contacts/ContactsPage'
 import { ContactsUploadPage } from '../pages/customer/contacts/upload/ContactsUploadPage'
+import { ContactUploadsPage } from '../pages/customer/contacts/uploads/ContactUploadsPage'
 import { DashboardPage } from '../pages/customer/dashboard/DashboardPage'
 import { ProfilePage } from '../pages/customer/profile/ProfilePage'
 import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
           { path: 'contacts', element: <ContactsPage /> },
           { path: 'contacts/:groupId', element: <ContactGroupPage /> },
           { path: 'contacts/:groupId/upload', element: <ContactsUploadPage /> },
+          { path: 'contacts/:groupId/uploads', element: <ContactUploadsPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'campaigns', element: <CampaignsPage /> },
           { path: 'campaigns/new', element: <NewCampaignPage /> },

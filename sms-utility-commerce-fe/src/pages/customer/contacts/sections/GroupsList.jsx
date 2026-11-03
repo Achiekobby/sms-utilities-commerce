@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft, ChevronRight, Clock, Pencil, Search } from 'lucide-react'
+import { Archive, ArrowRight, ChevronLeft, ChevronRight, Clock, Pencil, RotateCcw, Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { SelectMenu } from '../../../../components/SelectMenu'
@@ -47,7 +47,24 @@ function StatusBar({ breakdown, total }) {
   )
 }
 
-function GroupCard({ group, onEdit }) {
+function GroupCardSkeleton() {
+  return (
+    <li className="rounded-xl border border-[#D8E7FA] bg-white p-4" aria-hidden="true">
+      <div className="flex items-start gap-3">
+        <span className="skeleton size-12 shrink-0 rounded-xl" />
+        <div className="min-w-0 flex-1 space-y-2 pt-1">
+          <span className="skeleton block h-4 w-2/3 rounded" />
+          <span className="skeleton block h-3 w-full rounded" />
+        </div>
+      </div>
+      <span className="skeleton mt-4 block h-7 w-24 rounded" />
+      <span className="skeleton mt-3 block h-2 w-full rounded-full" />
+      <span className="skeleton mt-4 block h-3 w-36 rounded" />
+    </li>
+  )
+}
+
+function GroupCard({ group, archived = false, onEdit, onArchive, onRestore, onDiscard }) {
   const Icon = group.icon
 
   return (
@@ -64,14 +81,28 @@ function GroupCard({ group, onEdit }) {
             <h3 className="truncate text-[15px] font-bold text-navy">{group.name}</h3>
             <p className="mt-0.5 line-clamp-2 text-[13px] leading-5 text-ink/60">{group.description}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => onEdit?.(group)}
-            aria-label={`Edit ${group.name}`}
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/80 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-          >
-            <Pencil size={16} strokeWidth={2} aria-hidden="true" />
-          </button>
+          <div className="flex shrink-0 gap-1.5">
+            {archived ? null : (
+              <button
+                type="button"
+                onClick={() => onEdit?.(group)}
+                aria-label={`Edit ${group.name}`}
+                className="flex size-9 items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/80 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              >
+                <Pencil size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+            {archived ? null : (
+              <button
+                type="button"
+                onClick={() => onArchive?.(group)}
+                aria-label={`Archive ${group.name}`}
+                className="flex size-9 items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/80 transition-colors hover:border-[#B45F06]/40 hover:bg-[#FFF8EE] hover:text-[#B45F06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              >
+                <Archive size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+          </div>
         </div>
 
         <p className="mt-4 flex items-baseline gap-1.5">
@@ -102,17 +133,37 @@ function GroupCard({ group, onEdit }) {
 
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-ink/[0.08] pt-3">
           <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-ink/50">
-            <Clock size={13} strokeWidth={2.2} aria-hidden="true" className="text-green" />
-            Updated {updatedFormat.format(parseISODate(group.updated))}
+            <Clock size={13} strokeWidth={2.2} aria-hidden="true" className={archived ? 'text-[#B45F06]' : 'text-green'} />
+            {archived ? 'Archived' : 'Updated'} {updatedFormat.format(parseISODate(archived ? group.archivedAt || group.updated : group.updated))}
           </span>
-          <Link
-            to={paths.contactGroup(group.id)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-green px-3 text-[13px] font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
-          >
-            View contacts
-            <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-            <span className="sr-only"> in {group.name}</span>
-          </Link>
+          {archived ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onDiscard?.(group)}
+                className="inline-flex h-9 items-center rounded-lg px-2.5 text-[13px] font-semibold text-[#C21F2D] hover:bg-[#FDECEE] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              >
+                Remove
+              </button>
+              <button
+                type="button"
+                onClick={() => onRestore?.(group)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-green px-3 text-[13px] font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              >
+                <RotateCcw size={14} strokeWidth={2.2} aria-hidden="true" />
+                Restore
+              </button>
+            </div>
+          ) : (
+            <Link
+              to={paths.contactGroup(group.id)}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-green px-3 text-[13px] font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+            >
+              View contacts
+              <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+              <span className="sr-only"> in {group.name}</span>
+            </Link>
+          )}
         </div>
       </article>
     </li>
@@ -184,7 +235,7 @@ function GroupsPagination({ pager, total, pageSize, onPageSize }) {
   )
 }
 
-export function GroupsList({ groups, onEdit }) {
+export function GroupsList({ groups, onEdit, onArchive, onRestore, onDiscard, archived = false, loading = false }) {
   const [query, setQuery] = useState('')
   // Newest first, so a group you just created is the first card you see.
   const [sort, setSort] = useState('updated')
@@ -205,10 +256,15 @@ export function GroupsList({ groups, onEdit }) {
   }
 
   return (
-    <section aria-labelledby="groups-heading" className="mt-6 sm:mt-7">
+    <section aria-labelledby="groups-heading" aria-busy={loading || undefined} className="mt-6 sm:mt-7">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
         <h2 id="groups-heading" className="mr-1 text-lg font-bold text-navy">
-          Groups <span className="tabular-nums">({formatCount(visible.length)})</span>
+          {archived ? 'Archived' : 'Groups'}{' '}
+          {loading ? (
+            <span className="sr-only">Loading</span>
+          ) : (
+            <span className="tabular-nums">({formatCount(visible.length)})</span>
+          )}
         </h2>
 
         <label className="relative order-last w-full min-w-48 flex-1 sm:order-none sm:w-auto sm:max-w-sm sm:ml-auto">
@@ -238,11 +294,25 @@ export function GroupsList({ groups, onEdit }) {
         />
       </div>
 
-      {visible.length ? (
+      {loading ? (
+        <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4" aria-hidden="true">
+          {Array.from({ length: 6 }, (_, index) => (
+            <GroupCardSkeleton key={index} />
+          ))}
+        </ul>
+      ) : visible.length ? (
         <>
           <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,19rem),1fr))] gap-4">
             {page.map((group) => (
-              <GroupCard key={group.id} group={group} onEdit={onEdit} />
+              <GroupCard
+                key={group.id}
+                group={group}
+                archived={archived}
+                onEdit={onEdit}
+                onArchive={onArchive}
+                onRestore={onRestore}
+                onDiscard={onDiscard}
+              />
             ))}
           </ul>
           <GroupsPagination
@@ -257,8 +327,24 @@ export function GroupsList({ groups, onEdit }) {
         </>
       ) : (
         <div className="mt-4 rounded-xl border border-dashed border-ink/15 bg-white px-4 py-12 text-center">
-          <p className="text-sm font-semibold text-navy">No groups found</p>
-          <p className="mt-1 text-sm text-ink/55">Nothing matches "{query.trim()}". Try a different name.</p>
+          {query.trim() ? (
+            <>
+              <p className="text-sm font-semibold text-navy">No groups found</p>
+              <p className="mt-1 text-sm text-ink/55">Nothing matches "{query.trim()}". Try a different name.</p>
+            </>
+          ) : (
+            archived ? (
+              <>
+                <p className="text-sm font-semibold text-navy">No archived groups</p>
+                <p className="mt-1 text-sm text-ink/55">When you archive a group, it waits here until you restore or remove it.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-navy">No groups yet</p>
+                <p className="mt-1 text-sm text-ink/55">Create a group, then add contacts to it.</p>
+              </>
+            )
+          )}
         </div>
       )}
     </section>

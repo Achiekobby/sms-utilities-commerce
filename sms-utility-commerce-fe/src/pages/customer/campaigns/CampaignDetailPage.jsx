@@ -51,7 +51,7 @@ export function CampaignDetailPage() {
   const audience = campaignGroups(campaign)
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full min-w-0">
       <p className="text-sm font-medium text-ink/55">
         <Link
           to={paths.campaigns}
@@ -67,7 +67,10 @@ export function CampaignDetailPage() {
       </div>
       <p className="mt-1.5 text-sm text-ink/55">Created {formatCreated(campaign.createdAt)}</p>
 
-      <div className="mt-6 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6">
+      {/* Side by side once the pane is wide enough, so the page fills the space instead of a narrow strip. */}
+      <div className="@container/detail mt-6">
+      <div className="grid items-start gap-4 @4xl/detail:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="min-w-0 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6">
         <h2 className="text-base font-bold text-navy">Send</h2>
         <dl className="mt-2">
           <Fact label="Type" value={<TypeBadge type={campaign.type} />} />
@@ -100,7 +103,7 @@ export function CampaignDetailPage() {
 
       <section
         aria-labelledby="campaign-delivery"
-        className="mt-4 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6"
+        className="min-w-0 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6"
       >
         <div className="flex items-center justify-between gap-3">
           <h2 id="campaign-delivery" className="text-base font-bold text-navy">
@@ -125,6 +128,8 @@ export function CampaignDetailPage() {
           <p className="mt-3 text-sm leading-6 text-ink/60">Delivery has not been reported yet.</p>
         )}
       </section>
+      </div>
+      </div>
     </div>
   )
 }

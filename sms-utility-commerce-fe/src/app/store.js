@@ -14,6 +14,8 @@ import accessReducer from '../features/auth/accessSlice'
 import authReducer from '../features/auth/authSlice'
 import { baseApi } from '../services/api/baseApi'
 import '../services/api/auth/authApi'
+import '../services/api/contacts/contactsApi'
+import '../services/api/contacts/contactRecordsApi'
 import campaignsReducer from '../features/campaigns/campaignsSlice'
 import contactsReducer from '../features/contacts/contactsSlice'
 import messagesReducer from '../features/messages/messagesSlice'
@@ -28,6 +30,8 @@ const authPersistConfig = {
 const contactsPersistConfig = {
   key: 'contacts',
   storage,
+  // Never keep local "created" groups across reloads. The API list is the source of truth.
+  blacklist: ['created'],
 }
 
 const campaignsPersistConfig = {

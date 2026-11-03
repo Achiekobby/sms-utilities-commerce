@@ -3,7 +3,7 @@ import {
   RiContactsBookFill,
   RiFileList2Fill,
   RiGroupFill,
-  RiMailFill,
+  RiInboxArchiveFill,
   RiMegaphoneFill,
   RiStarFill,
   RiUserAddFill,
@@ -93,43 +93,11 @@ export const groupSorts = [
   { id: 'name', label: 'Name (A–Z)' },
 ]
 
-// Illustrative figures matching the contacts reference, until the contacts API is connected.
-// `color` is the icon and sparkline, `tint` is the pale tile behind the icon, `trend` is the last six months.
+// The four summary cards. The figures come from GET /api/client/contact-groups/stats; only the look lives here.
+// `color` is the icon, `tint` is the pale tile behind it, and `key` is the field of the stats object it shows.
 export const contactStats = [
-  {
-    label: 'Total Groups',
-    value: '12',
-    change: 20,
-    icon: RiGroupFill,
-    color: '#0B63F6',
-    tint: '#E3EFFD',
-    trend: [6, 7, 7, 9, 10, 12],
-  },
-  {
-    label: 'Total Contacts',
-    value: '24,892',
-    change: 12,
-    icon: RiContactsBookFill,
-    color: '#0B63F6',
-    tint: '#E3EFFD',
-    trend: [17800, 19200, 20400, 21900, 23100, 24892],
-  },
-  {
-    label: 'New This Month',
-    value: '2,480',
-    change: 35,
-    icon: RiUserAddFill,
-    color: '#8B3FE0',
-    tint: '#EEE3FB',
-    trend: [1500, 1700, 1650, 2000, 2250, 2480],
-  },
-  {
-    label: 'Opt-in Rate',
-    value: '78.4%',
-    change: 6,
-    icon: RiMailFill,
-    color: '#F26B1D',
-    tint: '#FFE8D8',
-    trend: [70.2, 72.5, 73.1, 75.4, 76.9, 78.4],
-  },
+  { key: 'totalGroups', label: 'Total Groups', icon: RiGroupFill, color: '#0B63F6', tint: '#E3EFFD' },
+  { key: 'totalContacts', label: 'Total Contacts', icon: RiContactsBookFill, color: '#0B63F6', tint: '#E3EFFD' },
+  { key: 'newThisMonth', label: 'New This Month', icon: RiUserAddFill, color: '#8B3FE0', tint: '#EEE3FB' },
+  { key: 'archivedGroups', label: 'Archived', icon: RiInboxArchiveFill, color: '#B45F06', tint: '#FFEBCB' },
 ]
