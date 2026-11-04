@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Drawer } from '../../../../components/Drawer'
+import { useNotify } from '../../../../features/notifications/useNotify'
 import { apiErrorMessage, fieldErrors } from '../../../../features/auth/client'
 import { groupUpdated } from '../../../../features/contacts/contactsSlice'
 import { contactsApi, useUpdateContactGroupMutation } from '../../../../services/api/contacts/contactsApi'
@@ -38,6 +39,7 @@ function savedNote(group) {
 
 export function EditGroupDrawer({ group, groups = [], onClose }) {
   const dispatch = useDispatch()
+  const notify = useNotify()
   const cached = useSelector((state) => contactsApi.endpoints.getContactGroups.select()(state)?.data ?? [])
   const [updateGroup, { isLoading: submitting }] = useUpdateContactGroupMutation()
   const [name, setName] = useState(group.name)
@@ -85,6 +87,7 @@ export function EditGroupDrawer({ group, groups = [], onClose }) {
         description: trimmedDescription,
       }).unwrap()
       if (updated) dispatch(groupUpdated(updated))
+      notify.success('Group updated.')
       onClose()
     } catch (error) {
       const fields = fieldErrors(error)

@@ -27,6 +27,23 @@ export function contactImportFromApi(data) {
   }
 }
 
+export function skippedRowFromApi(data) {
+  if (!data || typeof data !== 'object') return null
+
+  const id = data.id ?? data.row ?? data.row_number
+  if (id == null) return null
+
+  return {
+    id: String(id),
+    row: Number(data.row ?? data.row_number) || null,
+    reason: String(data.reason ?? data.message ?? data.skip_reason ?? '').trim(),
+    phone: data.phone_number ?? data.phone ?? '',
+    firstName: data.first_name ?? data.firstName ?? '',
+    lastName: data.last_name ?? data.lastName ?? '',
+    email: data.email ?? '',
+  }
+}
+
 export function pageResult(envelope, mapRow) {
   const rows = (Array.isArray(envelope?.data) ? envelope.data : []).map(mapRow).filter(Boolean)
   const pagination = envelope?.pagination ?? {}

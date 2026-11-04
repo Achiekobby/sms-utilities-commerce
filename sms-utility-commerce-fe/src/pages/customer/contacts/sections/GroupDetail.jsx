@@ -1,6 +1,7 @@
 import { Archive, ArrowLeft, ChartPie, CloudUpload, Files, Loader2, Pencil, UserPlus, Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { RiForbid2Line, RiGroupFill, RiProhibited2Fill, RiTimeFill } from 'react-icons/ri'
+import { ActionMenu, actionMenuTrigger } from '../../../../components/ActionMenu'
 import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
 import { GroupContacts } from './GroupContacts'
@@ -8,7 +9,6 @@ import { useUploadWatch } from '../uploads/useUploadWatch'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
-// Compact until the card is wide enough for the labels to sit beside the title.
 const actionIcon = 'size-4 shrink-0 @3xl/detail:size-[15px]'
 const actionLabel = 'hidden @3xl/detail:inline'
 
@@ -44,7 +44,63 @@ function RunningUploads({ groupId }) {
   )
 }
 
-export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsights, notice, onNotice }) {
+function groupActions({ group, onArchive, onEdit, onOpenInsights }) {
+  const items = [
+    {
+      id: 'edit',
+      label: 'Edit group',
+      hint: 'Name and description',
+      icon: Pencil,
+      color: '#0B63F6',
+      tint: '#E3EFFD',
+      onClick: onEdit,
+    },
+    {
+      id: 'uploads',
+      label: 'Uploads',
+      hint: 'Files added to this group',
+      icon: Files,
+      color: '#0B63F6',
+      tint: '#E3EFFD',
+      to: paths.contactUploads(group.id),
+    },
+    {
+      id: 'import',
+      label: 'Import contacts',
+      hint: 'Upload an Excel file',
+      icon: CloudUpload,
+      color: '#008859',
+      tint: '#DDF3E6',
+      to: paths.contactUpload(group.id),
+    },
+    {
+      id: 'insights',
+      label: 'Insights',
+      hint: 'Audience overview',
+      icon: ChartPie,
+      color: '#8B3FE0',
+      tint: '#EEE3FB',
+      onClick: onOpenInsights,
+    },
+  ]
+
+  if (onArchive) {
+    items.push('separator', {
+      id: 'archive',
+      label: 'Archive group',
+      hint: 'Contacts stay in place',
+      icon: Archive,
+      color: '#B45F06',
+      tint: '#FFEBCB',
+      tone: 'caution',
+      onClick: onArchive,
+    })
+  }
+
+  return items
+}
+
+export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsights }) {
   const Icon = group.icon
 
   return (
@@ -76,28 +132,11 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 @3xl/detail:gap-2">
-          <button type="button" onClick={onEdit} aria-label="Edit group" className={secondary}>
-            <Pencil strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
-            <span className={actionLabel}>Edit</span>
-          </button>
-          {onArchive ? (
-            <button type="button" onClick={onArchive} aria-label="Archive group" className={secondary}>
-              <Archive strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-[#B45F06]`} />
-              <span className={actionLabel}>Archive</span>
-            </button>
-          ) : null}
-          <Link to={paths.contactUploads(group.id)} aria-label="View uploads" className={secondary}>
-            <Files strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
-            <span className={actionLabel}>Uploads</span>
-          </Link>
-          <Link to={paths.contactUpload(group.id)} aria-label="Import contacts" className={secondary}>
-            <CloudUpload strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
-            <span className={actionLabel}>Import Contacts</span>
-          </Link>
-          <button type="button" onClick={onOpenInsights} aria-haspopup="dialog" aria-label="Insights" className={secondary}>
-            <ChartPie strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-blue`} />
-            <span className={actionLabel}>Insights</span>
-          </button>
+          <ActionMenu
+            label="Actions"
+            items={groupActions({ group, onArchive, onEdit, onOpenInsights })}
+            triggerClassName={actionMenuTrigger}
+          />
           <Link to={paths.contacts} aria-label="Back to groups" className={secondary}>
             <ArrowLeft strokeWidth={2.2} aria-hidden="true" className={`${actionIcon} text-blue`} />
             <span className={actionLabel}>Groups</span>
@@ -113,10 +152,7 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
         {breakdownTiles.map((tile) => {
           const TileIcon = tile.icon
           return (
-            <div
-              key={tile.key}
-              className="flex items-center gap-2.5 rounded-xl border border-[#E1EAF6] bg-white p-3"
-            >
+            <div key={tile.key} className="flex items-center gap-2.5 rounded-xl border border-[#E1EAF6] bg-white p-3">
               <span
                 aria-hidden="true"
                 className="flex size-10 shrink-0 items-center justify-center rounded-lg"
@@ -136,7 +172,7 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
       </dl>
 
       <RunningUploads groupId={group.id} />
-      <GroupContacts key={group.id} group={group} onAdd={onAddContact} notice={notice} onNotice={onNotice} />
+      <GroupContacts key={group.id} group={group} onAdd={onAddContact} />
     </section>
   )
 }

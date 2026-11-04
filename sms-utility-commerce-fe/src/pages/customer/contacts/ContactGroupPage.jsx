@@ -2,6 +2,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { apiErrorMessage } from '../../../features/auth/client'
+import { useNotify } from '../../../features/notifications/useNotify'
 import { paths } from '../../../routes/paths'
 import { useDisclosure } from '../../../utils/hooks/useDisclosure'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
@@ -25,7 +26,7 @@ export function ContactGroupPage() {
   const insights = useDisclosure()
   const edit = useDisclosure()
   const [adding, setAdding] = useState(false)
-  const [notice, setNotice] = useState('')
+  const notify = useNotify()
   const { ask, dialog } = useGroupActions({
     onSuccess(type, message) {
       const view = type === 'restore' ? '' : '?view=archived'
@@ -129,8 +130,6 @@ export function ContactGroupPage() {
         onEdit={edit.open}
         onOpenInsights={insights.open}
         onAddContact={() => setAdding(true)}
-        notice={notice}
-        onNotice={setNotice}
       />
 
       {adding ? (
@@ -139,7 +138,7 @@ export function ContactGroupPage() {
           onClose={() => setAdding(false)}
           onSaved={(message) => {
             setAdding(false)
-            setNotice(message)
+            notify.success(message)
           }}
         />
       ) : null}

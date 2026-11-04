@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { applyProfile } from '../../../features/auth/authSlice'
 import { apiErrorMessage, clientFromApi, fieldErrors, profileBody } from '../../../features/auth/client'
+import { useNotify } from '../../../features/notifications/useNotify'
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../../services/api/auth/authApi'
 import { useAuth } from '../../../utils/hooks/useAuth'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
@@ -14,13 +15,13 @@ import { ProfileSkeleton } from './sections/ProfileSkeleton'
 export function ProfilePage() {
   useDocumentTitle('Profile')
   const dispatch = useDispatch()
+  const notify = useNotify()
   const { user, isBusiness, isVerified } = useAuth()
   const { data: profile, isLoading, isFetching, isError, error, refetch } = useGetProfileQuery()
   const [saveProfile, { isLoading: saving }] = useUpdateProfileMutation()
   const saved = useMemo(() => profileFromUser(user), [user])
   const [values, setValues] = useState(saved)
   const [errors, setErrors] = useState({})
-  const [status, setStatus] = useState('')
   const [formError, setFormError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const summaryRef = useRef(null)
@@ -67,7 +68,6 @@ export function ProfilePage() {
 
   function changeValue(key, value) {
     edited.current = true
-    setStatus('')
     setFormError('')
     setErrors((current) => (current[key] ? { ...current, [key]: undefined } : current))
 
@@ -92,7 +92,6 @@ export function ProfilePage() {
     clearPhoto()
     setValues(saved)
     setErrors({})
-    setStatus('')
     setFormError('')
     setAttempt(0)
   }
@@ -104,7 +103,6 @@ export function ProfilePage() {
     setFormError('')
 
     if (Object.keys(found).length > 0) {
-      setStatus('')
       setAttempt((count) => count + 1)
       return
     }
@@ -139,12 +137,11 @@ export function ProfilePage() {
       })
       const message = typeof result?.message === 'string' && result.message.length < 80 ? result.message : 'Profile updated.'
       setAttempt(0)
-      setStatus(message)
+      notify.success(message)
     } catch (saveError) {
       const fields = fieldErrors(saveError)
       setErrors(fields)
       setFormError(Object.keys(fields).length > 0 ? '' : apiErrorMessage(saveError))
-      setStatus('')
       if (Object.keys(fields).length > 0) setAttempt((count) => count + 1)
     }
   }
@@ -194,7 +191,6 @@ export function ProfilePage() {
               errors={errors}
               fieldIds={fieldIds}
               dirty={dirty}
-              status={status}
               summaryRef={summaryRef}
               showSummary={attempt > 0}
               onChange={changeValue}

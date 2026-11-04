@@ -9,6 +9,7 @@ import {
   persistReducer,
   persistStore,
 } from 'redux-persist'
+import { reducer as notificationsReducer } from 'reapop'
 import storage from 'redux-persist/es/storage'
 import accessReducer from '../features/auth/accessSlice'
 import authReducer from '../features/auth/authSlice'
@@ -71,12 +72,13 @@ export const store = configureStore({
     messages: persistedMessagesReducer,
     senderIds: persistedSenderIdsReducer,
     wallet: persistedWalletReducer,
+    notifications: notificationsReducer(),
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-        ignoredPaths: ['api'],
+        ignoredPaths: ['api', 'notifications'],
         ignoredActionPaths: [
           'meta.arg',
           'meta.baseQueryMeta',

@@ -330,7 +330,7 @@ export function ContactsUploadPage() {
     try {
       const uploaded = await uploadContacts({ groupId: group.id, file }).unwrap()
       navigate(paths.contactUploads(group.id), {
-        state: { importId: uploaded.item?.id ?? '', notice: uploaded.message },
+        state: { importId: uploaded.item?.id ?? '' },
       })
     } catch (uploadError) {
       setImportState({

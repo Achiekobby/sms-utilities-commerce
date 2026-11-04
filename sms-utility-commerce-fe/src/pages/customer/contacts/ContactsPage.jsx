@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { apiErrorMessage } from '../../../features/auth/client'
+import { useNotify } from '../../../features/notifications/useNotify'
 import { useGetContactStatsQuery } from '../../../services/api/contacts/contactsApi'
 import { useDisclosure } from '../../../utils/hooks/useDisclosure'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
@@ -43,6 +44,7 @@ export function ContactsPage() {
   useDocumentTitle('Contacts')
   const navigate = useNavigate()
   const location = useLocation()
+  const notify = useNotify()
   const [params, setParams] = useSearchParams()
   const archivedView = params.get('view') === 'archived'
   const active = useGroups()
@@ -51,55 +53,30 @@ export function ContactsPage() {
   const source = archivedView ? trashed : active
   const create = useDisclosure()
   const [editing, setEditing] = useState(null)
-  const [notice, setNotice] = useState(undefined)
-  const routed = typeof location.state?.notice === 'string' ? { message: location.state.notice, type: location.state.type ?? '' } : null
-  const currentNotice = notice === undefined ? routed : notice
+  const routedNotice = useRef('')
   const { ask, dialog } = useGroupActions({
-    onSuccess(type, message) {
-      setNotice({ type, message })
+    onSuccess(_type, message) {
+      notify.success(message)
     },
   })
   const waiting = !source.isError && source.groups.length === 0 && (source.isLoading || source.isFetching)
 
+  useEffect(() => {
+    const message = location.state?.notice
+    if (typeof message !== 'string' || !message || routedNotice.current === message) return
+    routedNotice.current = message
+    notify.success(message)
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+  }, [location.pathname, location.search, location.state, navigate, notify])
+
   function show(view) {
     setParams(view === 'archived' ? { view: 'archived' } : {}, { replace: true })
-  }
-
-  function dismissNotice() {
-    setNotice(null)
-    if (location.state?.notice) {
-      navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
-    }
   }
 
   return (
     <div>
       <ContactsHeader onCreateGroup={create.open} />
       <GroupViewTabs archived={archivedView} archivedCount={trashed.groups.length} onChange={show} />
-
-      {currentNotice?.message ? (
-        <div
-          role="status"
-          className="mt-4 flex flex-col gap-3 rounded-xl border border-green/25 bg-[#F3FBF6] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <p className="text-sm text-[#0E6B3C]">{currentNotice.message}</p>
-          <div className="flex shrink-0 items-center gap-2">
-            {currentNotice.type === 'archive' && !archivedView ? (
-              <button type="button" onClick={() => show('archived')} className={`text-sm font-semibold text-navy ${focusClass}`}>
-                View archived
-              </button>
-            ) : null}
-            {currentNotice.type === 'restore' && archivedView ? (
-              <button type="button" onClick={() => show('active')} className={`text-sm font-semibold text-navy ${focusClass}`}>
-                View active groups
-              </button>
-            ) : null}
-            <button type="button" onClick={dismissNotice} className={`text-sm font-semibold text-ink/55 hover:text-navy ${focusClass}`}>
-              Dismiss
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       {archivedView ? null : (
         <ContactStats stats={summary.data ?? null} failed={summary.isError} onRetry={summary.refetch} />

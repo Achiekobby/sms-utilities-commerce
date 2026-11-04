@@ -32,6 +32,7 @@ export function contactFromApi(data) {
   return {
     id: String(data.id),
     groupId: data.contact_group_id == null ? '' : String(data.contact_group_id),
+    importId: data.import_id == null && data.contact_import_id == null ? '' : String(data.import_id ?? data.contact_import_id),
     firstName: data.first_name ?? '',
     lastName: data.last_name ?? '',
     email: data.email ?? '',

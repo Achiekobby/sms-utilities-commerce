@@ -1,4 +1,4 @@
-import { Check, ImagePlus, Lock, Undo2, X } from 'lucide-react'
+import { ImagePlus, Lock, Undo2, X } from 'lucide-react'
 import { SelectField } from '../../../../components/SelectField'
 import { TextField } from '../../../../components/TextField'
 import { genders, ghanaRegions } from '../../../../features/auth/regions'
@@ -61,7 +61,6 @@ export function ProfileForm({
   errors,
   fieldIds,
   dirty,
-  status,
   summaryRef,
   showSummary,
   onChange,
@@ -286,15 +285,8 @@ export function ProfileForm({
       </section>
 
       <div className="mt-2 flex flex-col gap-3 border-t border-ink/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p role="status" aria-live="polite" className="flex min-h-5 items-center gap-1.5 text-sm font-medium text-green">
-          {formError ? (
-            <span style={{ color: errorColor }}>{formError}</span>
-          ) : status ? (
-            <>
-              <Check size={15} strokeWidth={2.4} aria-hidden="true" />
-              {status}
-            </>
-          ) : null}
+        <p role="status" aria-live="polite" className="flex min-h-5 items-center text-sm font-medium">
+          {formError ? <span style={{ color: errorColor }}>{formError}</span> : null}
         </p>
         <div className="flex items-center gap-2">
           <button

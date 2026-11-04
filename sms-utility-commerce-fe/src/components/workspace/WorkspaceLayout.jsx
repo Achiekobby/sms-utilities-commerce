@@ -23,11 +23,11 @@ export function WorkspaceLayout() {
   const drawerOpen = menu.isOpen && !isDesktop
 
   return (
-    <div className="min-h-svh bg-canvas">
+    <div className="min-h-svh w-full bg-canvas">
       <Sidebar open={drawerOpen} onClose={menu.close} collapsed={collapsed} />
 
       <div
-        className={`w-full min-w-0 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
+        className={`min-h-svh w-full min-w-0 transition-[padding] duration-200 ease-out motion-reduce:transition-none ${
           collapsed ? 'lg:pl-18' : 'lg:pl-64'
         }`}
       >
@@ -37,7 +37,8 @@ export function WorkspaceLayout() {
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed((value) => !value)}
         />
-        <main className="w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10 xl:px-10 2xl:px-12">
+        {/* Pages can set data-page-bleed to cancel main padding and fill the column edge-to-edge. */}
+        <main className="w-full min-w-0 px-3 py-5 sm:px-4 sm:py-6 lg:px-5 lg:py-6 xl:px-6 2xl:px-8 has-[[data-page-bleed]]:p-0">
           <Outlet />
         </main>
       </div>

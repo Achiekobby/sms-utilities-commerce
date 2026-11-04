@@ -2,14 +2,20 @@ import { useState } from 'react'
 import { ConfirmDialog } from '../../../../components/ConfirmDialog'
 import { apiErrorMessage } from '../../../../features/auth/client'
 import { contactName } from '../../../../features/contacts/contact'
-import { useDeleteContactMutation, useUpdateContactDndMutation } from '../../../../services/api/contacts/contactRecordsApi'
+import {
+  useDeleteContactMutation,
+  useDeleteUploadContactMutation,
+  useUpdateContactDndMutation,
+} from '../../../../services/api/contacts/contactRecordsApi'
 
-export function useContactActions({ groupId, onDone }) {
+export function useContactActions({ groupId, importId = '', onDone }) {
   const [removeContact, removeState] = useDeleteContactMutation()
+  const [removeUploadContact, removeUploadState] = useDeleteUploadContactMutation()
   const [updateDnd, dndState] = useUpdateContactDndMutation()
   const [pending, setPending] = useState(null)
   const [actionError, setActionError] = useState('')
-  const busy = removeState.isLoading || dndState.isLoading
+  const busy = removeState.isLoading || removeUploadState.isLoading || dndState.isLoading
+  const fromUpload = Boolean(importId)
 
   function ask(type, contact) {
     if (busy) return
@@ -30,7 +36,9 @@ export function useContactActions({ groupId, onDone }) {
 
     try {
       if (type === 'remove') {
-        const message = await removeContact({ groupId, contactId: contact.id }).unwrap()
+        const message = fromUpload
+          ? await removeUploadContact({ groupId, importId, contactId: contact.id }).unwrap()
+          : await removeContact({ groupId, contactId: contact.id }).unwrap()
         setPending(null)
         onDone?.(message)
       } else {
@@ -50,7 +58,9 @@ export function useContactActions({ groupId, onDone }) {
       title={pending.type === 'remove' ? `Remove ${name}?` : turningOn ? `Stop messages to ${name}?` : `Allow messages to ${name}?`}
       description={
         pending.type === 'remove'
-          ? `${name} will be removed from this group only. This cannot be undone from here.`
+          ? fromUpload
+            ? `${name} will be removed from this upload and from the group. This cannot be undone from here.`
+            : `${name} will be removed from this group only. This cannot be undone from here.`
           : turningOn
             ? `${name} will be on the do-not-disturb list and will not receive messages.`
             : `${name} will be taken off the do-not-disturb list and can receive messages again.`

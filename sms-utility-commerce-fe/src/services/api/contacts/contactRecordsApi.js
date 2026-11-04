@@ -1,5 +1,5 @@
 import { contactBody, contactFromApi } from '../../../features/contacts/contact'
-import { contactImportFromApi, pageResult } from '../../../features/contacts/contactImport'
+import { contactImportFromApi, pageResult, skippedRowFromApi } from '../../../features/contacts/contactImport'
 import { contactsApi } from './contactsApi'
 
 function groupTags(groupId) {
@@ -14,15 +14,72 @@ function groupTags(groupId) {
 export const contactRecordsApi = contactsApi.injectEndpoints({
   endpoints: (builder) => ({
     getContacts: builder.query({
-      query: ({ groupId, page = 1 }) => ({
-        url: `/api/client/contact-groups/${groupId}/contacts`,
-        method: 'GET',
-        params: { page },
-      }),
+      query: ({ groupId, page = 1, perPage = 15, search = '', dnd = 'all' }) => {
+        const params = { page, per_page: perPage }
+        const term = String(search ?? '').trim()
+        if (term) params.search = term
+        if (dnd === 'active' || dnd === 'inactive') params.dnd_status = dnd
+        return {
+          url: `/api/client/contact-groups/${groupId}/contacts`,
+          method: 'GET',
+          params,
+        }
+      },
       transformResponse: (envelope) => pageResult(envelope, contactFromApi),
       providesTags: (result, _error, { groupId }) => [
         { type: 'Contact', id: `LIST-${groupId}` },
         ...(result?.rows ?? []).map((contact) => ({ type: 'Contact', id: contact.id })),
+      ],
+    }),
+    getUploadContacts: builder.query({
+      query: ({ groupId, importId, page = 1 }) => ({
+        url: `/api/client/contact-groups/${groupId}/contacts/upload/${importId}/contacts`,
+        method: 'GET',
+        params: { page },
+      }),
+      transformResponse: (envelope) => pageResult(envelope, contactFromApi),
+      providesTags: (result, _error, { groupId, importId }) => [
+        { type: 'Contact', id: `LIST-${groupId}` },
+        { type: 'Contact', id: `LIST-${groupId}-IMPORT-${importId}` },
+        ...(result?.rows ?? []).map((contact) => ({ type: 'Contact', id: contact.id })),
+      ],
+    }),
+    getUploadSkippedRows: builder.query({
+      query: ({ groupId, importId, page = 1 }) => ({
+        url: `/api/client/contact-groups/${groupId}/contacts/upload/${importId}/skipped`,
+        method: 'GET',
+        params: { page },
+      }),
+      transformResponse: (envelope) => pageResult(envelope, skippedRowFromApi),
+      providesTags: (_result, _error, { importId }) => [{ type: 'ContactImport', id: `SKIPPED-${importId}` }],
+    }),
+    deleteContactImport: builder.mutation({
+      query: ({ groupId, importId }) => ({
+        url: `/api/client/contact-groups/${groupId}/contacts/upload/${importId}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (envelope) => envelope?.message || 'Upload deleted.',
+      invalidatesTags: (_result, _error, { groupId, importId }) => [
+        { type: 'ContactImport', id: `LIST-${groupId}` },
+        { type: 'ContactImport', id: String(importId) },
+        { type: 'Contact', id: `LIST-${groupId}` },
+        { type: 'Contact', id: `LIST-${groupId}-IMPORT-${importId}` },
+        { type: 'ContactImport', id: `SKIPPED-${importId}` },
+      ],
+    }),
+    deleteUploadContact: builder.mutation({
+      query: ({ groupId, importId, contactId }) => ({
+        url: `/api/client/contact-groups/${groupId}/contacts/upload/${importId}`,
+        method: 'DELETE',
+        params: { contact_id: contactId },
+      }),
+      transformResponse: (envelope) => envelope?.message || 'Contact removed from this upload.',
+      invalidatesTags: (_result, _error, { groupId, importId, contactId }) => [
+        ...groupTags(groupId),
+        { type: 'Contact', id: String(contactId) },
+        { type: 'Contact', id: `LIST-${groupId}-IMPORT-${importId}` },
+        { type: 'ContactImport', id: `LIST-${groupId}` },
+        { type: 'ContactImport', id: String(importId) },
       ],
     }),
     getContact: builder.query({
@@ -58,6 +115,9 @@ export const contactRecordsApi = contactsApi.injectEndpoints({
       invalidatesTags: (result, _error, { groupId, contactId }) => [
         { type: 'Contact', id: `LIST-${groupId}` },
         { type: 'Contact', id: result?.contact?.id ?? String(contactId) },
+        ...(result?.contact?.importId
+          ? [{ type: 'Contact', id: `LIST-${groupId}-IMPORT-${result.contact.importId}` }]
+          : []),
       ],
     }),
     updateContactDnd: builder.mutation({
@@ -73,6 +133,9 @@ export const contactRecordsApi = contactsApi.injectEndpoints({
       invalidatesTags: (result, _error, { groupId, contactId }) => [
         { type: 'Contact', id: `LIST-${groupId}` },
         { type: 'Contact', id: result?.contact?.id ?? String(contactId) },
+        ...(result?.contact?.importId
+          ? [{ type: 'Contact', id: `LIST-${groupId}-IMPORT-${result.contact.importId}` }]
+          : []),
       ],
     }),
     deleteContact: builder.mutation({
@@ -127,12 +190,16 @@ export const contactRecordsApi = contactsApi.injectEndpoints({
 
 export const {
   useGetContactsQuery,
+  useGetUploadContactsQuery,
+  useGetUploadSkippedRowsQuery,
   useGetContactQuery,
   useCreateContactMutation,
   useUpdateContactMutation,
   useUpdateContactDndMutation,
   useDeleteContactMutation,
+  useDeleteUploadContactMutation,
   useGetContactImportsQuery,
   useGetContactImportQuery,
+  useDeleteContactImportMutation,
   useUploadContactsMutation,
 } = contactRecordsApi
