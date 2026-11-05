@@ -1,4 +1,4 @@
-import { ImagePlus, Lock, Undo2, X } from 'lucide-react'
+import { Check, ImagePlus, Lock, Undo2, X } from 'lucide-react'
 import { SelectField } from '../../../../components/SelectField'
 import { TextField } from '../../../../components/TextField'
 import { genders, ghanaRegions } from '../../../../features/auth/regions'
@@ -70,6 +70,7 @@ export function ProfileForm({
   submitting = false,
   formError = '',
   currentPhoto = '',
+  hidePhoto = false,
 }) {
   return (
     <form
@@ -89,17 +90,19 @@ export function ProfileForm({
           <p className="mt-1 max-w-xl text-sm leading-6 text-ink/60">
             This name is the workspace in the sidebar, and the organisation on sender ID requests.
           </p>
-          <div className="mt-5 scroll-mt-28">
-            <PhotoField
-              id={fieldIds.profileImage}
-              label="Logo"
-              file={values.profileImage}
-              preview={values.photoUrl || currentPhoto}
-              error={errors.profileImage}
-              onSelect={(file) => onChange('profileImage', file)}
-              onClear={() => onChange('profileImage', null)}
-            />
-          </div>
+          {hidePhoto ? null : (
+            <div className="mt-5 scroll-mt-28">
+              <PhotoField
+                id={fieldIds.profileImage}
+                label="Logo"
+                file={values.profileImage}
+                preview={values.photoUrl || currentPhoto}
+                error={errors.profileImage}
+                onSelect={(file) => onChange('profileImage', file)}
+                onClear={() => onChange('profileImage', null)}
+              />
+            </div>
+          )}
           <div className="scroll-mt-28">
             <TextField
               id={fieldIds.businessName}
@@ -121,16 +124,18 @@ export function ProfileForm({
           <p className="mt-1 max-w-xl text-sm leading-6 text-ink/60">
             The name on your wallet and on messages you send yourself.
           </p>
-          <div className="mt-5 scroll-mt-28">
-            <PhotoField
-              id={fieldIds.profileImage}
-              file={values.profileImage}
-              preview={values.photoUrl || currentPhoto}
-              error={errors.profileImage}
-              onSelect={(file) => onChange('profileImage', file)}
-              onClear={() => onChange('profileImage', null)}
-            />
-          </div>
+          {hidePhoto ? null : (
+            <div className="mt-5 scroll-mt-28">
+              <PhotoField
+                id={fieldIds.profileImage}
+                file={values.profileImage}
+                preview={values.photoUrl || currentPhoto}
+                error={errors.profileImage}
+                onSelect={(file) => onChange('profileImage', file)}
+                onClear={() => onChange('profileImage', null)}
+              />
+            </div>
+          )}
           <div className="grid gap-x-4 sm:grid-cols-2">
             <div className="scroll-mt-28">
               <TextField

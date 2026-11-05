@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
+import { useSearchParams } from 'react-router'
 import { applyProfile } from '../../../features/auth/authSlice'
 import { apiErrorMessage, clientFromApi, fieldErrors, profileBody } from '../../../features/auth/client'
 import { useNotify } from '../../../features/notifications/useNotify'
@@ -7,15 +8,22 @@ import { useGetProfileQuery, useUpdateProfileMutation } from '../../../services/
 import { useAuth } from '../../../utils/hooks/useAuth'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { isProfileDirty, profileFromUser, validateProfile } from './profileModel'
-import { ProfileAccount } from './sections/ProfileAccount'
+import { AccountDetails } from './settings/AccountDetails'
+import { NotificationSettings } from './settings/NotificationSettings'
+import { PreferenceSettings } from './settings/PreferenceSettings'
+import { ProfileHeader } from './settings/ProfileHeader'
+import { ProfileSidebar } from './settings/ProfileSidebar'
+import { SecuritySettings } from './settings/SecuritySettings'
+import { settingsSection } from './settings/sections'
 import { ProfileForm } from './sections/ProfileForm'
-import { ProfileIdentity } from './sections/ProfileIdentity'
 import { ProfileSkeleton } from './sections/ProfileSkeleton'
 
 export function ProfilePage() {
   useDocumentTitle('Profile')
   const dispatch = useDispatch()
   const notify = useNotify()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const section = settingsSection(searchParams.get('section'))
   const { user, isBusiness, isVerified } = useAuth()
   const { data: profile, isLoading, isFetching, isError, error, refetch } = useGetProfileQuery()
   const [saveProfile, { isLoading: saving }] = useUpdateProfileMutation()
@@ -146,14 +154,18 @@ export function ProfilePage() {
     }
   }
 
+  function openSection(next) {
+    setSearchParams(next === 'profile' ? {} : { section: next }, { replace: true })
+  }
+
   return (
-    <div className="w-full">
+    <div className="mx-auto w-full max-w-[72rem]">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem] lg:text-3xl">Profile</h1>
-        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60 sm:text-[15px]">
+        <h1 className="text-2xl font-bold tracking-tight text-navy">Settings</h1>
+        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
           {isBusiness
-            ? 'The business on this account, and the contact details customers and sender IDs use.'
-            : 'The name, email, mobile number, and address on your messages, receipts, and wallet.'}
+            ? 'The business on this account, and how you sign in.'
+            : 'Your profile, sign-in, and the choices stored in this browser.'}
         </p>
       </header>
 
@@ -179,28 +191,43 @@ export function ProfilePage() {
           label={saving ? 'Saving your profile' : 'Loading your profile'}
         />
       ) : (
-        <div className="profile-in mt-6 flex flex-col gap-6 xl:flex-row xl:items-start">
-          <div className="w-full shrink-0 xl:w-80">
-            <ProfileIdentity user={user} isVerified={isVerified} photo={values.photoUrl} />
-            <ProfileAccount user={user} />
-          </div>
+        <div className="profile-in mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+          <ProfileSidebar section={section} onSelect={openSection} />
           <div className="min-w-0 w-full flex-1">
-            <ProfileForm
-              isBusiness={isBusiness}
-              values={values}
-              errors={errors}
-              fieldIds={fieldIds}
-              dirty={dirty}
-              summaryRef={summaryRef}
-              showSummary={attempt > 0}
-              onChange={changeValue}
-              onBlur={blurField}
-              onDiscard={discard}
-              onSubmit={save}
-              submitting={saving}
-              formError={formError}
-              currentPhoto={user?.profileImage || ''}
-            />
+            {section === 'profile' ? (
+              <div className="flex flex-col gap-4">
+                <ProfileHeader
+                  user={user}
+                  isVerified={isVerified}
+                  photo={values.photoUrl || user?.profileImage || ''}
+                  pendingFile={values.profileImage instanceof File}
+                  photoError={errors.profileImage}
+                  onSelect={(file) => changeValue('profileImage', file)}
+                  onClear={() => changeValue('profileImage', null)}
+                />
+                <ProfileForm
+                  isBusiness={isBusiness}
+                  values={values}
+                  errors={errors}
+                  fieldIds={fieldIds}
+                  dirty={dirty}
+                  summaryRef={summaryRef}
+                  showSummary={attempt > 0}
+                  onChange={changeValue}
+                  onBlur={blurField}
+                  onDiscard={discard}
+                  onSubmit={save}
+                  submitting={saving}
+                  formError={formError}
+                  currentPhoto={user?.profileImage || ''}
+                  hidePhoto
+                />
+              </div>
+            ) : null}
+            {section === 'account' ? <AccountDetails user={user} isVerified={isVerified} /> : null}
+            {section === 'security' ? <SecuritySettings user={user} /> : null}
+            {section === 'notifications' ? <NotificationSettings /> : null}
+            {section === 'preferences' ? <PreferenceSettings /> : null}
           </div>
         </div>
       )}
