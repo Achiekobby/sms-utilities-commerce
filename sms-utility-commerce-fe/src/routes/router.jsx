@@ -16,6 +16,8 @@ import { ContactsPage } from '../pages/customer/contacts/ContactsPage'
 import { ContactsUploadPage } from '../pages/customer/contacts/upload/ContactsUploadPage'
 import { ContactUploadsPage } from '../pages/customer/contacts/uploads/ContactUploadsPage'
 import { DashboardPage } from '../pages/customer/dashboard/DashboardPage'
+import { ActivityLogsPage } from '../pages/customer/activity/ActivityLogsPage'
+import { ApiKeysPage } from '../pages/customer/api-keys/ApiKeysPage'
 import { ProfilePage } from '../pages/customer/profile/ProfilePage'
 import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
 import { RequestSenderPage } from '../pages/customer/sender-ids/RequestSenderPage'
@@ -93,6 +95,8 @@ export const router = createBrowserRouter([
           { path: 'contacts/:groupId/upload', element: <ContactsUploadPage /> },
           { path: 'contacts/:groupId/uploads', element: <ContactUploadsPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'api-keys', element: <ApiKeysPage /> },
+          { path: 'activity-logs', element: <ActivityLogsPage /> },
           { path: 'campaigns', element: <CampaignsPage /> },
           { path: 'campaigns/new', element: <NewCampaignPage /> },
           { path: 'campaigns/:campaignId', element: <CampaignDetailPage /> },

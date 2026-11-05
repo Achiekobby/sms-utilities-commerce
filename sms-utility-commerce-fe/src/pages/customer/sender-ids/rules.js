@@ -1,15 +1,17 @@
 export const senderIdMax = 11
 
-const allowed = /^[A-Za-z0-9 _-]*$/
+export function senderIdError(value) {
+  const raw = String(value ?? '')
+  const trimmed = raw.trim()
 
-export function senderIdError(value, names = []) {
-  if (!value) return 'Enter a sender ID.'
-  if (value.length > senderIdMax) return 'Keep it within 11 characters. Spaces count.'
-  if (!allowed.test(value)) return 'Use letters, numbers, spaces, hyphens, and underscores only.'
-  if (!/^[A-Za-z]/.test(value)) return 'Start with a letter.'
-  if (/\s$/.test(value)) return 'Remove the space at the end.'
+  if (!trimmed) return 'Sender ID is required.'
+  if (/^\s/.test(raw)) return 'Sender ID must start with a letter.'
+  if (/\s$/.test(raw)) return 'Remove the space at the end.'
+  if (trimmed.length > senderIdMax) return 'Sender ID must be 11 characters or fewer.'
+  if (!/^[A-Za-z]/.test(trimmed)) return 'Sender ID must start with a letter.'
+  if (/ {2,}/.test(trimmed)) return 'Use a single space between words.'
+  if (!/^[A-Za-z0-9 ]+$/.test(trimmed)) return 'Only letters, numbers, and spaces are allowed.'
+  if (!/[A-Za-z]/.test(trimmed)) return 'Sender ID must start with a letter.'
 
-  const name = value.toUpperCase()
-  if (names.some((item) => item.toUpperCase() === name)) return 'This sender ID is already in your workspace.'
   return ''
 }

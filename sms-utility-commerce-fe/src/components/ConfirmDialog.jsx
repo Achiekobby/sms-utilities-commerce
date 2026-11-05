@@ -1,4 +1,4 @@
-import { Archive, RotateCcw, Trash2 } from 'lucide-react'
+import { Archive, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { useEffect, useId, useRef } from 'react'
 
 const tones = {
@@ -6,6 +6,11 @@ const tones = {
     icon: Archive,
     iconClass: 'bg-[#FFEBCB] text-[#B45F06]',
     buttonClass: 'bg-navy hover:bg-navy/90',
+  },
+  warning: {
+    icon: RefreshCw,
+    iconClass: 'bg-[#FFEBCB] text-[#B45F06]',
+    buttonClass: 'bg-[#B45F06] hover:bg-[#945008]',
   },
   restore: {
     icon: RotateCcw,
@@ -70,9 +75,9 @@ export function ConfirmDialog({
         <h2 id={titleId} className="mt-4 text-lg font-bold tracking-tight text-navy">
           {title}
         </h2>
-        <p id={descriptionId} className="mt-2 text-sm leading-6 text-ink/70">
+        <div id={descriptionId} className="mt-2 text-sm leading-6 text-ink/70">
           {description}
-        </p>
+        </div>
         {error ? (
           <p role="alert" className="mt-3 rounded-lg bg-[#FDECEE] px-3 py-2 text-[13px] leading-5 text-[#9F1C26]">
             {error}

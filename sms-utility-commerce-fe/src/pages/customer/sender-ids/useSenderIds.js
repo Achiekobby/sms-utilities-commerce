@@ -1,13 +1,6 @@
-import { useMemo } from 'react'
-import { useSelector } from 'react-redux'
-import { seededSenderIds } from './data'
-
-function byRequested(a, b) {
-  return b.requestedAt.localeCompare(a.requestedAt)
-}
+import { useGetSenderIdsQuery } from '../../../services/api/sender-ids/senderIdsApi'
 
 export function useSenderIds() {
-  const created = useSelector((state) => state.senderIds.created)
-
-  return useMemo(() => [...created, ...seededSenderIds].sort(byRequested), [created])
+  const query = useGetSenderIdsQuery({ page: 1, perPage: 15 })
+  return query.data?.rows ?? []
 }

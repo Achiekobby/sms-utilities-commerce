@@ -1,7 +1,40 @@
+import { pageResult } from '../../../features/contacts/contactImport'
+import { topUpFromApi, walletFromApi } from '../../../features/wallet/walletRecord'
 import { baseApi } from '../baseApi'
 
-// Payment seam for Hubtel and Paystack. The browser settles locally in settleTopUp
-// until this can initialize a charge and complete it from a verified webhook.
 export const walletApi = baseApi.injectEndpoints({
-  endpoints: () => ({}),
+  endpoints: (builder) => ({
+    getWallet: builder.query({
+      query: () => ({
+        url: '/api/client/wallet',
+        method: 'GET',
+      }),
+      transformResponse: (envelope) => walletFromApi(envelope?.data),
+      providesTags: ['Wallet'],
+    }),
+    getWalletTopUps: builder.query({
+      query: ({ page = 1, perPage = 15 } = {}) => ({
+        url: '/api/client/wallet/top-ups',
+        method: 'GET',
+        params: { page, per_page: perPage },
+      }),
+      transformResponse: (envelope) => pageResult(envelope, topUpFromApi),
+      providesTags: ['Wallet'],
+    }),
+    createWalletTopUp: builder.mutation({
+      query: (body) => ({
+        url: '/api/client/wallet/top-ups',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (envelope) => ({
+        topUp: topUpFromApi(envelope?.data),
+        message: envelope?.message || 'Top-up started.',
+        completed: String(envelope?.data?.status ?? '').toLowerCase() === 'completed',
+      }),
+      invalidatesTags: ['Wallet'],
+    }),
+  }),
 })
+
+export const { useGetWalletQuery, useGetWalletTopUpsQuery, useCreateWalletTopUpMutation } = walletApi

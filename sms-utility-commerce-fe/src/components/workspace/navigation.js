@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Megaphone,
   MessageSquare,
+  ScrollText,
   Settings,
   Smartphone,
   UserRound,
@@ -107,9 +108,10 @@ export function getNavigation({ isBusiness }) {
       label: 'Developers',
       items: [
         {
-          label: 'API access',
+          label: 'API Key',
           icon: Code,
-          keywords: 'developer portal api keys credentials webhooks docs',
+          to: paths.apiKeys,
+          keywords: 'developer portal api keys credentials token regenerate sms api',
         },
       ],
     },
@@ -118,6 +120,12 @@ export function getNavigation({ isBusiness }) {
       label: 'Account',
       items: [
         ...(isBusiness ? [{ label: 'Team', icon: UsersRound, keywords: 'members roles invite' }] : []),
+        {
+          label: 'Activity logs',
+          icon: ScrollText,
+          to: paths.activityLogs,
+          keywords: 'audit history events security otp profile subscription',
+        },
         {
           label: 'Settings',
           icon: Settings,
@@ -136,7 +144,7 @@ export function getAccountMenu() {
       { label: 'Profile', icon: UserRound, to: paths.profile },
       { label: 'Settings', icon: Settings },
     ],
-    [{ label: 'Developer portal', icon: Code }],
+    [{ label: 'API Key', icon: Code, to: paths.apiKeys }],
   ]
 }
 

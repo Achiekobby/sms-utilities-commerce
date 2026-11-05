@@ -22,6 +22,8 @@ export const paths = {
   message: (messageId) => `/app/messages/${messageId}`,
   wallet: '/app/wallet',
   walletTopUp: '/app/wallet/top-up',
+  apiKeys: '/app/api-keys',
+  activityLogs: '/app/activity-logs',
   contactGroup: (groupId) => `/app/contacts/${groupId}`,
   contactUpload: (groupId) => `/app/contacts/${groupId}/upload`,
   contactUploads: (groupId) => `/app/contacts/${groupId}/uploads`,

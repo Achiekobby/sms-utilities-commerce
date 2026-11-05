@@ -1,25 +1,26 @@
-import { CircleCheck, CircleX, Clock } from 'lucide-react'
+import { CheckCircle2, CircleX, Clock3 } from 'lucide-react'
 import { statusLabel } from '../model'
 
-const tone = {
-  approved: 'bg-[#E5F6EC] text-[#008859]',
-  pending: 'bg-[#E7F1FC] text-blue',
-  rejected: 'bg-[#FFDFE1] text-[#B8141F]',
+const look = {
+  approved: { icon: CheckCircle2, className: 'bg-[#DDF3E6] text-[#0E7A38]' },
+  pending: { icon: Clock3, className: 'bg-[#FFF4DF] text-[#B45F06]' },
+  rejected: { icon: CircleX, className: 'bg-[#FDECEE] text-[#C21F2D]' },
 }
 
-const icons = {
-  approved: CircleCheck,
-  pending: Clock,
-  rejected: CircleX,
-}
-
-export function SenderStatus({ status }) {
-  const Icon = icons[status]
+export function SenderStatus({ status, compact = false }) {
+  const label = statusLabel[status] ?? (status ? status.charAt(0).toUpperCase() + status.slice(1) : '')
+  if (!label) return null
+  const tone = look[status] ?? { icon: Clock3, className: 'bg-[#F3F6FB] text-navy' }
+  const Icon = tone.icon
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${tone[status] ?? 'bg-canvas text-navy'}`}>
-      {Icon ? <Icon size={13} strokeWidth={2.3} aria-hidden="true" /> : null}
-      {statusLabel[status] ?? status}
+    <span
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 font-semibold ${tone.className} ${
+        compact ? 'text-[11px]' : 'text-xs'
+      }`}
+    >
+      <Icon size={compact ? 11 : 12} strokeWidth={2.3} aria-hidden="true" className="shrink-0" />
+      {label}
     </span>
   )
 }
