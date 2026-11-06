@@ -1,7 +1,16 @@
 import { useEffect, useId, useRef } from 'react'
 import { focusClass } from './ui'
 
-export function ConfirmDialog({ title, description, confirmLabel, tone = 'caution', error = '', onConfirm, onClose }) {
+export function ConfirmDialog({
+  title,
+  description,
+  confirmLabel,
+  tone = 'caution',
+  error = '',
+  busy = false,
+  onConfirm,
+  onClose,
+}) {
   const dialogRef = useRef(null)
   const titleId = useId()
   const descriptionId = useId()
@@ -19,6 +28,9 @@ export function ConfirmDialog({ title, description, confirmLabel, tone = 'cautio
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       onClose={onClose}
+      onCancel={(event) => {
+        if (busy) event.preventDefault()
+      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
@@ -40,18 +52,21 @@ export function ConfirmDialog({ title, description, confirmLabel, tone = 'cautio
           <button
             type="button"
             onClick={onClose}
-            className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white px-4 text-sm font-semibold text-navy hover:bg-canvas ${focusClass}`}
+            disabled={busy}
+            className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white px-4 text-sm font-semibold text-navy hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-lg px-4 text-sm font-semibold text-white ${focusClass} ${
+            disabled={busy}
+            aria-busy={busy || undefined}
+            className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-lg px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-70 ${focusClass} ${
               danger ? 'bg-[#C21F2D] hover:bg-[#9F1C26]' : 'bg-navy hover:bg-[#0a3268]'
             }`}
           >
-            {confirmLabel}
+            {busy ? 'Updating' : confirmLabel}
           </button>
         </div>
       </div>

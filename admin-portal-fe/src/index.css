@@ -118,6 +118,18 @@
   }
 }
 
+@keyframes drawer-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes scrim-out {
+  to {
+    opacity: 0;
+  }
+}
+
 /* Indeterminate progress bar: a segment sweeping across its track. */
 @keyframes slide {
   from {
@@ -200,9 +212,17 @@
   animation: drawer-in-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.drawer-right-out {
+  animation: drawer-out-right 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 .drawer-left::backdrop,
 .drawer-right::backdrop {
   animation: scrim-in 220ms ease-out;
+}
+
+.drawer-right-out::backdrop {
+  animation: scrim-out 220ms ease-out forwards;
 }
 
 @keyframes confirm-in {
@@ -229,8 +249,10 @@
 @media (prefers-reduced-motion: reduce) {
   .drawer-left,
   .drawer-right,
+  .drawer-right-out,
   .drawer-left::backdrop,
   .drawer-right::backdrop,
+  .drawer-right-out::backdrop,
   .confirm-dialog::backdrop,
   .confirm-panel {
     animation: none;

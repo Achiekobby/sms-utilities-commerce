@@ -66,7 +66,7 @@ const navigation = [
         to: paths.activityLogs,
         icon: ScrollText,
         permissions: ['activity_log.view'],
-        summary: 'A record of admin and account activity will be listed here.',
+        summary: 'Admin, client, and system activity across the platform.',
       },
     ],
   },
@@ -130,10 +130,25 @@ const navigation = [
       {
         id: 'clients',
         label: 'Clients',
-        to: paths.clients,
         icon: Users,
-        permissions: ['client.manage'],
-        summary: 'Client accounts will be managed here.',
+        children: [
+          {
+            id: 'all-clients',
+            label: 'All clients',
+            to: paths.clients,
+            icon: Users,
+            permissions: ['client.manage'],
+            summary: 'Individual and business accounts, with wallet and subscription status.',
+          },
+          {
+            id: 'client-onboarding',
+            label: 'Client onboarding',
+            to: paths.clientOnboarding,
+            icon: UserPlus,
+            permissions: ['onboarding.client'],
+            summary: 'Create an individual or business client and email them a sign-in code.',
+          },
+        ],
       },
       {
         id: 'subscriptions',
@@ -141,30 +156,7 @@ const navigation = [
         to: paths.subscriptions,
         icon: BadgeCheck,
         permissions: ['subscription.view', 'subscription.assign'],
-        summary: 'Client subscriptions will be reviewed and assigned here.',
-      },
-      {
-        id: 'onboarding',
-        label: 'Onboarding',
-        icon: UserPlus,
-        children: [
-          {
-            id: 'client-onboarding',
-            label: 'Client onboarding',
-            to: paths.clientOnboarding,
-            icon: UserPlus,
-            permissions: ['onboarding.client'],
-            summary: 'Client onboarding will be handled here.',
-          },
-          {
-            id: 'admin-onboarding',
-            label: 'Admin onboarding',
-            to: paths.adminOnboarding,
-            icon: ShieldCheck,
-            permissions: ['onboarding.admin'],
-            summary: 'New admin accounts will be onboarded here.',
-          },
-        ],
+        summary: 'Active plans, credit top-ups, and subscription history.',
       },
     ],
   },
@@ -194,7 +186,7 @@ const navigation = [
         to: paths.plans,
         icon: Layers,
         permissions: ['plan.manage'],
-        summary: 'Subscription plans will be managed here.',
+        summary: 'Subscription plans, prices, and SMS units.',
       },
       {
         id: 'payment-gateways',
@@ -202,7 +194,7 @@ const navigation = [
         to: paths.paymentGateways,
         icon: Landmark,
         permissions: ['payment_gateway.manage'],
-        summary: 'Payment gateway connections will be managed here.',
+        summary: 'Enable providers, set priority, and choose the primary gateway.',
       },
       {
         id: 'payment-settings',
@@ -221,10 +213,25 @@ const navigation = [
       {
         id: 'admins',
         label: 'Admins',
-        to: paths.admins,
         icon: ShieldCheck,
-        permissions: ['admin.manage'],
-        summary: 'Admin accounts will be managed here.',
+        children: [
+          {
+            id: 'all-admins',
+            label: 'All admins',
+            to: paths.admins,
+            icon: ShieldCheck,
+            permissions: ['admin.manage'],
+            summary: 'Team members, their roles, and account status.',
+          },
+          {
+            id: 'admin-onboarding',
+            label: 'Admin onboarding',
+            to: paths.adminOnboarding,
+            icon: UserPlus,
+            permissions: ['onboarding.admin'],
+            summary: 'Create an admin, assign a role, and email them a sign-in code.',
+          },
+        ],
       },
       {
         id: 'roles',
@@ -232,7 +239,7 @@ const navigation = [
         to: paths.roles,
         icon: Shield,
         permissions: ['role.manage'],
-        summary: 'Admin roles will be managed here.',
+        summary: 'Roles and the permissions each one can use.',
       },
       {
         id: 'permissions',
@@ -240,7 +247,7 @@ const navigation = [
         to: paths.permissions,
         icon: LockKeyhole,
         permissions: ['permission.manage'],
-        summary: 'Permission definitions will be managed here.',
+        summary: 'Every permission, grouped by the part of the platform it covers.',
       },
       {
         id: 'otp',
@@ -261,6 +268,26 @@ const navigation = [
     ],
   },
 ]
+
+const readyPaths = new Set([
+  paths.app,
+  paths.clients,
+  paths.clientOnboarding,
+  paths.senderIds,
+  paths.plans,
+  paths.activityLogs,
+  paths.subscriptions,
+  paths.paymentGateways,
+  paths.roles,
+  paths.permissions,
+  paths.admins,
+  paths.adminOnboarding,
+  paths.profile,
+])
+
+export function isComingSoon(to) {
+  return Boolean(to) && !readyPaths.has(to)
+}
 
 const footerItems = [
   {
@@ -300,6 +327,7 @@ export function getSearchEntries(access) {
           icon: link.icon,
           group: group.label,
           summary: link.summary ?? '',
+          comingSoon: isComingSoon(link.to),
         }))
     }),
   )
@@ -311,6 +339,7 @@ export function getSearchEntries(access) {
     icon: item.icon,
     group: 'Account',
     summary: item.summary ?? '',
+    comingSoon: isComingSoon(item.to),
   }))
 
   return [...pages, ...account]
@@ -325,6 +354,7 @@ export function matchSearchEntries(entries, query) {
 }
 
 export function titleForPath(pathname) {
+  if (pathname.startsWith(`${paths.clients}/`)) return 'Client'
   const match = flattenNavigation([...navigation, { id: 'account', items: footerItems }]).find(
     (item) => item.to === pathname,
   )

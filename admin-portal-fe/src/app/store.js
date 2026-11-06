@@ -13,8 +13,17 @@ import { reducer as notificationsReducer } from 'reapop'
 import storage from 'redux-persist/es/storage'
 import authReducer from '../features/auth/authSlice'
 import { baseApi } from '../services/api/baseApi'
+import '../services/api/activity-logs/activityLogsApi'
+import '../services/api/admins/adminsApi'
 import '../services/api/auth/authApi'
+import '../services/api/clients/clientsApi'
+import '../services/api/onboarding/onboardingApi'
+import '../services/api/payment-gateways/paymentGatewaysApi'
 import '../services/api/profile/profileApi'
+import '../services/api/roles/rolesApi'
+import '../services/api/plans/plansApi'
+import '../services/api/sender-ids/senderIdsApi'
+import '../services/api/subscriptions/subscriptionsApi'
 
 const authPersistConfig = {
   key: 'admin-auth',

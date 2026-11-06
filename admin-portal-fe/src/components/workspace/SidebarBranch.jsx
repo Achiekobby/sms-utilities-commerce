@@ -1,10 +1,12 @@
 import { ChevronDown } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useLocation } from 'react-router'
+import { paths } from '../../routes/paths'
 import { SidebarItem } from './SidebarItem'
 
 function childIsCurrent(pathname, to) {
-  return pathname === to
+  if (pathname === to) return true
+  return to === paths.clients && pathname.startsWith(`${paths.clients}/`)
 }
 
 export function SidebarBranch({ item, iconOnly, onNavigate }) {

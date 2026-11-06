@@ -103,10 +103,15 @@ export function SearchDialog({ entries, onClose }) {
                 }`}
               >
                 <Icon size={16} strokeWidth={1.8} aria-hidden="true" className="shrink-0 text-ink/55" />
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-medium text-navy">{entry.label}</span>
                   <span className="block truncate text-[11px] text-ink/45">{entry.group}</span>
                 </span>
+                {entry.comingSoon ? (
+                  <span className="shrink-0 rounded-full bg-ink/[0.06] px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-ink/45 uppercase">
+                    Soon
+                  </span>
+                ) : null}
               </div>
             )
           })
