@@ -37,8 +37,8 @@ function ViewAll({ to, label }) {
 
 export function ActivityBoard() {
   return (
-    <section aria-label="Recent activity and reviews" className="mt-6 w-full min-w-0 sm:mt-7">
-      <div className="grid w-full items-start gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.8fr)]">
+    <section aria-label="Recent activity and reviews" className="mt-6 flex w-full min-w-0 flex-col gap-4 sm:mt-7">
+      <div className="grid w-full min-w-0 gap-4">
         <article className={`${card} min-w-0`}>
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-navy sm:text-lg">Recent activity</h2>

@@ -1,9 +1,10 @@
-import { cardClass, errorColor, focusClass } from './ui'
+import { Check, User } from 'lucide-react'
+import { cardClass, errorColor, focusClass, mintChip } from './ui'
 
 function Field({ id, label, error, children }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-navy">
+      <label htmlFor={id} className="mb-2 block text-sm font-semibold text-navy">
         {label}
       </label>
       {children}
@@ -15,16 +16,23 @@ function Field({ id, label, error, children }) {
 }
 
 const inputClass = (invalid) =>
-  `h-11 w-full rounded-lg border bg-white px-3 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-ink/35 ${focusClass} ${
-    invalid ? 'border-[#E0232E]' : 'border-ink/15 focus:border-blue'
+  `h-12 w-full rounded-xl border bg-white px-3.5 text-sm text-ink outline-none transition-colors duration-150 placeholder:text-ink/35 ${focusClass} ${
+    invalid ? 'border-[#E0232E]' : 'border-ink/10 focus:border-green'
   }`
 
 export function PersonalInformation({ baseId, values, errors, dirty, saving, onChange, onSubmit }) {
   return (
     <form onSubmit={onSubmit} noValidate className={cardClass}>
-      <h2 className="text-base font-semibold text-navy">Personal information</h2>
-      <p className="mt-1 text-sm leading-6 text-ink/60">The name, email, and phone on this admin account.</p>
-      <div className="mt-4 grid gap-x-4 sm:grid-cols-2">
+      <div className="flex items-start gap-3">
+        <span className={mintChip}>
+          <User size={18} strokeWidth={1.8} aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-navy">Personal information</h2>
+          <p className="mt-0.5 text-sm text-ink/55">The name, email, and phone on this admin account.</p>
+        </div>
+      </div>
+      <div className="mt-6 grid gap-x-6 sm:grid-cols-2">
         <Field id={`${baseId}-first`} label="First name" error={errors.firstName}>
           <input
             id={`${baseId}-first`}
@@ -75,14 +83,15 @@ export function PersonalInformation({ baseId, values, errors, dirty, saving, onC
           />
         </Field>
       </div>
-      <div className="flex flex-col gap-3 border-t border-ink/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-end">
-        {dirty ? <p className="text-sm text-ink/50 sm:mr-auto">Unsaved changes</p> : null}
+      <div className="mt-2 flex flex-col gap-3 border-t border-ink/[0.06] pt-5 sm:flex-row sm:items-center sm:justify-end">
+        {dirty ? <p className="text-sm text-ink/45 sm:mr-auto">Unsaved changes</p> : null}
         <button
           type="submit"
           disabled={!dirty || saving}
           aria-busy={saving}
-          className={`inline-flex h-10 cursor-pointer items-center justify-center rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
+          className={`inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
         >
+          <Check size={16} strokeWidth={2.4} aria-hidden="true" />
           {saving ? 'Saving' : 'Save changes'}
         </button>
       </div>

@@ -1,6 +1,7 @@
+import { Settings } from 'lucide-react'
 import { formatStamp, statusLabel } from '../profileForm'
 import { DangerZone } from './DangerZone'
-import { cardClass } from './ui'
+import { cardClass, mintChip } from './ui'
 
 function Row({ label, value }) {
   return (
@@ -15,8 +16,15 @@ export function AccountDetails({ profile }) {
   return (
     <div className="flex flex-col gap-4">
       <section className={cardClass}>
-        <h2 className="text-base font-semibold text-navy">Account</h2>
-        <p className="mt-1 text-sm leading-6 text-ink/60">Details that identify this admin. These are not edited here.</p>
+        <div className="flex items-start gap-3">
+          <span className={mintChip}>
+            <Settings size={18} strokeWidth={1.8} aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-navy">Account</h2>
+            <p className="mt-0.5 text-sm text-ink/55">Details that identify this admin. These are not edited here.</p>
+          </div>
+        </div>
         <dl className="mt-2">
           <Row label="Account ID" value={profile?.id ? String(profile.id) : ''} />
           <Row label="Role" value={profile?.role?.name} />

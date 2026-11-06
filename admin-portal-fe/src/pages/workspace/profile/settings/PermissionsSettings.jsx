@@ -1,109 +1,91 @@
-import { useEffect, useState } from 'react'
-import { useNotify } from '../../../../features/notifications/useNotify'
-import { permissionItems, readBrowserPermissions, requestBrowserPermission } from './browserPermissions'
-import { PermissionRow } from './PermissionRow'
-import { cardClass } from './ui'
+import { Shield } from 'lucide-react'
+import { cardClass, mintChip } from './ui'
 
-function moduleLabel(module) {
-  return String(module)
-    .split('_')
+function titleCase(value) {
+  return String(value)
+    .split(/[._\s]+/)
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 }
 
+function moduleLabel(module) {
+  return titleCase(module)
+}
+
+function permissionLabel(name, module) {
+  const raw = String(name ?? '')
+  const prefix = `${module}.`
+  const action = raw.startsWith(prefix) ? raw.slice(prefix.length) : raw
+  return titleCase(action) || raw
+}
+
 export function PermissionsSettings({ profile }) {
-  const notify = useNotify()
   const modules = Array.isArray(profile?.role?.permissions) ? profile.role.permissions : []
   const permissionCount = modules.reduce((total, group) => total + (group.permissions?.length ?? 0), 0)
-  const [states, setStates] = useState(null)
-  const [error, setError] = useState('')
-  const [busyId, setBusyId] = useState('')
-
-  useEffect(() => {
-    let active = true
-    readBrowserPermissions().then(
-      (next) => {
-        if (active) setStates(next)
-      },
-      () => {
-        if (active) setError('This browser could not report permission status.')
-      },
-    )
-    return () => {
-      active = false
-    }
-  }, [])
-
-  async function allow(id) {
-    setBusyId(id)
-    try {
-      const next = await requestBrowserPermission(id)
-      setStates((current) => ({ ...current, [id]: next }))
-      if (next === 'allowed') notify.success('Permission allowed in this browser.')
-      else if (next === 'blocked') notify.error('The browser blocked this permission.')
-    } catch {
-      const refreshed = await readBrowserPermissions()
-      setStates(refreshed)
-      notify.error('The browser did not grant this permission.')
-    } finally {
-      setBusyId('')
-    }
-  }
+  const roleName = profile?.role?.name || 'This role'
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className={cardClass}>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-base font-semibold text-navy">Role access</h2>
-          <p className="text-xs text-ink/45">
-            {permissionCount} {permissionCount === 1 ? 'permission' : 'permissions'}
-          </p>
+    <section className={cardClass}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className={mintChip}>
+            <Shield size={18} strokeWidth={1.8} aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-navy">Role access</h2>
+            <p className="mt-0.5 max-w-xl text-sm leading-6 text-ink/55">
+              {roleName} decides which admin pages you can open.
+              {profile?.role?.description ? ` ${profile.role.description}` : ''} It is not edited here.
+            </p>
+          </div>
         </div>
-        <p className="mt-1 text-sm leading-6 text-ink/60">
-          {profile?.role?.name || 'This role'} decides which admin pages you can open. It is not edited here.
-        </p>
-        {modules.length ? (
-          <ul className="mt-4 flex flex-wrap gap-1.5">
-            {modules.map((group) => (
-              <li key={group.module} className="rounded-full bg-[#F3F6FB] px-2.5 py-1 text-xs font-medium text-navy">
-                {moduleLabel(group.module)}
-                <span className="sr-only">
-                  {`, ${group.permissions?.map((item) => item.name).join(', ') || 'no permissions'}`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-4 text-sm text-ink/55">No role permissions were returned.</p>
-        )}
-      </section>
+        <dl className="flex shrink-0 gap-2">
+          <div className="rounded-xl bg-[#E7F8F0] px-3 py-2 text-center">
+            <dt className="text-[11px] font-medium text-green/80">Modules</dt>
+            <dd className="text-lg leading-none font-bold text-green tabular-nums">{modules.length}</dd>
+          </div>
+          <div className="rounded-xl bg-[#F3F6FB] px-3 py-2 text-center">
+            <dt className="text-[11px] font-medium text-ink/45">Permissions</dt>
+            <dd className="text-lg leading-none font-bold text-navy tabular-nums">{permissionCount}</dd>
+          </div>
+        </dl>
+      </div>
 
-      <section className={cardClass}>
-        <h2 className="text-base font-semibold text-navy">Browser permissions</h2>
-        <p className="mt-1 max-w-xl text-sm leading-6 text-ink/60">
-          Device features this browser can use. A blocked permission has to be changed in the browser settings.
-        </p>
-        {error ? (
-          <p className="mt-4 text-sm text-[#9F1C26]" role="alert">
-            {error}
-          </p>
-        ) : null}
-        {!states && !error ? <p className="mt-4 text-sm text-ink/55">Checking this browser…</p> : null}
-        {states ? (
-          <ul className="mt-2">
-            {permissionItems.map((item) => (
-              <PermissionRow
-                key={item.id}
-                item={item}
-                state={states[item.id]}
-                busy={busyId === item.id}
-                onAllow={() => allow(item.id)}
-              />
-            ))}
-          </ul>
-        ) : null}
-      </section>
-    </div>
+      {modules.length ? (
+        <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+          {modules.map((group) => {
+            const permissions = Array.isArray(group.permissions) ? group.permissions : []
+            return (
+              <li key={group.module} className="rounded-xl border border-ink/[0.06] bg-[#F7FBF9] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-navy">{moduleLabel(group.module)}</h3>
+                  <p className="text-xs font-medium text-ink/45 tabular-nums">
+                    {permissions.length} {permissions.length === 1 ? 'permission' : 'permissions'}
+                  </p>
+                </div>
+                {permissions.length ? (
+                  <ul className="mt-3 flex flex-wrap gap-1.5">
+                    {permissions.map((item) => (
+                      <li
+                        key={item.id ?? item.name}
+                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-navy ring-1 ring-ink/10"
+                        title={item.name}
+                      >
+                        {permissionLabel(item.name, group.module)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-ink/45">No permissions in this module.</p>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <p className="mt-6 rounded-xl bg-[#F7FBF9] px-4 py-6 text-sm text-ink/55">No role permissions were returned.</p>
+      )}
+    </section>
   )
 }

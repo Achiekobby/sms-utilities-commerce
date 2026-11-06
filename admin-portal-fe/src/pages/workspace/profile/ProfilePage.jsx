@@ -1,3 +1,4 @@
+import { UserRound } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSearchParams } from 'react-router'
@@ -6,16 +7,14 @@ import { adminFromProfile, apiErrorMessage, fieldErrors } from '../../../feature
 import { useNotify } from '../../../features/notifications/useNotify'
 import { usePermissions } from '../../../features/auth/usePermissions'
 import { useGetProfileQuery, useUpdateProfileMutation } from '../../../services/api/profile/profileApi'
+import Images from '../../../utils/Images'
 import { AccessDeniedPage } from '../AccessDeniedPage'
 import { formFromProfile, isProfileDirty, profileBody, validateProfile } from './profileForm'
 import { AccountDetails } from './settings/AccountDetails'
-import { NotificationSettings } from './settings/NotificationSettings'
 import { PermissionsSettings } from './settings/PermissionsSettings'
 import { PersonalInformation } from './settings/PersonalInformation'
-import { PreferenceSettings } from './settings/PreferenceSettings'
 import { ProfileHeader } from './settings/ProfileHeader'
 import { ProfileSidebar } from './settings/ProfileSidebar'
-import { SecuritySettings } from './settings/SecuritySettings'
 import { settingsSection } from './settings/sections'
 import { focusClass } from './settings/ui'
 
@@ -95,57 +94,69 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[72rem]">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-navy">Settings</h1>
-        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
-          Your admin profile, sign-in, and the choices stored in this browser.
-        </p>
+    <div className="flex w-full min-w-0 flex-col">
+      <header className="relative shrink-0 overflow-hidden rounded-2xl border border-ink/[0.06] bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,33,61,0.04),0_18px_40px_-28px_rgba(16,33,61,0.35)] sm:px-6 sm:py-5">
+        <img
+          src={Images.profile_header_background}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right"
+        />
+        <div className="relative flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-green shadow-[0_8px_20px_-14px_rgba(0,136,89,0.9)] ring-1 ring-green/15">
+            <UserRound size={22} strokeWidth={1.8} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-green uppercase">Admin account</p>
+            <h1 className="mt-0.5 text-[1.75rem] leading-none font-bold tracking-tight text-navy">Profile</h1>
+            <p className="mt-1.5 max-w-xl text-sm leading-5 text-ink/60">
+              Your photo, contact details, and the access on this account.
+            </p>
+          </div>
+        </div>
       </header>
 
-      {isError ? (
-        <div className="mt-6 rounded-xl border border-[#E0232E]/20 bg-white px-4 py-4" role="alert">
-          <p className="text-sm text-[#9F1C26]">{apiErrorMessage(error)}</p>
-          <button
-            type="button"
-            onClick={refetch}
-            className={`mt-3 inline-flex h-9 cursor-pointer items-center rounded-lg bg-navy px-3 text-sm font-semibold text-white ${focusClass}`}
-          >
-            Try again
-          </button>
-        </div>
-      ) : null}
-
-      <div className="profile-in mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+      <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
         <ProfileSidebar section={section} onSelect={openSection} />
+
         <div className="min-w-0 w-full flex-1">
-          {waiting ? <ProfileSkeleton /> : null}
-          {profile && values && section === 'profile' ? (
-            <div className="flex flex-col gap-4">
-              <ProfileHeader
-                profile={profile}
-                photo={photoUrl}
-                pendingFile={values.photo instanceof File}
-                photoError={errors.profileImage}
-                onSelect={setPhoto}
-                onClear={() => setPhoto(null)}
-              />
-              <PersonalInformation
-                baseId={baseId}
-                values={values}
-                errors={errors}
-                dirty={dirty}
-                saving={saving}
-                onChange={change}
-                onSubmit={onSubmit}
-              />
+          {isError ? (
+            <div className="mb-5 rounded-2xl border border-[#E0232E]/20 bg-white px-4 py-4" role="alert">
+              <p className="text-sm text-[#9F1C26]">{apiErrorMessage(error)}</p>
+              <button
+                type="button"
+                onClick={refetch}
+                className={`mt-3 inline-flex h-9 cursor-pointer items-center rounded-lg bg-navy px-3 text-sm font-semibold text-white ${focusClass}`}
+              >
+                Try again
+              </button>
             </div>
           ) : null}
-          {profile && section === 'account' ? <AccountDetails profile={profile} /> : null}
-          {profile && section === 'security' ? <SecuritySettings profile={profile} /> : null}
-          {profile && section === 'permissions' ? <PermissionsSettings profile={profile} /> : null}
-          {section === 'notifications' ? <NotificationSettings /> : null}
-          {section === 'preferences' ? <PreferenceSettings /> : null}
+          <div className="profile-in flex flex-col gap-5">
+            {waiting ? <ProfileSkeleton /> : null}
+            {profile && values && section === 'profile' ? (
+              <div className="flex flex-col gap-4">
+                <ProfileHeader
+                  profile={profile}
+                  photo={photoUrl}
+                  pendingFile={values.photo instanceof File}
+                  photoError={errors.profileImage}
+                  onSelect={setPhoto}
+                  onClear={() => setPhoto(null)}
+                />
+                <PersonalInformation
+                  baseId={baseId}
+                  values={values}
+                  errors={errors}
+                  dirty={dirty}
+                  saving={saving}
+                  onChange={change}
+                  onSubmit={onSubmit}
+                />
+              </div>
+            ) : null}
+            {profile && section === 'account' ? <AccountDetails profile={profile} /> : null}
+            {profile && section === 'permissions' ? <PermissionsSettings profile={profile} /> : null}
+          </div>
         </div>
       </div>
     </div>

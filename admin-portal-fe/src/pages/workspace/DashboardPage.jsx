@@ -6,6 +6,7 @@ import { CollectionsStrip } from './dashboard/CollectionsStrip'
 import { greeting } from './dashboard/data'
 import { MetricCards } from './dashboard/MetricCards'
 import { OverviewCharts } from './dashboard/OverviewCharts'
+import { YearlyChart } from './dashboard/YearlyChart'
 
 export function DashboardPage() {
   const user = useSelector(selectCurrentUser)
@@ -23,6 +24,7 @@ export function DashboardPage() {
       <CollectionsStrip />
       <MetricCards />
       <OverviewCharts />
+      <YearlyChart />
       <ActivityBoard />
     </div>
   )

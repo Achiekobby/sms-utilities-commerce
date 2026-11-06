@@ -123,7 +123,7 @@ function VolumeChart() {
   const axis = volumeAxis(data)
 
   return (
-    <article className={`${card} flex min-w-0 w-full flex-col`}>
+    <article className={`${card} flex h-full min-h-[32rem] w-full min-w-0 flex-col`}>
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-base font-bold text-navy sm:text-lg">Message volume</h2>
         <PeriodMenu period={period} onChange={setPeriod} />
@@ -145,7 +145,7 @@ function VolumeChart() {
           Delivery rate
         </li>
       </ul>
-      <div className="relative mt-2 h-72 w-full min-w-0 flex-1">
+      <div className="relative mt-2 min-h-80 w-full min-w-0 flex-1">
         <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 4, left: -8, bottom: 0 }} barGap={1} barCategoryGap="32%">
@@ -242,12 +242,12 @@ function DeliveryStatus() {
   return (
     <article
       ref={cardRef}
-      className={`${card} relative flex w-full min-w-0 flex-col`}
+      className={`${card} relative flex h-full min-h-[32rem] w-full min-w-0 flex-col`}
       onMouseMove={active == null ? undefined : track}
     >
       <h2 className="text-base font-bold text-navy sm:text-lg">Delivery status</h2>
-      <div className="mt-5 flex min-w-0 flex-1 flex-col items-stretch gap-6 sm:flex-row sm:items-center">
-        <div className="relative mx-auto aspect-square w-full max-w-44 shrink-0 sm:mx-0 sm:w-44">
+      <div className="mt-5 flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-6">
+        <div className="relative aspect-square w-full max-w-56">
           <DeliveryDonut
             active={active}
             onActive={(index, event) => {
@@ -262,11 +262,11 @@ function DeliveryStatus() {
             <p className="mt-1.5 text-xs text-ink/50">Messages</p>
           </div>
         </div>
-        <ul className="min-w-0 flex-1 divide-y divide-ink/[0.07]" onMouseLeave={() => setActive(null)}>
+        <ul className="w-full min-w-[9.5rem] flex-1 divide-y divide-ink/[0.07]" onMouseLeave={() => setActive(null)}>
           {deliveryStatus.map((item, index) => (
             <li
               key={item.label}
-              className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 py-3 text-sm transition-opacity duration-150 ${
+              className={`flex items-center gap-2 py-3 text-sm transition-opacity duration-150 ${
                 active == null || active === index ? 'opacity-100' : 'opacity-40'
               }`}
               onMouseEnter={(event) => {
@@ -274,9 +274,9 @@ function DeliveryStatus() {
                 track(event)
               }}
             >
-              <span aria-hidden="true" className="size-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-              <span className="truncate font-medium text-ink/75">{item.label}</span>
-              <span className="font-bold text-navy tabular-nums">{item.share}</span>
+              <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="min-w-0 flex-1 truncate font-medium text-ink/75">{item.label}</span>
+              <span className="shrink-0 font-bold text-navy tabular-nums">{item.share}</span>
             </li>
           ))}
         </ul>

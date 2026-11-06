@@ -1,10 +1,7 @@
 export const settingsSections = [
   { id: 'profile', label: 'Profile' },
   { id: 'account', label: 'Account' },
-  { id: 'security', label: 'Security' },
   { id: 'permissions', label: 'Permissions' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'preferences', label: 'Preferences' },
 ]
 
 export function settingsSection(value) {

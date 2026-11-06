@@ -141,6 +141,37 @@ export const reviewQueue = [
   { id: 'pay-1', title: 'GH₵ 4,200 top-up', detail: 'Kente & Co · payment review', status: 'Review' },
 ]
 
+const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+export const yearlyViews = [
+  { id: 'payments', label: 'Payments', detail: 'Wallet collections settled each month.' },
+  { id: 'subscriptions', label: 'Subscriptions', detail: 'New plans started each month.' },
+]
+
+export const yearlyReports = {
+  2026: {
+    payments: [286400, 312800, 428600, 364200, 391500, 348900, 372400, 405200, 468800, 512400, 486350, 392100],
+    subscriptions: [34, 29, 48, 41, 37, 33, 39, 44, 52, 58, 47, 36],
+  },
+  2025: {
+    payments: [214600, 238400, 301200, 276800, 289400, 264100, 281600, 318900, 346200, 372800, 358400, 301500],
+    subscriptions: [28, 24, 36, 31, 30, 27, 32, 35, 40, 43, 38, 29],
+  },
+  2024: {
+    payments: [162400, 174800, 221600, 198400, 206900, 188200, 194600, 228400, 246800, 268100, 251400, 214700],
+    subscriptions: [18, 16, 22, 20, 19, 17, 21, 24, 26, 28, 23, 19],
+  },
+}
+
+export const yearlyYears = Object.keys(yearlyReports)
+  .map(Number)
+  .sort((left, right) => right - left)
+
+export function yearlySeries(year, view) {
+  const values = yearlyReports[year]?.[view] ?? []
+  return monthLabels.map((label, index) => ({ label, value: values[index] ?? 0 }))
+}
+
 export const recentActivity = [
   { id: 'a1', client: 'Akosua Retail', event: 'Wallet top-up', detail: 'GH₵ 2,500 · MTN', when: '5 Nov, 09:14', status: 'Settled' },
   { id: 'a2', client: 'Harbour Clinic', event: 'Sender ID', detail: 'HARBOUR submitted', when: '5 Nov, 08:02', status: 'Pending' },
