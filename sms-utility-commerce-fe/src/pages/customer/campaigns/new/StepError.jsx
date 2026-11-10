@@ -4,11 +4,17 @@ const errorColor = '#9F1C26'
 
 const campaignFields = [
   ['groupIds', 'Audience', 'campaign-groups'],
+  ['rewardType', 'Reward type', 'reward-enabled'],
+  ['rewardAmount', 'Reward amount', 'reward-amount'],
+  ['rewardBundle', 'Data bundle', 'reward-bundle'],
+  ['rewardBalance', 'Reward balance', 'reward-enabled'],
   ['name', 'Campaign name', 'campaign-name-input'],
   ['type', 'Type', 'campaign-type'],
   ['customType', 'Custom type', 'campaign-custom-type-input'],
   ['sender', 'Sender', 'campaign-sender'],
   ['body', 'Message', 'campaign-body-input'],
+  ['ctaType', 'CTA type', 'campaign-cta'],
+  ['ctaValue', 'CTA destination', 'cta-value'],
   ['sendAt', 'Send time', 'campaign-send-at-input'],
 ]
 

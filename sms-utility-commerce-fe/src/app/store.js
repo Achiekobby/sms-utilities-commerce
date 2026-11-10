@@ -26,7 +26,7 @@ import campaignsReducer from '../features/campaigns/campaignsSlice'
 import contactsReducer from '../features/contacts/contactsSlice'
 import messagesReducer from '../features/messages/messagesSlice'
 import senderIdsReducer from '../features/sender-ids/senderIdsSlice'
-import walletReducer from '../features/wallet/walletSlice'
+import walletReducer, { demoWalletBalanceUnits } from '../features/wallet/walletSlice'
 
 const authPersistConfig = {
   key: 'auth',
@@ -58,6 +58,17 @@ const senderIdsPersistConfig = {
 const walletPersistConfig = {
   key: 'wallet',
   storage,
+  // Bump when demo seed changes so persisted zero balances pick up the temporary float.
+  version: 1,
+  migrate: (state) => {
+    if (!state || typeof state.balance !== 'number' || state.balance <= 0) {
+      return Promise.resolve({
+        balance: demoWalletBalanceUnits,
+        entries: state?.entries ?? [],
+      })
+    }
+    return Promise.resolve(state)
+  },
 }
 
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer)

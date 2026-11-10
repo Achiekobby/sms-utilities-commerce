@@ -171,6 +171,60 @@
   animation: profile-in 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+@keyframes campaign-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.campaign-step-in {
+  animation: campaign-step-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* GPU-friendly card lift: transform only (box-shadow transitions feel choppy). */
+.start-choice-card {
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.start-choice-card:hover,
+.start-choice-card:focus-visible {
+  transform: translate3d(0, -6px, 0);
+}
+
+.start-choice-card:active {
+  transform: translate3d(0, -2px, 0);
+  transition-duration: 180ms;
+}
+
+.start-choice-card__wash {
+  transform: translate3d(0, 0, 0) scale(1);
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.start-choice-card:hover .start-choice-card__wash,
+.start-choice-card:focus-visible .start-choice-card__wash {
+  transform: translate3d(0, 0, 0) scale(1.08);
+}
+
+.start-choice-card__tile {
+  transform: translate3d(0, 0, 0) scale(1);
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.start-choice-card:hover .start-choice-card__tile,
+.start-choice-card:focus-visible .start-choice-card__tile {
+  transform: translate3d(0, 0, 0) scale(1.04);
+}
+
 @keyframes upload-slide {
   from {
     transform: translateX(-120%);
@@ -187,8 +241,28 @@
 @media (prefers-reduced-motion: reduce) {
   .skeleton,
   .profile-in,
+  .campaign-step-in,
   .upload-slide {
     animation: none;
+  }
+
+  .start-choice-card,
+  .start-choice-card__wash,
+  .start-choice-card__tile {
+    transition: none;
+  }
+
+  .start-choice-card:hover,
+  .start-choice-card:focus-visible,
+  .start-choice-card:active {
+    transform: none;
+  }
+
+  .start-choice-card:hover .start-choice-card__wash,
+  .start-choice-card:focus-visible .start-choice-card__wash,
+  .start-choice-card:hover .start-choice-card__tile,
+  .start-choice-card:focus-visible .start-choice-card__tile {
+    transform: none;
   }
 }
 

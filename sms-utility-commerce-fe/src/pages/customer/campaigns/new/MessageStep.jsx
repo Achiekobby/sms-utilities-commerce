@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, Mail, Phone, Send, User, UserRound, Users } from 'lucide-react'
+import { Building2, Cake, CalendarClock, Gift, Mail, Phone, Send, Signal, User, UserRound, Users, Wallet } from 'lucide-react'
 import { useRef } from 'react'
 import { ChoiceEmpty, ChoicePager, ChoiceSearch, useChoicePage } from '../../../../components/form/ChoiceList'
 import { typeIcons } from '../../../../components/TypeBadge'
@@ -10,6 +10,9 @@ import {
   messagePlaceholders,
   segmentCount,
 } from '../model'
+import { ctaInsertText } from '../cta'
+import { insertRewardCopy, rewardPlaceholders } from '../reward'
+import { PromotionCtaSection } from './PromotionCtaSection'
 
 const placeholderIcons = {
   firstName: UserRound,
@@ -18,7 +21,13 @@ const placeholderIcons = {
   phone: Phone,
   email: Mail,
   businessName: Building2,
+  birthday: Cake,
+  rewardType: Gift,
+  rewardAmount: Wallet,
+  bundleSize: Signal,
 }
+
+const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 const field =
   'w-full rounded-xl border border-ink/15 bg-white px-4 text-base text-ink outline-none transition-all duration-200 placeholder:text-ink/35 focus:border-blue focus:ring-4 focus:ring-blue/15'
@@ -51,6 +60,8 @@ export function MessageStep({
   const segments = segmentCount(values.body)
   const over = segments > maxSegments
   const earliest = localDateTimeValue(new Date())
+  const rewardVars = rewardPlaceholders(values.reward)
+  const placeholders = [...messagePlaceholders, ...rewardVars]
   const senderChoices = useChoicePage(senders, {
     pageSize: 6,
     matches: (sender, term) => sender.toLowerCase().includes(term),
@@ -71,6 +82,18 @@ export function MessageStep({
       field?.focus()
       field?.setSelectionRange(cursor, cursor)
     })
+  }
+
+  function insertRewardDetails() {
+    const copy = insertRewardCopy(values.reward)
+    if (!copy) return
+    insertPlaceholder(copy)
+  }
+
+  function insertCtaDetails() {
+    const copy = ctaInsertText(values.cta)
+    if (!copy) return
+    insertPlaceholder(copy)
   }
 
   return (
@@ -225,14 +248,14 @@ export function MessageStep({
         {showPlaceholders ? (
           <>
             <div className="mb-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="Insert a placeholder">
-              {messagePlaceholders.map((item) => {
-                const Icon = placeholderIcons[item.id]
+              {placeholders.map((item) => {
+                const Icon = placeholderIcons[item.id] ?? Gift
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => insertPlaceholder(item.token)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ink/15 bg-white px-2.5 text-xs font-semibold text-navy transition-colors hover:border-blue/40 hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-ink/15 bg-white px-2.5 text-xs font-semibold text-navy transition-colors hover:border-blue/40 hover:bg-canvas ${focusClass}`}
                   >
                     <Icon size={13} strokeWidth={2.2} aria-hidden="true" className="text-blue" />
                     {item.label}
@@ -240,6 +263,16 @@ export function MessageStep({
                   </button>
                 )
               })}
+              {values.reward?.enabled ? (
+                <button
+                  type="button"
+                  onClick={insertRewardDetails}
+                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue/25 bg-blue/[0.06] px-2.5 text-xs font-semibold text-blue transition-colors hover:bg-blue/[0.1] ${focusClass}`}
+                >
+                  <Gift size={13} strokeWidth={2.2} aria-hidden="true" />
+                  Insert reward details
+                </button>
+              ) : null}
             </div>
             <p className="mb-2 text-xs leading-5 text-ink/55">Each contact gets their own value. A missing field is left blank.</p>
           </>
@@ -269,67 +302,70 @@ export function MessageStep({
         <FieldError id="campaign-body-error">{errors.body}</FieldError>
       </div>
 
-      <fieldset id="campaign-sendAt" className="scroll-mt-28">
-        <legend className={labelClass}>When to send</legend>
-        {allowSchedule ? (
-          <>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {[
-                { id: 'now', label: 'Send now', icon: Send },
-                { id: 'later', label: 'Schedule', icon: CalendarClock },
-              ].map((item) => {
-                const checked = values.when === item.id
-                const Icon = item.icon
-                return (
-                  <label
-                    key={item.id}
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors duration-200 ${
-                      checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="when"
-                      value={item.id}
-                      checked={checked}
-                      onChange={() => {
-                        onChange('when', item.id)
-                        if (item.id === 'now') onChange('sendAt', '')
-                      }}
-                      className="sr-only"
-                    />
-                    <Icon size={16} strokeWidth={2.2} aria-hidden="true" className={checked ? 'text-blue' : 'text-ink/55'} />
-                    {item.label}
-                  </label>
-                )
-              })}
-            </div>
-            {values.when === 'later' ? (
-              <div className="mt-3">
-                <label htmlFor="campaign-send-at-input" className="sr-only">
-                  Date and time
+      {values.type === 'promotion' ? (
+        <PromotionCtaSection
+          values={values}
+          errors={errors}
+          onChange={onChange}
+          onInsertIntoMessage={insertCtaDetails}
+        />
+      ) : null}
+
+      {allowSchedule ? (
+        <fieldset id="campaign-sendAt" className="scroll-mt-28">
+          <legend className={labelClass}>When to send</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              { id: 'now', label: 'Send now', icon: Send },
+              { id: 'later', label: 'Schedule', icon: CalendarClock },
+            ].map((item) => {
+              const checked = values.when === item.id
+              const Icon = item.icon
+              return (
+                <label
+                  key={item.id}
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors duration-200 ${
+                    checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="when"
+                    value={item.id}
+                    checked={checked}
+                    onChange={() => {
+                      onChange('when', item.id)
+                      if (item.id === 'now') onChange('sendAt', '')
+                    }}
+                    className="sr-only"
+                  />
+                  <Icon size={16} strokeWidth={2.2} aria-hidden="true" className={checked ? 'text-blue' : 'text-ink/55'} />
+                  {item.label}
                 </label>
-                <input
-                  id="campaign-send-at-input"
-                  type="datetime-local"
-                  name="sendAt"
-                  min={earliest}
-                  value={values.sendAt}
-                  aria-invalid={errors.sendAt ? true : undefined}
-                  aria-describedby={errors.sendAt ? 'campaign-send-at-error' : undefined}
-                  onChange={(event) => onChange('sendAt', event.target.value)}
-                  className={`${field} h-12`}
-                />
-                <FieldError id="campaign-send-at-error">{errors.sendAt}</FieldError>
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <p className="mt-1 rounded-xl border border-ink/10 bg-canvas px-3 py-3 text-sm leading-6 text-ink/65">
-            Quick sends go out immediately.
-          </p>
-        )}
-      </fieldset>
+              )
+            })}
+          </div>
+          {values.when === 'later' ? (
+            <div className="mt-3">
+              <label htmlFor="campaign-send-at-input" className="sr-only">
+                Date and time
+              </label>
+              <input
+                id="campaign-send-at-input"
+                type="datetime-local"
+                name="sendAt"
+                min={earliest}
+                value={values.sendAt}
+                aria-invalid={errors.sendAt ? true : undefined}
+                aria-describedby={errors.sendAt ? 'campaign-send-at-error' : undefined}
+                onChange={(event) => onChange('sendAt', event.target.value)}
+                className={`${field} h-12`}
+              />
+              <FieldError id="campaign-send-at-error">{errors.sendAt}</FieldError>
+            </div>
+          ) : null}
+        </fieldset>
+      ) : null}
     </div>
   )
 }

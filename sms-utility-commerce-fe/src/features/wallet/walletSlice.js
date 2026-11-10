@@ -1,9 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { unitsPerCedi } from '../../pages/customer/wallet/money'
+
+/** Temporary demo float until top-up / live wallet balance is wired. */
+export const demoWalletBalanceUnits = 100_000 * unitsPerCedi
 
 const walletSlice = createSlice({
   name: 'wallet',
   initialState: {
-    balance: 0,
+    balance: demoWalletBalanceUnits,
     entries: [],
   },
   reducers: {

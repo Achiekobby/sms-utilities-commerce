@@ -3,7 +3,14 @@ import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
 import { formatCount } from '../../dashboard/format'
 import { campaignTypes, statusLabel } from '../model'
-import { emptyFilters, queryCampaigns, senderOptions, statusOptions } from '../query'
+import {
+  emptyFilters,
+  queryCampaigns,
+  rewardPresenceOptions,
+  rewardTypeFilterOptions,
+  senderOptions,
+  statusOptions,
+} from '../query'
 import { approvedSenderNames } from '../../sender-ids/model'
 import { useSenderIds } from '../../sender-ids/useSenderIds'
 
@@ -14,7 +21,7 @@ function DrawerHeader({ onClose }) {
     <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
       <div className="min-w-0">
         <h2 className="text-base font-bold text-navy">Filter campaigns</h2>
-        <p className="mt-0.5 text-[13px] text-ink/60">Status, type, and sender. Search stays in the list.</p>
+        <p className="mt-0.5 text-[13px] text-ink/60">Status, type, reward, and sender. Search stays in the list.</p>
       </div>
       <button
         type="button"
@@ -95,6 +102,37 @@ export function CampaignFilterDrawer({ campaigns, search, filters, onApply, onCl
                 label={type.label}
                 checked={draft.types.includes(type.id)}
                 onChange={() => toggle('types', type.id)}
+              />
+            ))}
+          </Group>
+
+          <Group legend="Reward">
+            {rewardPresenceOptions.map((option) => (
+              <label
+                key={option.id}
+                className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
+                  draft.reward === option.id ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="reward-presence"
+                  checked={draft.reward === option.id}
+                  onChange={() => setDraft((current) => ({ ...current, reward: option.id }))}
+                  className="size-4 accent-blue"
+                />
+                {option.label}
+              </label>
+            ))}
+          </Group>
+
+          <Group legend="Reward type">
+            {rewardTypeFilterOptions.map((option) => (
+              <Option
+                key={option.id}
+                label={option.label}
+                checked={draft.rewardTypes.includes(option.id)}
+                onChange={() => toggle('rewardTypes', option.id)}
               />
             ))}
           </Group>
