@@ -1,10 +1,11 @@
-import { ClipboardList, Megaphone, Receipt } from 'lucide-react'
+import { ClipboardList, Megaphone, PenLine, Receipt } from 'lucide-react'
 import { typeLabel } from '../pages/customer/campaigns/model'
 
 export const typeIcons = {
   promotional: Megaphone,
   transactional: Receipt,
   survey: ClipboardList,
+  other: PenLine,
 }
 
 export function TypeBadge({ type }) {

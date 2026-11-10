@@ -1,15 +1,17 @@
-import { CalendarClock, CircleCheck, Send } from 'lucide-react'
+import { CalendarClock, CircleCheck, Clock3, Send } from 'lucide-react'
 import { statusLabel } from '../model'
 
 const tone = {
   completed: 'bg-[#E5F6EC] text-[#008859]',
   in_progress: 'bg-[#E7F1FC] text-blue',
+  queued: 'bg-[#E7F1FC] text-blue',
   scheduled: 'bg-mint/15 text-green',
 }
 
 const icons = {
   completed: CircleCheck,
   in_progress: Send,
+  queued: Clock3,
   scheduled: CalendarClock,
 }
 

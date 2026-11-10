@@ -27,7 +27,10 @@ export function ReviewStep({ values, groups, cost, balance, onTopUp }) {
 
       <dl className="mt-5 sm:max-w-xl">
         <Fact label="Name" value={values.name.trim()} />
-        <Fact label="Type" value={typeLabel(values.type)} />
+        <Fact
+          label="Type"
+          value={values.type === 'other' ? String(values.customType ?? '').trim() || 'Other' : typeLabel(values.type)}
+        />
         <Fact label={groups.length === 1 ? 'Group' : 'Groups'} value={names || '—'} />
         <Fact label="Recipients" value={formatCount(recipients)} />
         <Fact label="Sender" value={values.sender} />

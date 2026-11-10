@@ -17,9 +17,16 @@ export const campaignTypes = [
     hint: 'A short ask for a response. One question keeps the reply rate up.',
     placeholder: 'Hi {firstName}, how was your last top-up? Reply 1 for good or 2 for poor.',
   },
+  {
+    id: 'other',
+    label: 'Other',
+    hint: 'Name the type yourself when none of the options above fit.',
+    placeholder: 'Hi {firstName}, here is a quick update from us.',
+  },
 ]
 
 export const statusLabel = {
+  queued: 'Queued',
   scheduled: 'Scheduled',
   in_progress: 'In Progress',
   completed: 'Completed',

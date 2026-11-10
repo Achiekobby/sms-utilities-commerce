@@ -1,8 +1,7 @@
 import { formatCount } from '../../dashboard/format'
 import { formatSendAt, sampleMessage, segmentCount, typeLabel } from '../../campaigns/model'
 import { formatUnits } from '../../wallet/money'
-import { SmsChargeNote } from '../../wallet/sections/SmsChargeNote'
-import { activeRecipients, formatStoredNumber, kindLabel } from '../model'
+import { activeRecipients, formatStoredNumber, kindLabel, resolvedMessageType } from '../model'
 
 function Fact({ label, value }) {
   return (
@@ -13,31 +12,35 @@ function Fact({ label, value }) {
   )
 }
 
-export function ReviewFields({ values, groups, numbers, cost, balance, onTopUp }) {
+export function ReviewFields({ values, groups, numbers, cost, balance, immediate = false }) {
   const segments = segmentCount(values.body.trim())
-  const when = values.when === 'later' ? formatSendAt(values.sendAt) : 'Sending now'
+  const when = immediate || values.when !== 'later' ? 'Sending now' : formatSendAt(values.sendAt)
   const recipients = values.kind === 'numbers' ? numbers.length : activeRecipients(groups)
 
   return (
     <div>
       <h2 className="text-base font-bold text-navy">Review</h2>
       <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/60">
-        This is saved under Messages. Delivery is reported after the messages leave.
+        {immediate
+          ? values.kind === 'groups'
+            ? 'This is queued to the selected groups. A report is saved under Messages.'
+            : 'This goes out now to the numbers below. A report is saved under Messages.'
+          : 'This is saved under Messages. Delivery is reported after the messages leave.'}
       </p>
 
       <dl className="mt-5 sm:max-w-xl">
-        <Fact label="Name" value={values.name.trim()} />
+        {immediate ? null : <Fact label="Name" value={values.name.trim()} />}
         <Fact label="Send" value={kindLabel(values.kind)} />
-        <Fact label="Type" value={typeLabel(values.type)} />
+        {immediate ? null : (
+          <Fact label="Type" value={values.type === 'other' ? resolvedMessageType(values) || 'Other' : typeLabel(values.type)} />
+        )}
         <Fact label="Recipients" value={formatCount(recipients)} />
         <Fact label="Sender" value={values.sender} />
         <Fact label="Segments" value={String(segments)} />
-        <Fact label="Cost" value={formatUnits(cost)} />
+        <Fact label="Estimated cost" value={formatUnits(cost)} />
         <Fact label="Wallet" value={formatUnits(balance)} />
         <Fact label="When" value={when} />
       </dl>
-
-      <SmsChargeNote cost={cost} balance={balance} onTopUp={onTopUp} />
 
       {values.kind === 'numbers' ? (
         <p className="mt-4 text-sm leading-6 text-ink/70">
@@ -58,9 +61,13 @@ export function ReviewFields({ values, groups, numbers, cost, balance, onTopUp }
       )}
 
       <div className="mt-5 rounded-xl bg-canvas px-4 py-4 sm:max-w-xl">
-        <p className="text-xs font-semibold tracking-wide text-ink/45">SAMPLE FOR AMA MENSAH</p>
+        <p className="text-xs font-semibold tracking-wide text-ink/45">
+          {immediate ? 'MESSAGE PREVIEW' : 'SAMPLE FOR AMA MENSAH'}
+        </p>
         <p className="mt-2 text-xs font-semibold tracking-wide text-navy">{values.sender}</p>
-        <p className="mt-1 text-sm leading-6 whitespace-pre-wrap text-ink">{sampleMessage(values.body.trim())}</p>
+        <p className="mt-1 text-sm leading-6 whitespace-pre-wrap text-ink">
+          {immediate ? values.body.trim() : sampleMessage(values.body.trim())}
+        </p>
       </div>
     </div>
   )

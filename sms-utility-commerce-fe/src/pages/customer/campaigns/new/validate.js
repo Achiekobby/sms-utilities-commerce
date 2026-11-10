@@ -8,12 +8,23 @@ export function validateAudience(groups) {
   return {}
 }
 
-export function validateMessage(values, now = new Date(), { nameError = 'Enter a campaign name.', senders = [] } = {}) {
+export function validateMessage(
+  values,
+  now = new Date(),
+  { nameError = 'Enter a campaign name.', senders = [], requireName = true, requireType = true } = {},
+) {
   const errors = {}
   const body = values.body.trim()
 
-  if (values.name.trim().length < 2) errors.name = nameError
-  if (!campaignTypes.some((type) => type.id === values.type)) errors.type = 'Choose a type.'
+  if (requireName && values.name.trim().length < 2) errors.name = nameError
+  if (requireType) {
+    if (!campaignTypes.some((type) => type.id === values.type)) errors.type = 'Choose a type.'
+    else if (values.type === 'other') {
+      const custom = String(values.customType ?? '').trim()
+      if (custom.length < 2) errors.customType = 'Enter a custom type of at least 2 characters.'
+      else if (custom.length > 40) errors.customType = 'Use 40 characters or fewer for the custom type.'
+    }
+  }
   if (!senders.includes(values.sender)) errors.sender = 'Choose a sender.'
   if (!body) errors.body = 'Write the message.'
   else if (segmentCount(body) > maxSegments) errors.body = 'Keep the message within 6 segments.'

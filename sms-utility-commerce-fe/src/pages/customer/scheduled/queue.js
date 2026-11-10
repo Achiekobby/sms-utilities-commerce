@@ -49,7 +49,7 @@ function messageRow(message) {
 
 export function useScheduledQueue() {
   const campaigns = useCampaigns()
-  const messages = useMessages()
+  const { messages } = useMessages({ page: 1, perPage: 50 })
 
   return useMemo(() => {
     const rows = [

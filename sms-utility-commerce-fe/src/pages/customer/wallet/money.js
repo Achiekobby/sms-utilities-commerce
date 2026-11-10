@@ -1,8 +1,8 @@
 import { formatCount } from '../dashboard/format'
 
-// 1 unit is GH₵0.001. One pesewa is 10 units, so the GH₵0.045 SMS rate is the integer 45.
+// 1 unit is GH₵0.001. One pesewa is 10 units, so the GH₵0.030 SMS rate is the integer 30.
 export const unitsPerCedi = 1000
-export const smsRateUnits = 45
+export const smsRateUnits = 30
 export const minimumTopUpUnits = 5 * unitsPerCedi
 
 export const topUpPresets = [20, 50, 100, 200, 500].map((cedis) => cedis * unitsPerCedi)

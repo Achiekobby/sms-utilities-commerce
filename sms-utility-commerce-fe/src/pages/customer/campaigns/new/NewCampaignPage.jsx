@@ -29,6 +29,7 @@ const empty = {
   groupIds: [],
   name: '',
   type: 'promotional',
+  customType: '',
   sender: 'UTILISMS',
   body: '',
   when: 'now',
@@ -96,8 +97,17 @@ export function NewCampaignPage() {
   }
 
   function change(key, value) {
-    setValues((current) => ({ ...current, [key]: value }))
-    setErrors((current) => (current[key] ? { ...current, [key]: undefined } : current))
+    setValues((current) => {
+      const next = { ...current, [key]: value }
+      if (key === 'type' && value !== 'other') next.customType = ''
+      return next
+    })
+    setErrors((current) => {
+      if (!current[key] && key !== 'type') return current
+      const next = { ...current, [key]: undefined }
+      if (key === 'type') next.customType = undefined
+      return next
+    })
   }
 
   function fail(found) {
@@ -171,7 +181,7 @@ export function NewCampaignPage() {
       campaignCreated({
         id,
         name: values.name.trim(),
-        type: values.type,
+        type: values.type === 'other' ? String(values.customType ?? '').trim() : values.type,
         groups: audience,
         groupName: audience.map((group) => group.name).join(', '),
         recipients: audience.reduce((sum, group) => sum + group.active, 0),

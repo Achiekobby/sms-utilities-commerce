@@ -6,6 +6,7 @@ const campaignFields = [
   ['groupIds', 'Audience', 'campaign-groups'],
   ['name', 'Campaign name', 'campaign-name-input'],
   ['type', 'Type', 'campaign-type'],
+  ['customType', 'Custom type', 'campaign-custom-type-input'],
   ['sender', 'Sender', 'campaign-sender'],
   ['body', 'Message', 'campaign-body-input'],
   ['sendAt', 'Send time', 'campaign-send-at-input'],
