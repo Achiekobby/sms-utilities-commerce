@@ -1,3 +1,5 @@
+import guideData from './guideData'
+
 export const senderIdMax = 11
 
 export function senderIdError(value) {
@@ -14,4 +16,8 @@ export function senderIdError(value) {
   if (!/[A-Za-z]/.test(trimmed)) return 'Sender ID must start with a letter.'
 
   return ''
+}
+
+export function validationGuide(overrides = guideData) {
+  return overrides
 }
