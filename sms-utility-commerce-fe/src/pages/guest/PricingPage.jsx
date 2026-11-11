@@ -1,147 +1,44 @@
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
-import { ArrowRight, Check, Minus, Plus, Sparkles } from 'lucide-react'
-import { useId, useState } from 'react'
+import { ArrowRight, Check, Minus, Plus, Star } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Link } from 'react-router'
 import { selectIsVerified } from '../../features/auth/authSlice'
+import { apiErrorMessage } from '../../features/auth/client'
 import { paths } from '../../routes/paths'
+import { useGetClientPlansQuery } from '../../services/api/plans/plansApi'
 import Images from '../../utils/Images'
+import { formatCount } from '../customer/dashboard/format'
+import {
+  billingPeriodsFromPlans,
+  comparisonSections,
+  durationLabel,
+  isNonExpiryPeriod,
+  mapClientPlans,
+  maxSavingsPercent,
+  planPerks,
+  planPrice,
+  planStandout,
+} from './pricingModel'
 
 const ease = [0.22, 1, 0.36, 1]
-const yearlyDiscount = 20
-
-// Illustrative figures until real rate cards are signed off.
-const plans = [
-  {
-    id: 'free',
-    name: 'Free',
-    audience: 'Try the platform with no commitment.',
-    monthly: 0,
-    yearly: 0,
-    rate: 'GH₵0.070',
-    cta: 'Start for free',
-    intro: 'What you get',
-    accent: '#008859',
-    perks: [
-      '50 SMS credits on signup',
-      '100 contacts in 1 group',
-      'Shared sender ID',
-      'Delivery status for every message',
-      'Fund your wallet by MoMo or card',
-      'Help center support',
-    ],
-    standout: {
-      title: 'No card. No expiry.',
-      text: 'Stay on Free as long as you like. Nothing to enter at signup.',
-    },
-  },
-  {
-    id: 'individual',
-    name: 'Individual',
-    audience: 'For one person messaging their own circle.',
-    monthly: 29,
-    yearly: 23,
-    rate: 'GH₵0.055',
-    cta: 'Choose Individual',
-    intro: 'Everything in Free, plus',
-    accent: '#0B63F6',
-    perks: [
-      '300 SMS credits every month',
-      '2,000 contacts in 10 groups',
-      'Scheduled SMS',
-      'Personalization and birthday messages',
-      'Airtime, data, TV, ECG and water',
-      'Email support',
-    ],
-    standout: {
-      title: 'Your own sender ID',
-      text: 'Messages arrive under your name instead of a shared one.',
-    },
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    audience: 'For teams running campaigns every week.',
-    monthly: 129,
-    yearly: 103,
-    rate: 'GH₵0.045',
-    cta: 'Choose Business',
-    intro: 'Everything in Individual, plus',
-    accent: '#8EC1FF',
-    featured: true,
-    perks: [
-      '3,000 SMS credits every month',
-      '25,000 contacts, unlimited groups',
-      'Up to 5 sender IDs',
-      'Real-time analytics and reports',
-      '5 team seats with roles',
-      'Bulk airtime and data discounts',
-      'Priority chat support',
-    ],
-    standout: {
-      title: 'Surveys that pay out',
-      text: 'Reward respondents with airtime, data, or money the moment they submit.',
-    },
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    audience: 'For organizations with volume and compliance needs.',
-    custom: true,
-    from: 899,
-    rate: 'From GH₵0.035',
-    cta: 'Talk to sales',
-    intro: 'Everything in Business, plus',
-    accent: '#0B1F5B',
-    perks: [
-      'Custom SMS volume and wholesale rates',
-      'Unlimited contacts and sender IDs',
-      'Unlimited seats, SSO and audit log',
-      'Onboarding and staff training',
-      '99.9% uptime SLA',
-    ],
-    standout: {
-      title: 'Utilities API and a named manager',
-      text: 'Sell airtime, data and bills from your own systems, with one person who knows your account.',
-    },
-  },
-]
-
-const comparison = [
-  { label: 'Monthly SMS credits', values: ['50 once', '300', '3,000', 'Custom'] },
-  { label: 'Rate per SMS after credits', values: ['GH₵0.070', 'GH₵0.055', 'GH₵0.045', 'From GH₵0.035'] },
-  { label: 'Contacts', values: ['100', '2,000', '25,000', 'Unlimited'] },
-  { label: 'Contact groups', values: ['1', '10', 'Unlimited', 'Unlimited'] },
-  { label: 'Sender IDs', values: ['Shared', '1', '5', 'Unlimited'] },
-  { label: 'Scheduled SMS', values: [false, true, true, true] },
-  { label: 'Personalization and birthdays', values: [false, true, true, true] },
-  { label: 'Airtime, data and bill payments', values: [true, true, true, true] },
-  { label: 'Bulk utility discounts', values: [false, false, true, true] },
-  { label: 'Survey responses per month', values: [false, '100', 'Unlimited', 'Unlimited'] },
-  { label: 'Automatic survey rewards', values: [false, false, true, true] },
-  { label: 'Analytics', values: ['Basic', 'Basic', 'Real time', 'Custom exports'] },
-  { label: 'Team seats', values: ['1', '1', '5', 'Unlimited'] },
-  { label: 'API and webhooks', values: [false, false, false, true] },
-  { label: 'Support', values: ['Help center', 'Email', 'Priority chat', 'Dedicated manager'] },
-  { label: 'Uptime SLA', values: [false, false, false, '99.9%'] },
-]
 
 const faqs = [
   {
     q: 'Do I need a card to start?',
-    a: 'No. The Free plan needs no payment details. You can fund your wallet by MoMo or card whenever you are ready to send more.',
+    a: 'No. You can explore Cellogent first, then subscribe or fund your wallet by MoMo or card when you are ready to send.',
   },
   {
-    q: 'How do SMS and utility purchases get paid for?',
-    a: 'From your wallet. Plans give you monthly credits and features, and anything beyond your credits, plus airtime, data and bills, is paid from the wallet at the rate for your plan.',
+    q: 'How do SMS purchases get paid for?',
+    a: 'Plan subscriptions are paid at checkout (for example Paystack). Your wallet is separate and covers other sends and utilities beyond your package units.',
   },
   {
     q: 'Can I change plans later?',
-    a: 'Yes. Upgrades apply immediately. Downgrades take effect at the end of your billing period so you keep what you paid for.',
+    a: 'Yes. Move up when you need more units, or switch duration when a longer package saves you more.',
   },
   {
-    q: 'Do unused SMS credits roll over?',
-    a: 'Monthly plan credits reset each billing cycle. Your wallet balance never expires.',
+    q: 'Do unused SMS units expire?',
+    a: 'Timed packages follow their billing period. Non-expiry packages keep their SMS units until you use them. Your wallet balance never expires.',
   },
   {
     q: 'Do the prices include VAT?',
@@ -154,31 +51,30 @@ const cardVariants = {
   show: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.6, ease, delay: 0.1 + i * 0.09 } }),
 }
 
-function BillingToggle({ yearly, onChange }) {
+function BillingToggle({ periods, value, onChange, savings }) {
   const group = useId()
-  const options = [
-    { id: false, label: 'Monthly' },
-    { id: true, label: 'Yearly' },
-  ]
+  const savingsLabel = isNonExpiryPeriod(value)
+    ? `Save up to ${savings}% vs monthly rates`
+    : `Save up to ${savings}% on longer plans`
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
+    <div className="flex flex-col items-center gap-3">
       <div
         role="radiogroup"
         aria-label="Billing period"
-        className="relative inline-grid grid-cols-2 rounded-xl bg-ink/[0.06] p-1"
+        className="relative flex max-w-full flex-wrap justify-center gap-1 rounded-xl bg-ink/[0.06] p-1"
       >
-        {options.map((option) => {
-          const active = option.id === yearly
+        {periods.map((option) => {
+          const active = option === value
 
           return (
             <button
-              key={option.label}
+              key={option}
               type="button"
               role="radio"
               aria-checked={active}
-              onClick={() => onChange(option.id)}
-              className="relative min-w-28 rounded-lg px-5 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              onClick={() => onChange(option)}
+              className="relative min-w-[5.5rem] rounded-lg px-3 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue sm:min-w-28 sm:px-5"
             >
               {active ? (
                 <motion.span
@@ -192,106 +88,103 @@ function BillingToggle({ yearly, onChange }) {
                   active ? 'text-navy' : 'text-ink/55 hover:text-ink'
                 }`}
               >
-                {option.label}
+                {durationLabel(option)}
               </span>
             </button>
           )
         })}
       </div>
-      <span className="rounded-md bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
-        Save {yearlyDiscount}% yearly
-      </span>
+      {savings > 0 ? (
+        <span className="rounded-md bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
+          {savingsLabel}
+        </span>
+      ) : isNonExpiryPeriod(value) ? (
+        <span className="rounded-md bg-blue/10 px-2.5 py-1 text-xs font-semibold text-blue">
+          Units never expire
+        </span>
+      ) : null}
     </div>
   )
 }
 
-function Price({ plan, yearly }) {
-  if (plan.custom) {
-    return (
-      <div>
-        <p className="text-4xl font-bold tracking-tight">Custom</p>
-        <p className="mt-1 text-sm opacity-65">From GH₵{plan.from} per month</p>
-      </div>
-    )
-  }
-
-  const value = yearly ? plan.yearly : plan.monthly
+function Price({ plan, period }) {
+  const selected = planPrice(plan, period)
+  const monthly = selected.months > 0 ? selected.price / selected.months : selected.price
 
   return (
     <div>
       <p className="flex items-baseline gap-1">
-        <span className="text-lg font-semibold opacity-70">GH₵</span>
-        <span className="relative inline-flex h-12 overflow-hidden text-5xl leading-[3rem] font-bold tracking-tight">
+        <span className="text-sm font-semibold opacity-70">GH₵</span>
+        <span className="relative inline-flex h-9 overflow-hidden text-3xl leading-9 font-bold tracking-tight">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
-              key={value}
-              initial={{ y: 28, opacity: 0 }}
+              key={`${selected.price}-${selected.months}-${selected.nonExpiry}`}
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -28, opacity: 0 }}
+              exit={{ y: -20, opacity: 0 }}
               transition={{ duration: 0.3, ease }}
             >
-              {value}
+              {formatCount(selected.price)}
             </motion.span>
           </AnimatePresence>
         </span>
-        <span className="text-sm opacity-65">/ month</span>
       </p>
-      <p className="mt-1 min-h-5 text-sm opacity-65">
-        {plan.monthly === 0
-          ? 'Free forever'
-          : yearly
-            ? `GH₵${plan.yearly * 12} billed yearly`
-            : 'Billed monthly'}
+      <p className="mt-1 min-h-4 text-[12px] leading-4 opacity-65">
+        {selected.nonExpiry
+          ? 'One-time purchase · never expires'
+          : selected.months === 1
+            ? 'Billed monthly'
+            : `GH₵${monthly % 1 === 0 ? formatCount(monthly) : monthly.toFixed(2)} / month equivalent`}
       </p>
     </div>
   )
 }
 
-function PlanCard({ plan, index, yearly, ctaTo }) {
+function PlanCard({ plan, index, period, ctaTo }) {
   const dark = Boolean(plan.featured)
+  const selected = planPrice(plan, period)
+  const perks = planPerks(plan, period)
+  const standout = planStandout(plan, period)
 
   return (
     <motion.article
       variants={cardVariants}
       custom={index}
-      className={`relative flex flex-col rounded-2xl p-6 transition-shadow duration-300 sm:p-7 ${
+      className={`relative flex flex-col rounded-2xl p-4 transition-shadow duration-300 sm:p-5 ${
         dark
-          ? 'bg-navy text-white shadow-[0_28px_60px_-20px_rgba(11,31,91,0.65)] lg:-my-3 lg:py-10'
+          ? 'bg-navy text-white shadow-[0_28px_60px_-20px_rgba(11,31,91,0.65)] lg:-my-1 lg:py-6'
           : 'bg-white text-ink shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.14)] ring-1 ring-ink/8 hover:shadow-[0_2px_4px_rgba(16,33,61,0.04),0_22px_44px_-12px_rgba(16,33,61,0.22)]'
       }`}
     >
       {dark ? (
-        <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-green px-3 py-1 text-xs font-semibold text-white">
-          <Sparkles size={12} strokeWidth={2.3} aria-hidden="true" />
+        <span className="absolute -top-2.5 left-5 inline-flex items-center gap-1 rounded-full bg-green px-2.5 py-0.5 text-[11px] font-semibold text-white">
+          <Star size={11} strokeWidth={2.3} aria-hidden="true" fill="currentColor" />
           Most popular
         </span>
       ) : null}
 
-      <h2 className={`text-xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{plan.name}</h2>
-      <p className={`mt-1 min-h-10 text-sm leading-5 ${dark ? 'text-white/70' : 'text-ink/60'}`}>
+      <h2 className={`text-base font-bold sm:text-lg ${dark ? 'text-white' : 'text-navy'}`}>{plan.name}</h2>
+      <p className={`mt-1 min-h-8 text-[13px] leading-4 ${dark ? 'text-white/70' : 'text-ink/60'}`}>
         {plan.audience}
       </p>
 
-      <div className={`mt-6 ${dark ? 'text-white' : 'text-navy'}`}>
-        <Price plan={plan} yearly={yearly} />
+      <div className={`mt-4 ${dark ? 'text-white' : 'text-navy'}`}>
+        <Price plan={plan} period={period} />
       </div>
-      <p className={`mt-3 text-xs font-medium ${dark ? 'text-white/60' : 'text-ink/50'}`}>
-        SMS from {plan.rate.replace('From ', '')} each
+      <p className={`mt-2 text-[11px] font-medium ${dark ? 'text-white/60' : 'text-ink/50'}`}>
+        {formatCount(selected.units)} SMS units
+        {selected.nonExpiry ? ' · never expire' : ` · from ${plan.rate} each`}
       </p>
 
       <Link
         to={ctaTo}
-        className={`group mt-6 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue ${
-          dark
-            ? 'bg-white text-navy hover:bg-white/90'
-            : plan.id === 'free'
-              ? 'bg-green text-white hover:bg-[#006B46]'
-              : 'bg-navy/[0.06] text-navy hover:bg-navy/10'
+        className={`group mt-4 flex h-10 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue ${
+          dark ? 'bg-white text-navy hover:bg-white/90' : 'bg-navy/[0.06] text-navy hover:bg-navy/10'
         }`}
       >
         {plan.cta}
         <ArrowRight
-          size={16}
+          size={15}
           strokeWidth={2.4}
           aria-hidden="true"
           className="transition-transform duration-200 group-hover:translate-x-0.5"
@@ -299,21 +192,21 @@ function PlanCard({ plan, index, yearly, ctaTo }) {
       </Link>
 
       <p
-        className={`mt-7 border-t pt-5 text-xs font-semibold tracking-[0.12em] uppercase ${
+        className={`mt-5 border-t pt-4 text-[11px] font-semibold tracking-[0.1em] uppercase ${
           dark ? 'border-white/15 text-white/60' : 'border-ink/10 text-ink/45'
         }`}
       >
         {plan.intro}
       </p>
-      <ul className="mt-4 space-y-3">
-        {plan.perks.map((perk) => (
-          <li key={perk} className="flex items-start gap-3 text-sm leading-5">
+      <ul className="mt-3 space-y-2">
+        {perks.map((perk) => (
+          <li key={perk} className="flex items-start gap-2 text-[13px] leading-4">
             <span
-              className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full ${
+              className={`mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full ${
                 dark ? 'bg-white text-navy' : 'bg-green text-white'
               }`}
             >
-              <Check size={10} strokeWidth={3.5} aria-hidden="true" />
+              <Check size={9} strokeWidth={3.5} aria-hidden="true" />
             </span>
             <span className={dark ? 'text-white/90' : 'text-ink/80'}>{perk}</span>
           </li>
@@ -321,28 +214,24 @@ function PlanCard({ plan, index, yearly, ctaTo }) {
       </ul>
 
       <div
-        className={`mt-auto rounded-xl p-4 pt-4 ${dark ? 'bg-white/10' : ''}`}
+        className={`mt-auto rounded-xl p-3 ${dark ? 'bg-white/10' : ''}`}
         style={dark ? undefined : { backgroundColor: `${plan.accent}12` }}
       >
-        <p
-          className="text-[11px] font-semibold tracking-[0.14em] uppercase"
-          style={{ color: plan.accent }}
-        >
+        <p className="text-[10px] font-semibold tracking-[0.12em] uppercase" style={{ color: plan.accent }}>
           Standout perk
         </p>
-        <p className={`mt-1.5 text-sm font-semibold ${dark ? 'text-white' : 'text-navy'}`}>
-          {plan.standout.title}
-        </p>
-        <p className={`mt-1 text-sm leading-5 ${dark ? 'text-white/70' : 'text-ink/65'}`}>
-          {plan.standout.text}
-        </p>
+        <p className={`mt-1 text-[13px] font-semibold ${dark ? 'text-white' : 'text-navy'}`}>{standout.title}</p>
+        <p className={`mt-1 text-[12px] leading-4 ${dark ? 'text-white/70' : 'text-ink/65'}`}>{standout.text}</p>
       </div>
     </motion.article>
   )
 }
 
 function Cell({ value, featured }) {
-  if (value === true) {
+  const text = typeof value === 'object' && value != null ? value.text : value
+  const best = typeof value === 'object' && value != null ? Boolean(value.best) : false
+
+  if (text === true) {
     return (
       <span className="inline-flex size-5 items-center justify-center rounded-full bg-green text-white">
         <Check size={12} strokeWidth={3.5} aria-label="Included" />
@@ -350,66 +239,205 @@ function Cell({ value, featured }) {
     )
   }
 
-  if (value === false) {
+  if (text === false) {
     return <Minus size={16} className="mx-auto text-ink/25" aria-label="Not included" />
   }
 
   return (
-    <span className={`text-sm ${featured ? 'font-semibold text-navy' : 'text-ink/75'}`}>{value}</span>
+    <span
+      className={`inline-flex flex-col items-center gap-1 text-sm ${
+        best
+          ? 'font-bold text-green'
+          : featured
+            ? 'font-semibold text-navy'
+            : 'font-medium text-ink/75'
+      }`}
+    >
+      <span>{text}</span>
+      {best ? (
+        <span className="rounded-full bg-green/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-green uppercase">
+          Best
+        </span>
+      ) : null}
+    </span>
   )
 }
 
-function Comparison() {
+function Comparison({ plans, period, ctaTo }) {
+  const sections = comparisonSections(plans, period)
+
   return (
     <section aria-labelledby="compare-heading" className="mt-24">
-      <h2 id="compare-heading" className="text-3xl font-bold tracking-tight text-navy sm:text-4xl">
-        Compare every detail
-      </h2>
-      <p className="mt-3 max-w-xl text-base leading-7 text-ink/65">
-        The same wallet powers every plan. What changes is volume, control, and support.
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold tracking-[0.16em] text-ink/45 uppercase">Side by side</p>
+          <h2 id="compare-heading" className="mt-2 text-3xl font-bold tracking-tight text-navy sm:text-4xl">
+            Compare every detail
+          </h2>
+          <p className="mt-3 text-base leading-7 text-ink/65">
+            Switch the billing period above, then compare units, pricing, and flexibility for that
+            package. Packages are paid at checkout; wallet top-ups cover other usage.
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 self-start rounded-full border border-ink/10 bg-white px-3.5 py-2 text-sm font-semibold text-navy shadow-[0_1px_2px_rgba(16,33,61,0.04)] sm:self-auto">
+          Viewing {durationLabel(period)}
+        </div>
+      </div>
 
-      <div className="mt-8 overflow-x-auto rounded-2xl bg-white shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.12)] ring-1 ring-ink/8">
-        <table className="w-full min-w-[46rem] border-collapse text-left">
-          <caption className="sr-only">Plan comparison</caption>
-          <thead>
-            <tr className="border-b border-ink/10">
-              <th scope="col" className="w-[28%] px-5 py-4 text-xs font-semibold tracking-[0.12em] text-ink/45 uppercase">
-                Feature
-              </th>
-              {plans.map((plan) => (
+      {/* Mobile cards */}
+      <div className="mt-8 grid gap-4 md:hidden">
+        {plans.map((plan) => {
+          const selected = planPrice(plan, period)
+          return (
+            <article
+              key={plan.id}
+              className={`rounded-2xl bg-white p-5 shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.12)] ring-1 ${
+                plan.featured ? 'ring-blue/30' : 'ring-ink/8'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg font-bold text-navy">{plan.name}</h3>
+                    {plan.featured ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                        <Star size={11} fill="currentColor" aria-hidden="true" />
+                        Popular
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-sm text-ink/60">{plan.audience}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xl font-bold text-navy">GH₵{formatCount(selected.price)}</p>
+                  <p className="text-[12px] text-ink/50">
+                    {selected.nonExpiry ? 'Never expires' : durationLabel(period)}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="mt-4 space-y-2.5 border-t border-ink/8 pt-4">
+                {sections.flatMap((section) =>
+                  section.rows.map((row) => {
+                    const value = row.values[plans.findIndex((item) => item.id === plan.id)]
+                    const text = typeof value === 'object' ? value.text : value
+                    return (
+                      <div key={`${plan.id}-${row.id}`} className="flex items-start justify-between gap-3">
+                        <dt className="text-[13px] text-ink/55">{row.label}</dt>
+                        <dd className="text-right text-sm font-semibold text-navy">
+                          {text === true ? 'Included' : text === false ? '—' : text}
+                        </dd>
+                      </div>
+                    )
+                  }),
+                )}
+              </dl>
+
+              <Link
+                to={ctaTo}
+                className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-navy/[0.06] text-sm font-semibold text-navy hover:bg-navy/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+              >
+                {plan.cta}
+                <ArrowRight size={15} strokeWidth={2.4} aria-hidden="true" />
+              </Link>
+            </article>
+          )
+        })}
+      </div>
+
+      {/* Desktop / tablet table */}
+      <div className="mt-8 hidden overflow-hidden rounded-2xl bg-white shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.12)] ring-1 ring-ink/8 md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[52rem] border-collapse text-left">
+            <caption className="sr-only">Plan comparison for {durationLabel(period)}</caption>
+            <thead>
+              <tr className="border-b border-ink/10">
                 <th
-                  key={plan.id}
                   scope="col"
-                  className={`px-4 py-4 text-center text-sm font-bold ${
-                    plan.featured ? 'bg-blue/[0.07] text-blue' : 'text-navy'
-                  }`}
+                  className="sticky left-0 z-[1] w-[24%] bg-[#F7FAFD] px-5 py-5 text-xs font-semibold tracking-[0.12em] text-ink/45 uppercase"
                 >
-                  {plan.name}
+                  Feature
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {comparison.map((row) => (
-              <tr key={row.label} className="border-b border-ink/6 last:border-0">
-                <th scope="row" className="px-5 py-3.5 text-sm font-medium text-navy">
-                  {row.label}
-                </th>
-                {row.values.map((value, index) => (
-                  <td
-                    key={plans[index].id}
-                    className={`px-4 py-3.5 text-center ${plans[index].featured ? 'bg-blue/[0.04]' : ''}`}
-                  >
-                    <Cell value={value} featured={plans[index].featured} />
-                  </td>
-                ))}
+                {plans.map((plan) => {
+                  const selected = planPrice(plan, period)
+                  return (
+                    <th
+                      key={plan.id}
+                      scope="col"
+                      className={`min-w-[10rem] px-4 py-5 text-center ${
+                        plan.featured ? 'bg-blue/[0.07]' : 'bg-[#F7FAFD]'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        {plan.featured ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green px-2.5 py-0.5 text-[10px] font-semibold text-white">
+                            <Star size={10} fill="currentColor" aria-hidden="true" />
+                            Most popular
+                          </span>
+                        ) : (
+                          <span className="h-5" aria-hidden="true" />
+                        )}
+                        <span className={`text-base font-bold ${plan.featured ? 'text-blue' : 'text-navy'}`}>
+                          {plan.name}
+                        </span>
+                        <span className="text-lg font-bold tracking-tight text-navy">
+                          GH₵{formatCount(selected.price)}
+                        </span>
+                        <span className="text-[12px] font-medium text-ink/50">
+                          {formatCount(selected.units)} units
+                          {selected.nonExpiry ? ' · no expiry' : ''}
+                        </span>
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sections.map((section) => (
+                <FragmentSection key={section.id} section={section} plans={plans} />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
+  )
+}
+
+function FragmentSection({ section, plans }) {
+  return (
+    <>
+      <tr className="border-b border-ink/8 bg-[#F3F7FD]/70">
+        <th
+          colSpan={plans.length + 1}
+          scope="colgroup"
+          className="sticky left-0 px-5 py-3 text-left"
+        >
+          <p className="text-[13px] font-bold text-navy">{section.title}</p>
+          <p className="mt-0.5 text-[12px] font-medium text-ink/50">{section.description}</p>
+        </th>
+      </tr>
+      {section.rows.map((row) => (
+        <tr key={row.id} className="border-b border-ink/6 last:border-0">
+          <th
+            scope="row"
+            className="sticky left-0 z-[1] bg-white px-5 py-4 text-left align-top shadow-[1px_0_0_rgba(16,33,61,0.04)]"
+          >
+            <span className="block text-sm font-semibold text-navy">{row.label}</span>
+            {row.hint ? <span className="mt-1 block text-[12px] font-medium leading-4 text-ink/45">{row.hint}</span> : null}
+          </th>
+          {row.values.map((value, index) => (
+            <td
+              key={`${plans[index].id}-${row.id}`}
+              className={`px-4 py-4 text-center align-middle ${plans[index].featured ? 'bg-blue/[0.03]' : ''}`}
+            >
+              <Cell value={value} featured={plans[index].featured} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
   )
 }
 
@@ -454,11 +482,31 @@ function FaqItem({ item, open, onToggle }) {
   )
 }
 
+function PlansSkeleton() {
+  return (
+    <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4 lg:gap-5">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="h-[28rem] animate-pulse rounded-2xl bg-white/70 ring-1 ring-ink/8"
+          aria-hidden="true"
+        />
+      ))}
+    </div>
+  )
+}
+
 export function PricingPage() {
   const isVerified = useSelector(selectIsVerified)
-  const [yearly, setYearly] = useState(true)
+  const { data, isLoading, isError, error, refetch, isFetching } = useGetClientPlansQuery()
+  const plans = useMemo(() => mapClientPlans(data?.data), [data?.data])
+  const billingPeriods = useMemo(() => billingPeriodsFromPlans(plans), [plans])
+  const [period, setPeriod] = useState(1)
+  const selectedPeriod = billingPeriods.includes(period) ? period : (billingPeriods[0] ?? 1)
   const [openFaq, setOpenFaq] = useState(0)
   const startPath = isVerified ? paths.app : paths.signup
+  const savings = maxSavingsPercent(plans, selectedPeriod)
+  const waiting = isLoading || (isFetching && !plans.length)
 
   return (
     <MotionConfig reducedMotion="user">
@@ -481,39 +529,80 @@ export function PricingPage() {
                 Plans that grow with <span className="text-blue">your audience</span>.
               </h1>
               <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-ink/65 lg:text-lg">
-                Prices in Ghana cedis. Start free, pay from your wallet by MoMo or card, and move up
-                when you need more reach.
+                Prices in Ghana cedis. Choose a package of SMS units, pay securely at checkout, and
+                move up when you need more reach.
               </p>
-              <div className="mt-8">
-                <BillingToggle yearly={yearly} onChange={setYearly} />
+              {plans.length ? (
+                <div className="mt-8">
+                  <BillingToggle
+                    periods={billingPeriods}
+                    value={selectedPeriod}
+                    onChange={setPeriod}
+                    savings={savings}
+                  />
+                </div>
+              ) : null}
+            </motion.div>
+
+            {waiting ? <PlansSkeleton /> : null}
+
+            {isError && !plans.length ? (
+              <div className="mx-auto mt-14 max-w-lg rounded-2xl bg-white px-6 py-8 text-center shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.12)] ring-1 ring-ink/8">
+                <p className="text-base font-semibold text-navy">Plans could not be loaded</p>
+                <p className="mt-2 text-sm leading-6 text-ink/65">
+                  {apiErrorMessage(error) || 'Something went wrong while loading pricing.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="mt-5 inline-flex h-10 items-center rounded-lg bg-navy px-4 text-sm font-semibold text-white hover:bg-navy/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
+                >
+                  Try again
+                </button>
               </div>
-            </motion.div>
+            ) : null}
 
-            <motion.div
-              className="mt-14 grid gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4 lg:items-stretch lg:gap-5"
-              initial="hidden"
-              animate="show"
-            >
-              {plans.map((plan, index) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  index={index}
-                  yearly={yearly}
-                  ctaTo={plan.custom ? paths.help : startPath}
-                />
-              ))}
-            </motion.div>
+            {!waiting && !isError && !plans.length ? (
+              <div className="mx-auto mt-14 max-w-lg rounded-2xl bg-white px-6 py-8 text-center shadow-[0_2px_4px_rgba(16,33,61,0.04),0_14px_30px_-10px_rgba(16,33,61,0.12)] ring-1 ring-ink/8">
+                <p className="text-base font-semibold text-navy">No plans available yet</p>
+                <p className="mt-2 text-sm leading-6 text-ink/65">
+                  Active subscription plans will show up here once they are published.
+                </p>
+              </div>
+            ) : null}
 
-            <p className="mt-8 text-center text-sm text-ink/55">
-              Prices are before VAT and applicable levies. SMS and utility usage is paid from your
-              wallet.
-            </p>
+            {plans.length ? (
+              <>
+                <motion.div
+                  className="mt-14 grid gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4 lg:items-stretch lg:gap-5"
+                  initial="hidden"
+                  animate="show"
+                >
+                  {plans.map((plan, index) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      index={index}
+                      period={selectedPeriod}
+                      ctaTo={startPath}
+                    />
+                  ))}
+                </motion.div>
+
+                <p className="mt-8 text-center text-sm text-ink/55">
+                  Prices are before VAT and applicable levies. Packages are paid at checkout; your
+                  wallet stays separate for other usage.
+                  {isNonExpiryPeriod(selectedPeriod)
+                    ? ' Non-expiry packages keep unused units until you send.'
+                    : ''}
+                </p>
+              </>
+            ) : null}
           </div>
         </section>
 
         <div className="mx-auto max-w-8xl px-4 pb-24 sm:px-6">
-          <Comparison />
+          {plans.length ? <Comparison plans={plans} period={selectedPeriod} ctaTo={startPath} /> : null}
 
           <section aria-labelledby="faq-heading" className="mt-24 grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
             <div>

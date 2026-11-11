@@ -298,7 +298,9 @@ export function ClientsPage() {
                             onClose={() => setMenuId((current) => (current === client.id ? null : current))}
                             onView={() => openClient(client.id)}
                             onSubscriptions={
-                              canViewSubscriptions ? () => navigate(`${paths.subscriptions}?client_id=${client.id}`) : undefined
+                              canViewSubscriptions
+                                ? () => navigate(`${paths.subscriptions}?client_id=${client.id}&from=clients`)
+                                : undefined
                             }
                             onStatus={() => {
                               setStatusError('')

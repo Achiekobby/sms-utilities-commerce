@@ -12,6 +12,16 @@ export const plansApi = baseApi.injectEndpoints({
         return [...plans.map((plan) => ({ type: 'Plan', id: plan.id })), { type: 'Plan', id: 'LIST' }]
       },
     }),
+    getClientPlans: builder.query({
+      query: ({ page = 1, perPage = 15 } = {}) => ({
+        url: '/api/client/plans',
+        params: { page, per_page: perPage },
+      }),
+      providesTags: (result) => {
+        const plans = Array.isArray(result?.data) ? result.data : []
+        return [...plans.map((plan) => ({ type: 'Plan', id: plan.id })), { type: 'Plan', id: 'LIST' }]
+      },
+    }),
     getPlan: builder.query({
       query: (id) => ({ url: `/api/admin/plans/${id}` }),
       providesTags: (result, error, id) => [{ type: 'Plan', id }],
@@ -35,4 +45,10 @@ export const plansApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useGetPlansQuery, useGetPlanQuery, useCreatePlanMutation, useUpdatePlanMutation } = plansApi
+export const {
+  useGetPlansQuery,
+  useGetClientPlansQuery,
+  useGetPlanQuery,
+  useCreatePlanMutation,
+  useUpdatePlanMutation,
+} = plansApi

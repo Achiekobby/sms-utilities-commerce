@@ -1,4 +1,4 @@
-import { BadgeCheck, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { apiErrorMessage } from '../../../features/auth/session'
@@ -6,6 +6,7 @@ import { usePermissions } from '../../../features/auth/usePermissions'
 import { clientName, pageWindow } from '../../../features/clients/clientModel'
 import { formatUnits, formatWhen, labelize, money, subscriptionStatuses } from '../../../features/subscriptions/subscriptionModel'
 import { paths } from '../../../routes/paths'
+import { useGetClientQuery } from '../../../services/api/clients/clientsApi'
 import { useGetSubscriptionsQuery } from '../../../services/api/subscriptions/subscriptionsApi'
 import { AccessDeniedPage } from '../AccessDeniedPage'
 import { ClientAvatar } from '../clients/ClientAvatar'
@@ -40,6 +41,7 @@ export function SubscriptionsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const status = subscriptionStatuses.some((item) => item.value === (searchParams.get('status') ?? '')) ? searchParams.get('status') ?? '' : ''
   const clientId = /^\d+$/.test(searchParams.get('client_id') ?? '') ? searchParams.get('client_id') : ''
+  const fromClients = searchParams.get('from') === 'clients'
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [open, setOpen] = useState(null)
@@ -48,6 +50,7 @@ export function SubscriptionsPage() {
     { page, clientId, status },
     { skip: !allowed },
   )
+  const { data: clientData } = useGetClientQuery(clientId, { skip: !allowed || !clientId })
 
   if (!allowed) return <AccessDeniedPage />
 
@@ -57,17 +60,28 @@ export function SubscriptionsPage() {
   )
   const waiting = isLoading && !data
   const filterCount = Number(Boolean(status)) + Number(Boolean(clientId))
+  const filteredClient =
+    records.find((record) => String(record.client_id) === String(clientId) && record.client)?.client ||
+    (clientData?.data && typeof clientData.data === 'object' && !Array.isArray(clientData.data) ? clientData.data : null)
+  const filteredClientName = filteredClient ? clientName(filteredClient) : clientId ? `Client ${clientId}` : ''
 
   function write(next) {
     const params = {}
     if (next.page > 1) params.page = String(next.page)
     if (next.status) params.status = next.status
     if (next.clientId) params.client_id = next.clientId
+    if (fromClients && next.clientId) params.from = 'clients'
     setSearchParams(params, { replace: true })
   }
 
   return (
     <div className="w-full min-w-0">
+      {fromClients ? (
+        <Link to={paths.clients} className={`mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-blue ${focusClass}`}>
+          <ArrowLeft size={16} strokeWidth={2.2} aria-hidden="true" />
+          Clients
+        </Link>
+      ) : null}
       <header className="overflow-hidden rounded-2xl border border-ink/[0.06] bg-white shadow-[0_1px_2px_rgba(16,33,61,0.04),0_18px_40px_-28px_rgba(16,33,61,0.35)]">
         <div className="flex min-w-0 items-center gap-4 px-5 py-5 sm:px-6">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#E7F8F0] text-green ring-1 ring-green/15">
@@ -132,18 +146,18 @@ export function SubscriptionsPage() {
               </button>
             ) : null}
             {clientId ? (
-              <span className="inline-flex h-8 items-center gap-2 rounded-full bg-[#E7F8F0] pl-3 text-sm font-medium text-navy">
-                Client {clientId}
+              <span className="inline-flex h-8 max-w-full items-center gap-2 rounded-full bg-[#E7F8F0] pl-3 text-sm font-medium text-navy">
+                <span className="truncate">{filteredClientName}</span>
                 {canOpenClient ? (
-                  <Link to={`${paths.clients}/${clientId}`} className={`font-semibold text-green ${focusClass}`}>
+                  <Link to={`${paths.clients}/${clientId}`} className={`shrink-0 font-semibold text-green ${focusClass}`}>
                     Open
                   </Link>
                 ) : null}
                 <button
                   type="button"
-                  aria-label={`Remove client ${clientId} filter`}
+                  aria-label={`Remove ${filteredClientName} filter`}
                   onClick={() => write({ page: 1, status, clientId: '' })}
-                  className={`inline-flex size-8 cursor-pointer items-center justify-center rounded-full hover:bg-[#d7f3e6] ${focusClass}`}
+                  className={`inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-[#d7f3e6] ${focusClass}`}
                 >
                   <X size={14} strokeWidth={2.2} aria-hidden="true" />
                 </button>

@@ -23,6 +23,12 @@ import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
 import { RequestSenderPage } from '../pages/customer/sender-ids/RequestSenderPage'
 import { SenderIdsPage } from '../pages/customer/sender-ids/SenderIdsPage'
 import { ScheduledSmsPage } from '../pages/customer/scheduled/ScheduledSmsPage'
+import { OrderDetailPage } from '../pages/customer/orders/OrderDetailPage'
+import { OrdersPage } from '../pages/customer/orders/OrdersPage'
+import { PaymentDetailPage } from '../pages/customer/payments/PaymentDetailPage'
+import { PaymentsPage } from '../pages/customer/payments/PaymentsPage'
+import { PlanCheckoutPage } from '../pages/customer/pricing/PlanCheckoutPage'
+import { PricingPage as CustomerPricingPage } from '../pages/customer/pricing/PricingPage'
 import { TopUpPage } from '../pages/customer/wallet/TopUpPage'
 import { WalletPage } from '../pages/customer/wallet/WalletPage'
 import { HelpPage } from '../pages/guest/HelpPage'
@@ -109,6 +115,12 @@ export const router = createBrowserRouter([
           { path: 'messages/:messageId', element: <MessageDetailPage /> },
           { path: 'wallet', element: <WalletPage /> },
           { path: 'wallet/top-up', element: <TopUpPage /> },
+          { path: 'plans', element: <CustomerPricingPage /> },
+          { path: 'plans/checkout', element: <PlanCheckoutPage /> },
+          { path: 'payments', element: <PaymentsPage /> },
+          { path: 'payments/:paymentId', element: <PaymentDetailPage /> },
+          { path: 'orders', element: <OrdersPage /> },
+          { path: 'orders/:orderId', element: <OrderDetailPage /> },
         ],
       },
     ],

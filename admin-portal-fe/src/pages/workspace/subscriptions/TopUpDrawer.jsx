@@ -2,10 +2,18 @@ import { X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { apiErrorMessage, fieldErrors } from '../../../features/auth/session'
 import { useNotify } from '../../../features/notifications/useNotify'
-import { formatUnits, money, monthSpan, topUpBody } from '../../../features/subscriptions/subscriptionModel'
-import { useGetPlansQuery } from '../../../services/api/plans/plansApi'
+import { detailLabel, formatUnits, isNonExpiryDetail, money, topUpBody } from '../../../features/subscriptions/subscriptionModel'
+import { useGetClientPlansQuery } from '../../../services/api/plans/plansApi'
 import { useActivateSubscriptionMutation } from '../../../services/api/subscriptions/subscriptionsApi'
 import { focusClass } from './ui'
+
+function preferredDetail(details) {
+  return details.find((row) => isNonExpiryDetail(row)) ?? details[0] ?? null
+}
+
+function detailKey(row, index) {
+  return `${row.months ?? 'x'}-${row.units ?? 'u'}-${index}`
+}
 
 export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
   const dialogRef = useRef(null)
@@ -15,11 +23,13 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
   const [months, setMonths] = useState('')
   const [problems, setProblems] = useState({})
   const notify = useNotify()
-  const { data, isLoading, isError, error, refetch } = useGetPlansQuery({ page: 1, perPage: 50 })
+  const { data, isLoading, isError, error, refetch } = useGetClientPlansQuery({ page: 1, perPage: 50 })
   const [activate, { isLoading: saving }] = useActivateSubscriptionMutation()
   const plans = (Array.isArray(data?.data) ? data.data : []).filter((plan) => plan.status === 'active')
   const selected = plans.find((plan) => String(plan.id) === String(planId))
   const details = Array.isArray(selected?.details) ? selected.details : []
+  const chosen = details.find((row) => String(row.months) === String(months))
+  const hasMonths = months !== ''
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -48,8 +58,9 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
 
   function choosePlan(plan) {
     const rows = Array.isArray(plan.details) ? plan.details : []
+    const pick = preferredDetail(rows)
     setPlanId(String(plan.id))
-    setMonths(rows[0]?.months == null ? '' : String(rows[0].months))
+    setMonths(pick?.months == null ? '' : String(pick.months))
     setProblems({})
   }
 
@@ -57,7 +68,7 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
     event.preventDefault()
     const next = {}
     if (!selected) next.plan = 'Choose a plan.'
-    if (!months) next.months = 'Choose a duration.'
+    if (!hasMonths || !chosen) next.months = 'Choose a duration.'
     setProblems(next)
     if (Object.keys(next).length) return
 
@@ -112,7 +123,7 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
       <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit} noValidate>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5">
           <p className="rounded-xl bg-[#F7FBF9] px-3 py-2.5 text-sm text-ink/60">
-            Adds the selected bundle of SMS units. This credit does not expire.
+            Assigns the selected SMS unit bundle as non-expiring credit for this client.
           </p>
           {isLoading ? <div className="skeleton h-24 rounded-xl" aria-hidden="true" /> : null}
           {isError ? (
@@ -156,21 +167,21 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
           ) : null}
           {selected ? (
             <fieldset>
-              <legend className="text-sm font-semibold text-navy">Duration</legend>
+              <legend className="text-sm font-semibold text-navy">Unit bundle</legend>
               {details.length ? (
                 <div className="mt-2 grid gap-2">
-                  {details.map((row) => {
+                  {details.map((row, index) => {
                     const picked = String(months) === String(row.months)
                     return (
                       <label
-                        key={row.months}
+                        key={detailKey(row, index)}
                         onMouseDown={(event) => event.preventDefault()}
                         className={`cursor-pointer rounded-xl border px-3 py-2.5 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
                           picked ? 'border-green bg-[#E7F8F0]' : 'border-ink/10'
                         }`}
                       >
                         <span className="flex items-baseline justify-between gap-3">
-                          <span className="text-sm font-semibold text-navy">{monthSpan(row.months)}</span>
+                          <span className="text-sm font-semibold text-navy">{detailLabel(row)}</span>
                           <span className="text-sm font-semibold text-navy tabular-nums">{money(row.price)}</span>
                         </span>
                         <span className="mt-0.5 block text-xs text-ink/50 tabular-nums">{formatUnits(row.units)} SMS units</span>
@@ -190,7 +201,7 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
                   })}
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-ink/55">This plan has no durations to assign.</p>
+                <p className="mt-2 text-sm text-ink/55">This plan has no unit bundles to assign.</p>
               )}
               {problems.months ? <p className="mt-1 text-xs text-[#9F1C26]">{problems.months}</p> : null}
             </fieldset>
@@ -208,7 +219,7 @@ export function TopUpDrawer({ clientId, clientName, onClose, onActivated }) {
           </button>
           <button
             type="submit"
-            disabled={saving || !selected || !months}
+            disabled={saving || !selected || !hasMonths || !chosen}
             className={`inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-green px-5 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-not-allowed disabled:opacity-40 ${focusClass}`}
           >
             {saving ? 'Activating' : 'Activate subscription'}

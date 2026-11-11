@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Eye, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, RefreshCw, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
 import { usePagination } from '../../../../utils/hooks/usePagination'
@@ -16,6 +16,7 @@ import { KindBadge } from './KindBadge'
 import { MessageDetailsDrawer } from './MessageDetailsDrawer'
 import { MessageFilterDrawer } from './MessageFilterDrawer'
 import { MessagesEmpty } from './MessagesEmpty'
+import { useMessageActions } from './useMessageActions'
 
 const messagePreview =
   'block max-w-[16rem] truncate text-left sm:max-w-[20rem] lg:max-w-[24rem]'
@@ -105,17 +106,42 @@ function Pagination({ pager, total }) {
   )
 }
 
-function DetailsButton({ message, onOpen, className = '' }) {
+function ActionIconButton({ label, icon: Icon, onClick, disabled = false, className = '' }) {
   return (
     <button
       type="button"
-      onClick={() => onOpen(message)}
-      aria-label={`View details for message ${message.id}`}
-      title="View details"
-      className={`inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/70 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue ${focusClass} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/70 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue disabled:cursor-not-allowed disabled:opacity-45 ${focusClass} ${className}`}
     >
-      <Eye size={15} strokeWidth={2.2} aria-hidden="true" />
+      <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
     </button>
+  )
+}
+
+function MessageActions({ message, onOpen, actions, busy }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <ActionIconButton label="View details" icon={Eye} onClick={() => onOpen(message)} disabled={busy} />
+      {actions.canResend(message) ? (
+        <ActionIconButton
+          label="Resend"
+          icon={RefreshCw}
+          disabled={busy}
+          onClick={() => actions.ask('resend', message)}
+        />
+      ) : null}
+      {actions.canReblast(message) ? (
+        <ActionIconButton
+          label="Reblast failed"
+          icon={RotateCcw}
+          disabled={busy}
+          onClick={() => actions.ask('reblast', message)}
+        />
+      ) : null}
+    </div>
   )
 }
 
@@ -123,6 +149,9 @@ export function MessageList({ messages }) {
   const [filters, setFilters] = useState(emptyMessageFilters)
   const [selected, setSelected] = useState(null)
   const drawer = useDisclosure()
+  const actions = useMessageActions({
+    onDone: () => setSelected(null),
+  })
   const filterCount = activeMessageFilterCount(filters)
   const results = useMemo(() => queryMessages(messages, filters), [messages, filters])
   const pager = usePagination({ total: results.length, pageSize: 10 })
@@ -243,7 +272,7 @@ export function MessageList({ messages }) {
                   </div>
                 </dl>
                 <div className="mt-4">
-                  <DetailsButton message={message} onOpen={setSelected} />
+                  <MessageActions message={message} onOpen={setSelected} actions={actions} busy={actions.busy} />
                 </div>
               </li>
             ))}
@@ -286,7 +315,7 @@ export function MessageList({ messages }) {
                     </td>
                     <td className={cell}>{formatCreated(message.createdAt)}</td>
                     <td className={cell}>
-                      <DetailsButton message={message} onOpen={setSelected} />
+                      <MessageActions message={message} onOpen={setSelected} actions={actions} busy={actions.busy} />
                     </td>
                   </tr>
                 ))}
@@ -330,7 +359,19 @@ export function MessageList({ messages }) {
         />
       ) : null}
 
-      {selected ? <MessageDetailsDrawer message={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? (
+        <MessageDetailsDrawer
+          message={selected}
+          onClose={() => setSelected(null)}
+          onResend={() => actions.ask('resend', selected)}
+          onReblast={() => actions.ask('reblast', selected)}
+          canResend={actions.canResend(selected)}
+          canReblast={actions.canReblast(selected)}
+          busy={actions.busy}
+        />
+      ) : null}
+
+      {actions.dialog}
     </section>
   )
 }

@@ -9,8 +9,11 @@ import {
   LayoutDashboard,
   Megaphone,
   MessageSquare,
+  Package,
+  Receipt,
   ScrollText,
   Settings,
+  ShoppingBag,
   Smartphone,
   UserRound,
   Users,
@@ -88,12 +91,31 @@ export function getNavigation({ isBusiness }) {
           keywords: 'fund balance momo card top up payments hubtel paystack',
         },
         {
+          label: 'Plans',
+          icon: Package,
+          to: paths.plans,
+          keywords: 'pricing packages subscribe subscription units sms plans billing',
+        },
+        {
+          label: 'Payments',
+          icon: Receipt,
+          to: paths.payments,
+          keywords: 'payment history checkout momo card paystack transactions receipts',
+        },
+        {
+          label: 'Orders',
+          icon: ShoppingBag,
+          to: paths.orders,
+          keywords: 'orders purchases packages plans sms units order history',
+        },
+        {
           label: 'Utilities',
           icon: Smartphone,
           keywords: 'airtime data tv electricity water bills buy',
         },
       ],
     },
+
     {
       id: 'engagement',
       label: 'Engagement',

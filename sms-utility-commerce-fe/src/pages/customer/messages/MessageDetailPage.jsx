@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, Clock3, Send, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Clock3, RefreshCw, RotateCcw, Send, XCircle } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router'
 import { KindBadge } from './sections/KindBadge'
 import { paths } from '../../../routes/paths'
@@ -10,9 +10,11 @@ import { formatCreated, messageCount, whenLabel } from '../campaigns/model'
 import {
   formatStoredNumber,
   messageDeliveryRate,
+  messageFailedCount,
   messageHasDelivery,
 } from './model'
 import { useMessage } from './useMessages'
+import { useMessageActions } from './sections/useMessageActions'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const card =
@@ -62,6 +64,7 @@ export function MessageDetailPage() {
   const location = useLocation()
   const seed = location.state?.message && typeof location.state.message === 'object' ? location.state.message : null
   const message = useMessage(messageId, seed)
+  const actions = useMessageActions()
   useDocumentTitle(message ? message.name : 'Message')
 
   if (!message) return <MissingMessage />
@@ -70,6 +73,9 @@ export function MessageDetailPage() {
   const created = formatStamp(message.createdAt) || formatCreated(message.createdAt)
   const completed = formatStamp(message.completedAt)
   const isBulk = message.kind === 'groups'
+  const failed = messageFailedCount(message)
+  const canResend = actions.canResend(message)
+  const canReblast = actions.canReblast(message)
 
   return (
     <div className="w-full">
@@ -92,6 +98,32 @@ export function MessageDetailPage() {
             {completed ? ` · Completed ${completed}` : ''}
           </p>
         </div>
+        {canResend || canReblast ? (
+          <div className="flex flex-wrap gap-2 self-start">
+            {canResend ? (
+              <button
+                type="button"
+                disabled={actions.busy}
+                onClick={() => actions.ask('resend', message)}
+                className={`inline-flex h-10 items-center gap-2 rounded-xl border border-ink/15 bg-white px-3.5 text-sm font-semibold text-navy hover:bg-canvas disabled:opacity-60 ${focusClass}`}
+              >
+                <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
+                Resend
+              </button>
+            ) : null}
+            {canReblast ? (
+              <button
+                type="button"
+                disabled={actions.busy}
+                onClick={() => actions.ask('reblast', message)}
+                className={`inline-flex h-10 items-center gap-2 rounded-xl bg-navy px-3.5 text-sm font-semibold text-white hover:bg-navy/90 disabled:opacity-60 ${focusClass}`}
+              >
+                <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+                Reblast failed{failed ? ` (${formatCount(failed)})` : ''}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       <section className={`${card} mt-6`}>
@@ -201,6 +233,8 @@ export function MessageDetailPage() {
           ))}
         </dl>
       </section>
+
+      {actions.dialog}
     </div>
   )
 }

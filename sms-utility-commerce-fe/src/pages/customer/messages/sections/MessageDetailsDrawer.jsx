@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { RefreshCw, RotateCcw, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { Drawer } from '../../../../components/Drawer'
 import { formatStamp } from '../../../../features/contacts/contactImport'
@@ -6,7 +6,7 @@ import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
 import { CampaignStatus } from '../../campaigns/sections/CampaignStatus'
 import { messageCount } from '../../campaigns/model'
-import { formatStoredNumber, messageDeliveryRate, messageHasDelivery } from '../model'
+import { formatStoredNumber, messageDeliveryRate, messageFailedCount, messageHasDelivery } from '../model'
 import { messageTypeLabel } from '../query'
 import { KindBadge } from './KindBadge'
 
@@ -35,11 +35,21 @@ function unitsValue(value) {
   return formatCount(value)
 }
 
-export function MessageDetailsDrawer({ message, onClose }) {
+export function MessageDetailsDrawer({
+  message,
+  onClose,
+  onResend,
+  onReblast,
+  canResend = false,
+  canReblast = false,
+  busy = false,
+}) {
   const isBulk = message.kind === 'groups'
   const created = formatStamp(message.createdAt) || '—'
   const completed = formatStamp(message.completedAt)
   const reported = messageHasDelivery(message)
+  const failed = messageFailedCount(message)
+  const showActions = canResend || canReblast
 
   return (
     <Drawer label="Message details" onClose={onClose} widthClass="w-[min(32rem,calc(100vw-1.5rem))]">
@@ -159,6 +169,35 @@ export function MessageDetailsDrawer({ message, onClose }) {
             </dl>
           </Section>
         </div>
+
+        {showActions ? (
+          <footer className="border-t border-ink/10 px-5 py-4">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {canResend ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={onResend}
+                  className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-3 text-sm font-semibold text-navy hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-60 ${focusClass}`}
+                >
+                  <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
+                  Resend
+                </button>
+              ) : null}
+              {canReblast ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={onReblast}
+                  className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-navy px-3 text-sm font-semibold text-white hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-60 ${focusClass}`}
+                >
+                  <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+                  Reblast failed{failed ? ` (${formatCount(failed)})` : ''}
+                </button>
+              ) : null}
+            </div>
+          </footer>
+        ) : null}
       </div>
     </Drawer>
   )

@@ -13,3 +13,4 @@
 /dist.tar.br
 /dist.tar.gz.br
 .cursor
+.cursorignore

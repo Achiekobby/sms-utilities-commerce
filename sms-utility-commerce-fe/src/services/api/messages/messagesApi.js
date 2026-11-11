@@ -44,7 +44,37 @@ export const messagesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
     }),
+    reblastSms: builder.mutation({
+      query: ({ smsId, message }) => ({
+        url: `/api/client/sms/${smsId}/reblast`,
+        method: 'POST',
+        body: { message },
+      }),
+      transformResponse: (envelope) => ({
+        data: envelope?.data ?? null,
+        message: messageOf(envelope, 'Failed recipients queued for sending.'),
+      }),
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+    }),
+    resendSms: builder.mutation({
+      query: ({ smsId, message }) => ({
+        url: `/api/client/sms/${smsId}/resend`,
+        method: 'POST',
+        body: { message },
+      }),
+      transformResponse: (envelope) => ({
+        data: envelope?.data ?? null,
+        message: messageOf(envelope, 'Message queued for sending.'),
+      }),
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+    }),
   }),
 })
 
-export const { useGetMessagesQuery, useSendQuickSmsMutation, useSendBulkSmsMutation } = messagesApi
+export const {
+  useGetMessagesQuery,
+  useSendQuickSmsMutation,
+  useSendBulkSmsMutation,
+  useReblastSmsMutation,
+  useResendSmsMutation,
+} = messagesApi

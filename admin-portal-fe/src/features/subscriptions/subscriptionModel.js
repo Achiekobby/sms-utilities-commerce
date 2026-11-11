@@ -28,6 +28,15 @@ export function isMissingSubscription(error) {
   return String(status) === '404'
 }
 
+export function isNonExpiryDetail(row) {
+  return Boolean(row?.non_expiry) || Number(row?.months) === 0
+}
+
+export function detailLabel(row) {
+  if (isNonExpiryDetail(row)) return 'Non-expiry'
+  return monthSpan(row?.months) || 'Duration'
+}
+
 export function topUpBody(planId, months) {
   return {
     plan_id: Number(planId),

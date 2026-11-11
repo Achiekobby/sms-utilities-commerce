@@ -265,3 +265,30 @@ export function messageDeliveryRate(message) {
 export function messageHasDelivery(message) {
   return message?.delivered != null || message?.sent != null || message?.failed != null || message?.pending != null
 }
+
+export function messageFailedCount(message) {
+  const value = Number(message?.failed)
+  return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+/** Reblast only when delivery reported failed recipients. */
+export function canReblastMessage(message) {
+  return Boolean(message?.id) && messageFailedCount(message) > 0
+}
+
+/** Resend for any saved message that is not still mid-send. */
+export function canResendMessage(message) {
+  if (!message?.id) return false
+  const status = String(message.status ?? '').toLowerCase()
+  return status !== 'queued' && status !== 'sending' && status !== 'processing'
+}
+
+export function defaultResendMessage(message) {
+  return String(message?.body ?? '').trim()
+}
+
+export function defaultReblastMessage(message) {
+  const body = String(message?.body ?? '').trim()
+  if (!body) return 'Reblast'
+  return body
+}

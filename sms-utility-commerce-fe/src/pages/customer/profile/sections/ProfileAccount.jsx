@@ -41,7 +41,16 @@ export function ProfileAccount({ user }) {
         <Row label="Status" value={plan?.status || '—'} />
         <Row label="Price" value={plan ? formatMoney(plan.price, wallet?.currency || 'GHS') : '—'} />
         <Row label="Units" value={plan?.units ?? '—'} />
-        <Row label="Ends" value={plan?.ends_at ? formatProfileDate(plan.ends_at) : '—'} />
+        <Row
+          label="Ends"
+          value={
+            plan?.ends_at
+              ? formatProfileDate(plan.ends_at)
+              : plan?.type === 'non_expiry' || plan?.type === 'non-expiry'
+                ? 'No expiry'
+                : '—'
+          }
+        />
       </Card>
     </div>
   )
