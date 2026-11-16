@@ -30,6 +30,8 @@ export const paths = {
   payment: (paymentId) => `/app/payments/${paymentId}`,
   orders: '/app/orders',
   order: (orderId) => `/app/orders/${orderId}`,
+  utilities: '/app/utilities',
+  utility: (service) => `/app/utilities/${encodeURIComponent(String(service))}`,
   apiKeys: '/app/api-keys',
   activityLogs: '/app/activity-logs',
   contactGroup: (groupId) => `/app/contacts/${groupId}`,

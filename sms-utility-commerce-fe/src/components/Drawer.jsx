@@ -12,6 +12,8 @@ export function Drawer({
   label,
   side = 'right',
   onClose,
+  onExited,
+  closing = false,
   widthClass = 'w-[min(25rem,calc(100vw-1.5rem))]',
   children,
 }) {
@@ -29,11 +31,20 @@ export function Drawer({
     <dialog
       ref={dialogRef}
       aria-label={label}
+      onCancel={(event) => {
+        event.preventDefault()
+        onClose()
+      }}
       onClose={onClose}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className={`${sides[side]} ${widthClass} fixed inset-y-0 m-0 h-dvh max-h-none max-w-none overflow-hidden bg-white p-0 text-ink shadow-[0_0_0_1px_rgba(16,33,61,0.06),0_0_64px_-16px_rgba(11,31,91,0.4)] backdrop:bg-navy/30`}
+      onAnimationEnd={(event) => {
+        if (!closing || event.target !== event.currentTarget) return
+        if (!String(event.animationName).includes('drawer-out')) return
+        onExited?.()
+      }}
+      className={`${sides[side]} ${closing ? 'drawer-out-right' : ''} ${widthClass} fixed inset-y-0 m-0 h-dvh max-h-none max-w-none overflow-hidden bg-white p-0 text-ink shadow-[0_0_0_1px_rgba(16,33,61,0.06),0_0_64px_-16px_rgba(11,31,91,0.4)] backdrop:bg-navy/30`}
     >
       {children}
     </dialog>

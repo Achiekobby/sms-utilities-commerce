@@ -1,5 +1,7 @@
 import { ArrowRight, Gift, LayoutGrid, Lightbulb, Smartphone, Tv, Users, Zap } from 'lucide-react'
 import { IoCaretUp } from 'react-icons/io5'
+import { Link } from 'react-router'
+import { paths } from '../../../../routes/paths'
 import { formatCount } from '../format'
 
 const card =
@@ -53,26 +55,34 @@ const activity = [
   },
 ]
 
-function ViewAll() {
+function ViewAll({ to }) {
+  if (!to) {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ink/35">
+        <span className="@max-[12rem]/mod:sr-only">Soon</span>
+      </span>
+    )
+  }
+
   return (
-    <button
-      type="button"
+    <Link
+      to={to}
       className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue transition-colors hover:text-blue/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
     >
       <span className="@max-[12rem]/mod:sr-only">View all</span>
       <ArrowRight size={13} strokeWidth={2.2} aria-hidden="true" />
-    </button>
+    </Link>
   )
 }
 
-function CardTitle({ icon: Icon, color, children }) {
+function CardTitle({ icon: Icon, color, children, to }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold text-navy">
         <Icon size={18} strokeWidth={2.2} aria-hidden="true" style={{ color }} className="shrink-0" />
         <span className="truncate">{children}</span>
       </h2>
-      <ViewAll />
+      <ViewAll to={to} />
     </div>
   )
 }
@@ -112,12 +122,21 @@ function Bars({ heights, color }) {
   )
 }
 
-function Action({ children }) {
+function Action({ children, to }) {
+  if (!to) {
+    return (
+      <button type="button" className={`${action} cursor-default opacity-50`}>
+        {children}
+        <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
+      </button>
+    )
+  }
+
   return (
-    <button type="button" className={action}>
+    <Link to={to} className={action}>
       {children}
       <ArrowRight size={15} strokeWidth={2.2} aria-hidden="true" />
-    </button>
+    </Link>
   )
 }
 
@@ -138,7 +157,7 @@ export function ModuleCards() {
         </article>
 
         <article className={card}>
-          <CardTitle icon={Zap} color="#0B63F6">
+          <CardTitle icon={Zap} color="#0B63F6" to={paths.utilities}>
             Utility Marketplace
           </CardTitle>
           <Stat value={1240} label="Transactions" change={28} />
@@ -160,7 +179,7 @@ export function ModuleCards() {
               )
             })}
           </ul>
-          <Action>Browse Utilities</Action>
+          <Action to={paths.utilities}>Browse Utilities</Action>
         </article>
 
         <article className={card}>

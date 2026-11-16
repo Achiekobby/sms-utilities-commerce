@@ -8,6 +8,7 @@ import auth from "../assets/images/auth.png"
 import mtn from '../assets/images/telcos/mtn.png'
 import telecel from '../assets/images/telcos/telecel.png'
 import at from '../assets/images/telcos/at.png'
+import glo from '../assets/images/telcos/glo.png'
 
 const Images = {
     logo,
@@ -20,6 +21,7 @@ const Images = {
     mtn,
     telecel,
     at,
+    glo,
 }
 
 export default Images;

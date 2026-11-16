@@ -111,7 +111,8 @@ export function getNavigation({ isBusiness }) {
         {
           label: 'Utilities',
           icon: Smartphone,
-          keywords: 'airtime data tv electricity water bills buy',
+          to: paths.utilities,
+          keywords: 'airtime data tv electricity mashup results bills buy',
         },
       ],
     },

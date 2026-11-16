@@ -29,6 +29,8 @@ import { PaymentDetailPage } from '../pages/customer/payments/PaymentDetailPage'
 import { PaymentsPage } from '../pages/customer/payments/PaymentsPage'
 import { PlanCheckoutPage } from '../pages/customer/pricing/PlanCheckoutPage'
 import { PricingPage as CustomerPricingPage } from '../pages/customer/pricing/PricingPage'
+import { UtilitiesPage } from '../pages/customer/utilities/UtilitiesPage'
+import { UtilityServicePage } from '../pages/customer/utilities/UtilityServicePage'
 import { TopUpPage } from '../pages/customer/wallet/TopUpPage'
 import { WalletPage } from '../pages/customer/wallet/WalletPage'
 import { HelpPage } from '../pages/guest/HelpPage'
@@ -46,7 +48,7 @@ export const router = createBrowserRouter([
       {
         element: <SiteLayout />,
         children: [
-          { index: true, element: <HomePage />, handle: { allowAuthenticated: true } },
+          { index: true, element: <HomePage /> },
           {
             path: 'pricing',
             element: <PricingPage />,
@@ -121,6 +123,8 @@ export const router = createBrowserRouter([
           { path: 'payments/:paymentId', element: <PaymentDetailPage /> },
           { path: 'orders', element: <OrdersPage /> },
           { path: 'orders/:orderId', element: <OrderDetailPage /> },
+          { path: 'utilities', element: <UtilitiesPage /> },
+          { path: 'utilities/:service', element: <UtilityServicePage /> },
         ],
       },
     ],
