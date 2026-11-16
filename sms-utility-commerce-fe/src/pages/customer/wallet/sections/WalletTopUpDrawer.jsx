@@ -1,21 +1,21 @@
-import { Check, X } from 'lucide-react'
+import { Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
 import { apiErrorMessage } from '../../../../features/auth/client'
 import { useNotify } from '../../../../features/notifications/useNotify'
+import { formatWalletAmount, parseTopUpAmount } from '../../../../features/wallet/walletRecord'
 import { useCreateWalletTopUpMutation } from '../../../../services/api/wallet/walletApi'
-import { parseTopUpAmount, walletMethods, walletNetworks } from '../../../../features/wallet/walletRecord'
 
+const PRESETS = [20, 50, 100, 200, 500, 1000]
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 export function WalletTopUpDrawer({ currency = '', onClose }) {
   const notify = useNotify()
   const [createTopUp, { isLoading }] = useCreateWalletTopUpMutation()
-  const [amount, setAmount] = useState('')
-  const [network, setNetwork] = useState(walletNetworks[0]?.id ?? '')
+  const [amount, setAmount] = useState('50')
   const [attempted, setAttempted] = useState(false)
   const [formError, setFormError] = useState('')
-  const method = walletMethods[0]
+  const code = currency || 'GHS'
   const parsed = parseTopUpAmount(amount)
   const amountError = parsed == null ? 'Enter an amount greater than zero.' : ''
 
@@ -34,19 +34,15 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
     if (isLoading) return
     setAttempted(true)
     setFormError('')
-    if (amountError || !network || !method) return
+    if (amountError) return
 
     try {
-      const result = await createTopUp({
-        amount: parsed,
-        network,
-        method: method.id,
-      }).unwrap()
-      notify.success(result.message)
+      const result = await createTopUp({ amount: parsed }).unwrap()
       if (result.topUp?.nextUrl) {
         window.location.assign(result.topUp.nextUrl)
         return
       }
+      notify.success(result.message)
       onClose()
     } catch (error) {
       setFormError(apiErrorMessage(error))
@@ -54,12 +50,17 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
   }
 
   return (
-    <Drawer label="Top up wallet" onClose={onClose} widthClass="w-[min(28rem,calc(100vw-1.5rem))]">
+    <Drawer label="Top up wallet" onClose={onClose} widthClass="w-[min(32rem,calc(100vw-1.5rem))]">
       <form onSubmit={submit} className="flex h-full flex-col bg-white" noValidate>
-        <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-navy">Top up wallet</h2>
-            <p className="mt-1 text-[13px] leading-5 text-ink/60">Add funds with mobile money.</p>
+        <header className="flex items-start justify-between gap-3 border-b border-[#E3ECF7] px-5 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E7F8F0] text-green">
+              <Wallet size={20} strokeWidth={2.2} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-navy">Top up wallet</h2>
+              <p className="mt-0.5 text-[13px] leading-5 text-ink/55">Choose an amount. Payment finishes on the checkout page.</p>
+            </div>
           </div>
           <button
             type="button"
@@ -72,11 +73,17 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
           <label className="block">
-            <span className="text-sm font-semibold text-navy">Amount</span>
-            <span className="mt-1.5 flex h-11 items-center rounded-lg border border-ink/15 bg-white focus-within:border-blue">
-              <span className="pl-3 text-sm font-medium text-ink/45">{currency || 'Amount'}</span>
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-navy">
+              <Wallet size={15} strokeWidth={2.2} className="text-ink/45" aria-hidden="true" />
+              Amount
+            </span>
+            <span className="mt-1 block text-[12px] leading-5 text-ink/45">
+              Type the amount to add, or pick one of the common values below.
+            </span>
+            <span className="mt-2 flex h-16 items-center rounded-2xl border border-ink/10 bg-canvas px-4 focus-within:border-navy">
+              <span className="text-sm font-semibold text-ink/40">{code}</span>
               <input
                 inputMode="decimal"
                 autoComplete="off"
@@ -86,7 +93,7 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
                 aria-invalid={attempted && Boolean(amountError)}
                 aria-describedby={attempted && amountError ? 'topup-amount-error' : undefined}
                 data-autofocus
-                className="h-full min-w-0 flex-1 bg-transparent px-2 text-sm text-navy tabular-nums outline-none placeholder:text-ink/35"
+                className={`h-full min-w-0 flex-1 bg-transparent px-3 text-3xl font-bold tracking-tight text-navy tabular-nums outline-none placeholder:text-ink/25 ${focusClass}`}
               />
             </span>
             {attempted && amountError ? (
@@ -96,78 +103,45 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
             ) : null}
           </label>
 
-          <fieldset>
-            <legend className="text-sm font-semibold text-navy">Network</legend>
-            <div className="mt-1.5 flex flex-col gap-2">
-              {walletNetworks.map((option) => {
-                const selected = network === option.id
+          <div className="mt-5">
+            <h3 className="text-[11px] font-semibold tracking-[0.14em] text-ink/45 uppercase">Common amounts</h3>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {PRESETS.map((value) => {
+                const selected = Number(amount) === value
                 return (
-                  <label key={option.id} className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="wallet-network"
-                      value={option.id}
-                      checked={selected}
-                      onChange={() => setNetwork(option.id)}
-                      className="peer sr-only"
-                    />
-                    <span
-                      className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue ${
-                        selected ? 'border-navy bg-canvas' : 'border-ink/15 bg-white hover:border-ink/30'
-                      }`}
-                    >
-                      <span className="flex h-8 w-14 shrink-0 items-center">
-                        <img src={option.image} alt="" className="h-8 w-auto max-w-14 object-contain object-left" />
-                      </span>
-                      <span className={`min-w-0 flex-1 text-sm ${selected ? 'font-semibold text-navy' : 'font-medium text-ink/75'}`}>
-                        {option.label}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
-                          selected ? 'border-navy bg-navy text-white' : 'border-ink/20 bg-white'
-                        }`}
-                      >
-                        {selected ? <Check size={11} strokeWidth={3} /> : null}
-                      </span>
-                    </span>
-                  </label>
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setAmount(String(value))}
+                    className={`flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-xl border px-2 text-center text-navy ${focusClass} ${
+                      selected ? 'border-green bg-[#E7F8F0] shadow-[0_0_0_1px_#008859]' : 'border-[#E3ECF7] bg-[#F8FBFF] hover:border-ink/15'
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold tracking-wide text-ink/40">{code}</span>
+                    <span className="text-lg font-bold tabular-nums">{value}</span>
+                  </button>
                 )
               })}
             </div>
-          </fieldset>
-
-          <div>
-            <span className="text-sm font-semibold text-navy">Payment method</span>
-            <p className="mt-1.5 flex h-11 items-center rounded-lg border border-ink/10 bg-canvas px-3 text-sm text-navy">
-              {method?.label}
-            </p>
           </div>
 
           {formError ? (
-            <p role="alert" className="rounded-lg bg-[#FDECEE] px-3 py-2 text-[13px] text-[#9F1C26]">
+            <p role="alert" className="mt-4 rounded-xl bg-[#FDECEE] px-3.5 py-3 text-sm text-[#9F1C26]">
               {formError}
             </p>
           ) : null}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-ink/10 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className={`inline-flex h-10 items-center rounded-lg px-3 text-sm font-semibold text-navy hover:bg-canvas disabled:opacity-50 ${focusClass}`}
-          >
-            Cancel
-          </button>
+        <footer className="border-t border-[#E3ECF7] bg-[#F7FAFD] px-5 py-4">
           <button
             type="submit"
-            disabled={isLoading}
-            className={`inline-flex h-10 items-center rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-wait disabled:opacity-70 ${focusClass}`}
+            disabled={isLoading || parsed == null}
+            className={`inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-navy text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
           >
-            {isLoading ? 'Processing...' : 'Top up wallet'}
+            {isLoading ? 'Opening payment…' : parsed == null ? 'Top up' : `Top up ${formatWalletAmount(parsed, code)}`}
           </button>
-        </div>
+        </footer>
       </form>
     </Drawer>
   )

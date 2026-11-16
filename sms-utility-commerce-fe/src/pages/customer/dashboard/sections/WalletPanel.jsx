@@ -1,15 +1,15 @@
 import { ArrowRight, Plus, Wallet } from 'lucide-react'
-import { useSelector } from 'react-redux'
 import { Link } from 'react-router'
+import { apiErrorMessage } from '../../../../features/auth/client'
+import { formatWalletAmount, statusLabel } from '../../../../features/wallet/walletRecord'
 import { paths } from '../../../../routes/paths'
-import { formatCreated } from '../../campaigns/model'
-import { formatUnits, smsRateUnits } from '../../wallet/money'
+import { useGetWalletQuery } from '../../../../services/api/wallet/walletApi'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 export function WalletPanel() {
-  const balance = useSelector((state) => state.wallet.balance)
-  const recent = useSelector((state) => state.wallet.entries).slice(0, 2)
+  const wallet = useGetWalletQuery()
+  const account = wallet.data
 
   return (
     <section aria-label="Wallet" className="mt-6 overflow-hidden rounded-xl border border-[#D8E7FA] bg-white shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:mt-7">
@@ -20,8 +20,14 @@ export function WalletPanel() {
           </span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-ink/55">Available balance</p>
-            <p className="mt-0.5 text-3xl font-bold tracking-tight text-navy tabular-nums">{formatUnits(balance)}</p>
-            <p className="mt-1 text-sm text-ink/55">SMS is {formatUnits(smsRateUnits)} per segment.</p>
+            {wallet.isLoading ? <span className="skeleton mt-2 block h-8 w-40 rounded" /> : null}
+            {wallet.isError ? <p className="mt-1 text-sm text-[#9F1C26]">{apiErrorMessage(wallet.error)}</p> : null}
+            {account ? (
+              <p className="mt-0.5 text-3xl font-bold tracking-tight text-navy tabular-nums">
+                {formatWalletAmount(account.balance, account.currency)}
+              </p>
+            ) : null}
+            {account?.status ? <p className="mt-1 text-sm text-ink/55">{statusLabel(account.status)}</p> : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -41,22 +47,6 @@ export function WalletPanel() {
           </Link>
         </div>
       </div>
-      {recent.length ? (
-        <ul className="grid border-t border-ink/10 sm:grid-cols-2">
-          {recent.map((entry) => (
-            <li key={entry.id} className="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-3 last:border-b-0 sm:border-b-0 sm:px-5 sm:odd:border-r">
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-navy">{entry.description}</span>
-                <span className="mt-0.5 block text-xs text-ink/45">{formatCreated(entry.createdAt)}</span>
-              </span>
-              <span className={`shrink-0 text-sm font-bold tabular-nums ${entry.type === 'credit' ? 'text-green' : 'text-navy'}`}>
-                {entry.type === 'credit' ? '+' : '−'}
-                {formatUnits(entry.amount)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
     </section>
   )
 }
