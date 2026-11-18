@@ -6,9 +6,9 @@ import {
   CalendarPlus,
   Check,
   Gift,
+  PartyPopper,
   RefreshCw,
   Send,
-  UserRoundCheck,
 } from 'lucide-react'
 import {
   formatCreated,
@@ -33,8 +33,7 @@ const errorColor = '#E0232E'
 const occasionIcons = {
   birthday: Cake,
   anniversary: Gift,
-  appointment: CalendarDays,
-  membership: UserRoundCheck,
+  holiday: PartyPopper,
   custom: CalendarPlus,
 }
 
@@ -345,7 +344,7 @@ function PromotionSchedule({ values, errors, onChange }) {
             {
               id: 'later',
               title: 'Schedule for later',
-              detail: 'Pick a future date and time.',
+              detail: 'Pick the day this promotion should send.',
               icon: CalendarClock,
             },
           ].map((item) => {
@@ -391,9 +390,9 @@ function PromotionSchedule({ values, errors, onChange }) {
           <div className="overflow-hidden">
             <div className="rounded-2xl border border-ink/10 bg-[#F8FAFC] p-4 sm:p-5">
               <label htmlFor="send-at" className="mb-1.5 block text-sm font-semibold text-navy">
-                Date and time
+                Send date
               </label>
-              <p className="mb-3 text-[13px] text-ink/55">Uses your local timezone.</p>
+              <p className="mb-3 text-[13px] text-ink/55">The promotion is saved for this day.</p>
               <div className="relative max-w-md">
                 <CalendarClock
                   size={15}
@@ -403,8 +402,8 @@ function PromotionSchedule({ values, errors, onChange }) {
                 />
                 <input
                   id="send-at"
-                  type="datetime-local"
-                  value={values.sendAt}
+                  type="date"
+                  value={String(values.sendAt ?? '').slice(0, 10)}
                   onChange={(event) => onChange('sendAt', event.target.value)}
                   aria-invalid={errors.sendAt ? true : undefined}
                   className={`${field} bg-white pl-10`}
@@ -421,8 +420,8 @@ function PromotionSchedule({ values, errors, onChange }) {
         headline={
           later
             ? values.sendAt
-              ? `This promotion will send on ${formatSendAt(values.sendAt)}.`
-              : 'Pick a date and time to finish scheduling.'
+              ? `This promotion will send on ${formatSendAt(String(values.sendAt).slice(0, 10))}.`
+              : 'Pick a date to finish scheduling.'
             : 'This promotion will start sending right after you confirm.'
         }
         points={[

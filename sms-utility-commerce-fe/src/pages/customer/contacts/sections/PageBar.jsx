@@ -10,8 +10,8 @@ function pagesOf(page, lastPage) {
   return [...new Set(wanted)].sort((left, right) => left - right)
 }
 
-export function PageBar({ page, lastPage, total, perPage, onPage, label, className = 'mt-4', showSummary = true }) {
-  if (!total || lastPage < 2) return null
+export function PageBar({ page, lastPage, total, perPage, onPage, label, className = 'mt-4', showSummary = true, always = false }) {
+  if (!total || (!always && lastPage < 2)) return null
 
   const start = (page - 1) * perPage + 1
   const end = Math.min(page * perPage, total)

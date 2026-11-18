@@ -9,6 +9,7 @@ const tone = {
   completed: 'bg-[#E5F6EC] text-[#008859]',
   paused: 'bg-[#F3F6FB] text-ink/65',
   failed: 'bg-[#FDECEE] text-[#C21F2D]',
+  cancelled: 'bg-[#F3F6FB] text-ink/55',
   queued: 'bg-[#E7F1FC] text-blue',
   in_progress: 'bg-[#E7F1FC] text-blue',
 }
@@ -21,6 +22,7 @@ const icons = {
   completed: CircleCheck,
   paused: Pause,
   failed: TriangleAlert,
+  cancelled: Ban,
   queued: Send,
   in_progress: Send,
 }

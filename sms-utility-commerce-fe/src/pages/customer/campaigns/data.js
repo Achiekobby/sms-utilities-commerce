@@ -88,7 +88,7 @@ export const seededCampaigns = [
     id: 'membership-reminder',
     name: 'Membership Reminder',
     type: 'occasion',
-    occasionType: 'membership',
+    occasionType: 'holiday',
     triggerOffset: '3',
     sendTime: '09:00',
     repeatYearly: false,

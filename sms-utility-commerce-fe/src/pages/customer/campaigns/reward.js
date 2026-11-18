@@ -13,6 +13,13 @@ export const rewardTypes = [
     available: true,
   },
   {
+    id: 'money',
+    label: 'Cash',
+    description: 'Send money directly to eligible recipients.',
+    example: 'GHS 10 per recipient',
+    available: true,
+  },
+  {
     id: 'airtime',
     label: 'Airtime',
     description: 'Send mobile airtime to recipients.',
@@ -139,7 +146,7 @@ export function formatRewardMoney(cedis) {
 
 export function formatRewardValue(reward) {
   if (!reward?.enabled) return '—'
-  if (reward.type === 'cash') return `${formatRewardMoney(reward.amount)} cash`
+  if (reward.type === 'cash' || reward.type === 'money') return `${formatRewardMoney(reward.amount)} cash`
   if (reward.type === 'airtime') return `${formatRewardMoney(rewardAmountCedis(reward))} airtime`
   if (reward.type === 'data') {
     const bundle = dataBundleById(reward.bundleId)
@@ -150,9 +157,9 @@ export function formatRewardValue(reward) {
 
 export function rewardShortLabel(reward) {
   if (!reward?.enabled) return null
-  if (reward.type === 'cash') return `${formatRewardMoney(reward.amount)}`
+  if (reward.type === 'cash' || reward.type === 'money') return `${formatRewardMoney(reward.amount)}`
   if (reward.type === 'airtime') return `${formatRewardMoney(rewardAmountCedis(reward))} airtime`
-  if (reward.type === 'data') return dataBundleById(reward.bundleId)?.label ?? 'Data'
+  if (reward.type === 'data') return reward.bundleLabel || dataBundleById(reward.bundleId)?.label || 'Data'
   return rewardTypeMeta(reward.type)?.label ?? 'Reward'
 }
 
@@ -169,7 +176,7 @@ export function rewardPlaceholders(reward) {
       aliases: ['{{reward_type}}', '{{rewardType}}'],
     },
   ]
-  if (reward.type === 'cash' || reward.type === 'airtime') {
+  if (reward.type === 'cash' || reward.type === 'money' || reward.type === 'airtime') {
     items.push({
       id: 'rewardAmount',
       token: '{rewardAmount}',
@@ -192,7 +199,7 @@ export function rewardPlaceholders(reward) {
 
 export function insertRewardCopy(reward) {
   if (!reward?.enabled) return ''
-  if (reward.type === 'cash') {
+  if (reward.type === 'cash' || reward.type === 'money') {
     return `We've sent you {rewardAmount} as a gift from {businessName}.`
   }
   if (reward.type === 'airtime') {
@@ -204,26 +211,31 @@ export function insertRewardCopy(reward) {
 export function emptyReward() {
   return {
     enabled: false,
+    rewardId: '',
     type: '',
     amount: '',
+    network: '',
     airtimePreset: '5',
-    bundleId: '1gb',
+    bundleId: '',
+    bundleLabel: '',
     disbursementMethod: 'mobile_money',
   }
 }
 
 export function normalizeCampaignReward(reward) {
   if (!reward || !reward.enabled) return null
-  const type = reward.type
+  const type = reward.type === 'money' ? 'cash' : reward.type
   const amount = rewardAmountCedis(reward)
   const bundle = type === 'data' ? dataBundleById(reward.bundleId) : null
   return {
     enabled: true,
+    rewardId: reward.rewardId ? String(reward.rewardId) : '',
     type,
-    amount: type === 'data' ? Number(bundle?.price) || 0 : amount,
+    amount: type === 'data' ? Number(bundle?.price) || amount : amount,
+    network: reward.network || '',
     airtimePreset: reward.airtimePreset || '',
     bundleId: reward.bundleId || '',
-    bundleLabel: bundle?.label || '',
+    bundleLabel: reward.bundleLabel || bundle?.label || '',
     currency: rewardCurrency,
     disbursementMethod: reward.disbursementMethod || 'mobile_money',
     eligibleRecipients: reward.eligibleRecipients ?? null,

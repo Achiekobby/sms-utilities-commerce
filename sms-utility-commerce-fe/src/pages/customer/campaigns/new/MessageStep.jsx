@@ -1,4 +1,15 @@
-import { Building2, Cake, CalendarClock, Gift, Mail, Phone, Send, Signal, User, UserRound, Users, Wallet } from 'lucide-react'
+import {
+  CalendarClock,
+  Cake,
+  Gift,
+  Mail,
+  MapPin,
+  MapPinned,
+  Send,
+  User,
+  UserRound,
+  Users,
+} from 'lucide-react'
 import { useRef } from 'react'
 import { ChoiceEmpty, ChoicePager, ChoiceSearch, useChoicePage } from '../../../../components/form/ChoiceList'
 import { typeIcons } from '../../../../components/TypeBadge'
@@ -7,24 +18,21 @@ import {
   localDateTimeValue,
   maxBodyLength,
   maxSegments,
-  messagePlaceholders,
+  placeholdersForType,
   segmentCount,
 } from '../model'
-import { ctaInsertText } from '../cta'
-import { insertRewardCopy, rewardPlaceholders } from '../reward'
 import { PromotionCtaSection } from './PromotionCtaSection'
 
 const placeholderIcons = {
   firstName: UserRound,
   lastName: User,
+  name: UserRound,
   fullName: Users,
-  phone: Phone,
   email: Mail,
-  businessName: Building2,
-  birthday: Cake,
-  rewardType: Gift,
-  rewardAmount: Wallet,
-  bundleSize: Signal,
+  dob: Cake,
+  region: MapPinned,
+  city: MapPin,
+  gpsAddress: MapPin,
 }
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -60,8 +68,7 @@ export function MessageStep({
   const segments = segmentCount(values.body)
   const over = segments > maxSegments
   const earliest = localDateTimeValue(new Date())
-  const rewardVars = rewardPlaceholders(values.reward)
-  const placeholders = [...messagePlaceholders, ...rewardVars]
+  const placeholders = placeholdersForType(values.type)
   const senderChoices = useChoicePage(senders, {
     pageSize: 6,
     matches: (sender, term) => sender.toLowerCase().includes(term),
@@ -82,18 +89,6 @@ export function MessageStep({
       field?.focus()
       field?.setSelectionRange(cursor, cursor)
     })
-  }
-
-  function insertRewardDetails() {
-    const copy = insertRewardCopy(values.reward)
-    if (!copy) return
-    insertPlaceholder(copy)
-  }
-
-  function insertCtaDetails() {
-    const copy = ctaInsertText(values.cta)
-    if (!copy) return
-    insertPlaceholder(copy)
   }
 
   return (
@@ -241,7 +236,11 @@ export function MessageStep({
         <FieldError id="campaign-sender-error">{errors.sender}</FieldError>
       </fieldset>
 
-      <div id="campaign-body" className="scroll-mt-28">
+      {values.type === 'promotion' ? (
+        <PromotionCtaSection values={values} errors={errors} onChange={onChange} />
+      ) : null}
+
+      <div id="campaign-body" className={`scroll-mt-28 ${values.type === 'promotion' ? 'border-t border-ink/10 pt-5' : ''}`}>
         <label htmlFor="campaign-body-input" className={labelClass}>
           Message
         </label>
@@ -263,16 +262,6 @@ export function MessageStep({
                   </button>
                 )
               })}
-              {values.reward?.enabled ? (
-                <button
-                  type="button"
-                  onClick={insertRewardDetails}
-                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue/25 bg-blue/[0.06] px-2.5 text-xs font-semibold text-blue transition-colors hover:bg-blue/[0.1] ${focusClass}`}
-                >
-                  <Gift size={13} strokeWidth={2.2} aria-hidden="true" />
-                  Insert reward details
-                </button>
-              ) : null}
             </div>
             <p className="mb-2 text-xs leading-5 text-ink/55">Each contact gets their own value. A missing field is left blank.</p>
           </>
@@ -301,15 +290,6 @@ export function MessageStep({
         </p>
         <FieldError id="campaign-body-error">{errors.body}</FieldError>
       </div>
-
-      {values.type === 'promotion' ? (
-        <PromotionCtaSection
-          values={values}
-          errors={errors}
-          onChange={onChange}
-          onInsertIntoMessage={insertCtaDetails}
-        />
-      ) : null}
 
       {allowSchedule ? (
         <fieldset id="campaign-sendAt" className="scroll-mt-28">

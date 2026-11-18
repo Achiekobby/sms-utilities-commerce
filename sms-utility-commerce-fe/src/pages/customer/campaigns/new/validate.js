@@ -1,25 +1,39 @@
-import { ctaTypes, validateCtaValue } from '../cta'
+import { bodyContainsLink, bodyHasCtaToken, bodyHasWebLink, validateCtaValue } from '../cta'
 import { campaignTypes, maxSegments, segmentCount } from '../model'
-import {
-  dataBundleById,
-  estimateRewardEligibility,
-  parseRewardAmount,
-  rewardCostUnits,
-  rewardTypes,
-} from '../reward'
+import { rewardTypes } from '../reward'
 
 export function validateCta(values) {
   if (values.type !== 'promotion') return {}
   const cta = values.cta
-  if (!cta?.enabled) return {}
-
+  const placement = cta?.placement || 'none'
+  const body = String(values.body ?? '')
   const errors = {}
-  if (!ctaTypes.some((item) => item.id === cta.type)) {
-    errors.ctaType = 'Choose a CTA type.'
+
+  if (placement === 'field') {
+    const valueError = validateCtaValue({ ...cta, type: 'link' })
+    if (valueError) errors.ctaValue = valueError
+    else if (bodyHasWebLink(body) || bodyContainsLink(body, cta.value)) {
+      errors.ctaValue = 'Remove the link from the message, or switch to writing the link in the message.'
+    } else if (bodyHasCtaToken(body)) {
+      errors.body = 'Remove {link} and {ctaUrl}. The CTA is added at the end of the message.'
+    }
     return errors
   }
-  const valueError = validateCtaValue(cta)
-  if (valueError) errors.ctaValue = valueError
+
+  if (placement === 'message') {
+    if (bodyHasCtaToken(body)) {
+      errors.body = 'Remove {link} and {ctaUrl}, and paste the real link instead.'
+    } else if (!bodyHasWebLink(body)) {
+      errors.body = 'Paste the link into the message.'
+    }
+    return errors
+  }
+
+  if (bodyHasCtaToken(body)) {
+    errors.body = 'Remove {link} and {ctaUrl} from the message.'
+  } else if (bodyHasWebLink(body)) {
+    errors.body = 'This message already includes a link. Choose “Link in the message”, or remove it.'
+  }
   return errors
 }
 
@@ -31,38 +45,19 @@ export function validateAudience(groups) {
   return {}
 }
 
-export function validateReward(values, { smsRecipients = 0, balance = 0 } = {}) {
+export function validateReward(values) {
   const reward = values.reward
   if (!reward?.enabled) return {}
 
   const errors = {}
-  if (!rewardTypes.some((type) => type.id === reward.type && type.available)) {
-    errors.rewardType = 'Choose a reward type.'
+  const rewardId = Number(reward.rewardId)
+  if (!Number.isInteger(rewardId) || rewardId < 1) {
+    errors.rewardId = 'Choose a reward from your catalog.'
     return errors
   }
 
-  if (reward.type === 'cash') {
-    const amount = parseRewardAmount(reward.amount)
-    if (amount == null || amount <= 0) errors.rewardAmount = 'Enter a reward amount greater than zero.'
-  }
-
-  if (reward.type === 'airtime') {
-    if (reward.airtimePreset === 'custom') {
-      const amount = parseRewardAmount(reward.amount)
-      if (amount == null || amount <= 0) errors.rewardAmount = 'Enter a custom airtime amount.'
-    } else if (!reward.airtimePreset) {
-      errors.rewardAmount = 'Choose an airtime value.'
-    }
-  }
-
-  if (reward.type === 'data' && !dataBundleById(reward.bundleId)) {
-    errors.rewardBundle = 'Choose a data bundle.'
-  }
-
-  const eligibility = estimateRewardEligibility(smsRecipients)
-  const cost = rewardCostUnits(reward, eligibility.eligible)
-  if (cost > balance) {
-    errors.rewardBalance = 'Your available balance is not enough to fund this reward.'
+  if (reward.type && !rewardTypes.some((type) => type.id === reward.type && type.available)) {
+    errors.rewardType = 'Choose a valid reward.'
   }
 
   return errors
@@ -97,9 +92,11 @@ export function validateSchedule(values, now = new Date()) {
   }
 
   if (values.when === 'later') {
-    const sendAt = new Date(values.sendAt)
-    if (!values.sendAt || Number.isNaN(sendAt.getTime())) errors.sendAt = 'Choose a date and time.'
-    else if (sendAt.getTime() <= now.getTime()) errors.sendAt = 'Choose a time in the future.'
+    const day = String(values.sendAt ?? '').slice(0, 10)
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`) : null
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    if (!date || Number.isNaN(date.getTime())) errors.sendAt = 'Choose a date.'
+    else if (date < today) errors.sendAt = 'Choose today or a future date.'
   }
 
   return errors
@@ -125,9 +122,11 @@ export function validateMessage(
 
   // Keep schedule validation available when MessageStep still owns when/sendAt (e.g. messages flow).
   if (values.when === 'later' && values.type !== 'occasion') {
-    const sendAt = new Date(values.sendAt)
-    if (!values.sendAt || Number.isNaN(sendAt.getTime())) errors.sendAt = 'Choose a date and time.'
-    else if (sendAt.getTime() <= now.getTime()) errors.sendAt = 'Choose a time in the future.'
+    const day = String(values.sendAt ?? '').slice(0, 10)
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`) : null
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    if (!date || Number.isNaN(date.getTime())) errors.sendAt = 'Choose a date.'
+    else if (date < today) errors.sendAt = 'Choose today or a future date.'
   }
 
   return errors

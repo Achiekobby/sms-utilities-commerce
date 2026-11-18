@@ -4,9 +4,10 @@ const errorColor = '#9F1C26'
 
 const campaignFields = [
   ['groupIds', 'Audience', 'campaign-groups'],
+  ['rewardId', 'Reward', 'reward-enabled'],
   ['rewardType', 'Reward type', 'reward-enabled'],
-  ['rewardAmount', 'Reward amount', 'reward-amount'],
-  ['rewardBundle', 'Data bundle', 'reward-bundle'],
+  ['rewardAmount', 'Reward amount', 'reward-enabled'],
+  ['rewardBundle', 'Data bundle', 'reward-enabled'],
   ['rewardBalance', 'Reward balance', 'reward-enabled'],
   ['name', 'Campaign name', 'campaign-name-input'],
   ['type', 'Type', 'campaign-type'],
@@ -16,6 +17,7 @@ const campaignFields = [
   ['ctaType', 'CTA type', 'campaign-cta'],
   ['ctaValue', 'CTA destination', 'cta-value'],
   ['sendAt', 'Send time', 'campaign-send-at-input'],
+  ['submit', 'Save', 'campaign-form'],
 ]
 
 export function StepError({ errors, summaryRef, fields = campaignFields }) {

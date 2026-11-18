@@ -22,14 +22,34 @@ export const ctaTypes = [
   },
 ]
 
+export const ctaTokens = ['{link}', '{ctaUrl}']
+
 export function emptyCta() {
   return {
     enabled: false,
+    placement: 'none',
     type: 'link',
     value: '',
     label: '',
-    triggersReward: true,
+    triggersReward: false,
   }
+}
+
+export function bodyHasCtaToken(body) {
+  const text = String(body ?? '')
+  return ctaTokens.some((token) => text.includes(token))
+}
+
+export function bodyHasWebLink(body) {
+  return /https?:\/\/\S+/i.test(String(body ?? ''))
+}
+
+export function bodyContainsLink(body, url) {
+  const address = String(url ?? '').trim().toLowerCase()
+  if (address.length < 4) return false
+  const text = String(body ?? '').toLowerCase()
+  const bare = address.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  return text.includes(address) || (bare.length > 4 && text.includes(bare))
 }
 
 export function ctaTypeMeta(type) {
@@ -48,13 +68,19 @@ export function normalizeCampaignCta(cta, { hasReward = false } = {}) {
   }
 }
 
+export function linkWithScheme(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+}
+
 export function formatCtaValue(cta) {
   if (!cta?.enabled || !cta.value) return '—'
   if (cta.type === 'whatsapp') {
     const digits = String(cta.value).replace(/\D/g, '')
     return digits ? `https://wa.me/${digits}` : cta.value
   }
-  return cta.value
+  return linkWithScheme(cta.value)
 }
 
 export function formatCtaSummary(cta) {
@@ -68,10 +94,21 @@ export function formatCtaSummary(cta) {
 export function ctaInsertText(cta) {
   if (!cta?.enabled || !cta.value) return ''
   const value = formatCtaValue(cta)
-  if (cta.label) return `${cta.label}: ${value}`
+  const label = String(cta.label ?? '').trim()
+  if (label) return `${label}: ${value}`
   if (cta.type === 'phone') return `Call ${value}`
   if (cta.type === 'whatsapp') return `WhatsApp us: ${value}`
   return value
+}
+
+/** Body text as a contact would read it when the CTA field is used. */
+export function messageWithCta(body, cta) {
+  const text = String(body ?? '').trim()
+  if (!cta || cta.placement !== 'field') return text
+  const suffix = ctaInsertText({ ...cta, enabled: true, type: cta.type || 'link' })
+  if (!suffix) return text
+  if (bodyHasWebLink(text) || bodyContainsLink(text, cta.value)) return text
+  return text ? `${text} ${suffix}` : suffix
 }
 
 export function validateCtaValue(cta) {

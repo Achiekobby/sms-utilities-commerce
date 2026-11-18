@@ -2,8 +2,8 @@ export const campaignTypes = [
   {
     id: 'occasion',
     label: 'Occasion',
-    hint: 'Automatically send messages around birthdays, anniversaries, reminders, and other important dates.',
-    examples: ['Birthdays', 'Anniversaries', 'Reminders'],
+    hint: 'Automatically send messages around birthdays, anniversaries, holidays, and other important dates.',
+    examples: ['Birthdays', 'Anniversaries', 'Holidays'],
     placeholder: 'Hi {firstName}, happy birthday from {businessName}! Enjoy a special treat on us today.',
   },
   {
@@ -18,8 +18,7 @@ export const campaignTypes = [
 export const occasionTypes = [
   { id: 'birthday', label: 'Birthday' },
   { id: 'anniversary', label: 'Anniversary' },
-  { id: 'appointment', label: 'Appointment reminder' },
-  { id: 'membership', label: 'Membership renewal' },
+  { id: 'holiday', label: 'Holiday' },
   { id: 'custom', label: 'Custom date' },
 ]
 
@@ -39,6 +38,7 @@ export const statusLabel = {
   completed: 'Completed',
   paused: 'Paused',
   failed: 'Failed',
+  cancelled: 'Cancelled',
   // Legacy seeds / older local records
   queued: 'Queued',
   in_progress: 'Sending',
@@ -108,6 +108,11 @@ export function formatCreated(iso) {
 
 export function formatSendAt(iso) {
   if (!iso) return '—'
+  const raw = String(iso)
+  const day = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const midnight = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ]00:00(?::00)?/)
+  const parts = day || midnight
+  if (parts) return createdFormat.format(new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])))
   return sendFormat.format(new Date(iso))
 }
 
@@ -124,14 +129,17 @@ export function formatSendTime(value) {
 
 export function scheduleLabel(campaign) {
   if (campaign.type === 'occasion') {
-    const offset = triggerOffsetLabel(campaign.triggerOffset || 'on')
+    const occasion = occasionTypeLabel(campaign.occasionType) || 'Occasion'
+    const offset =
+      campaign.triggerOffset === 'custom'
+        ? `${campaign.customOffsetDays ?? '—'} days before`
+        : triggerOffsetLabel(campaign.triggerOffset || 'on')
     const time = formatSendTime(campaign.sendTime || '09:00')
     const repeat = campaign.repeatYearly ? ' · Every year' : ''
-    return `${offset} at ${time}${repeat}`
+    return `${occasion} · ${offset} at ${time}${repeat}`
   }
   if (campaign.sendAt) return formatSendAt(campaign.sendAt)
   if (campaign.status === 'completed') return `Sent ${formatCreated(campaign.createdAt)}`
-  if (campaign.status === 'draft') return '—'
   return 'Send now'
 }
 
@@ -147,9 +155,17 @@ export function campaignGroups(campaign) {
 
 export function audienceLabel(campaign) {
   const groups = campaignGroups(campaign)
-  if (!groups.length) return campaign.audienceLabel || '—'
-  if (groups.length === 1) return groups[0].name
-  return `${groups.length} groups`
+  const groupText = groups.length
+    ? groups.length === 1
+      ? groups[0].name
+      : `${groups.length} groups`
+    : campaign.audienceLabel || ''
+  const eligible = Number(campaign.eligibleRecipients)
+  if (Number.isFinite(eligible) && eligible > 0) {
+    const count = `${eligible} eligible`
+    return groupText ? `${groupText} · ${count}` : count
+  }
+  return groupText || '—'
 }
 
 export function campaignMetrics(campaigns) {
@@ -171,15 +187,42 @@ export function campaignMetrics(campaigns) {
   return { sent, delivered, failed, active, rate }
 }
 
-export const messagePlaceholders = [
-  { id: 'firstName', token: '{firstName}', label: 'First name', sample: 'John', aliases: ['{{first_name}}', '{{firstName}}', '{first_name}'] },
-  { id: 'lastName', token: '{lastName}', label: 'Last name', sample: 'Mensah', aliases: ['{{last_name}}', '{{lastName}}', '{last_name}'] },
-  { id: 'fullName', token: '{fullName}', label: 'Full name', sample: 'John Mensah', aliases: ['{{full_name}}', '{{fullName}}', '{full_name}', '{{name}}', '{name}'] },
-  { id: 'phone', token: '{phone}', label: 'Phone', sample: '024 123 4567', aliases: ['{{phone}}', '{{phone_number}}', '{phone_number}'] },
-  { id: 'email', token: '{email}', label: 'Email', sample: 'john@mensahstores.test', aliases: ['{{email}}', '{{email_address}}', '{email_address}'] },
-  { id: 'businessName', token: '{businessName}', label: 'Business', sample: 'Mensah Market', aliases: ['{{business_name}}', '{{businessName}}', '{business_name}', '{{business}}', '{business}'] },
-  { id: 'birthday', token: '{birthday}', label: 'Birthday', sample: '12 Mar', aliases: ['{{birthday}}'] },
+export const promotionPlaceholders = [
+  { id: 'firstName', token: '{firstName}', label: 'First name', sample: 'John', aliases: ['{first_name}'] },
+  { id: 'lastName', token: '{lastName}', label: 'Last name', sample: 'Mensah', aliases: ['{last_name}'] },
+  { id: 'fullName', token: '{fullName}', label: 'Full name', sample: 'John Mensah', aliases: ['{full_name}'] },
 ]
+
+export const occasionPlaceholders = [
+  { id: 'firstName', token: '{firstName}', label: 'First name', sample: 'John', aliases: ['{first_name}'] },
+  { id: 'lastName', token: '{lastName}', label: 'Last name', sample: 'Mensah', aliases: ['{last_name}'] },
+  { id: 'name', token: '{name}', label: 'Name', sample: 'John' },
+  { id: 'fullName', token: '{fullName}', label: 'Full name', sample: 'John Mensah', aliases: ['{full_name}'] },
+  { id: 'email', token: '{email}', label: 'Email', sample: 'john@mensahstores.test' },
+  {
+    id: 'dob',
+    token: '{dob}',
+    label: 'Date of birth',
+    sample: '12 Mar 1990',
+    aliases: ['{dateOfBirth}', '{date_of_birth}'],
+  },
+  { id: 'region', token: '{region}', label: 'Region', sample: 'Greater Accra' },
+  { id: 'city', token: '{city}', label: 'City', sample: 'Accra' },
+  {
+    id: 'gpsAddress',
+    token: '{gpsAddress}',
+    label: 'GPS address',
+    sample: 'GA-123-4567',
+    aliases: ['{gps_address}'],
+  },
+]
+
+/** All known tokens for preview replacement. */
+export const messagePlaceholders = [...occasionPlaceholders]
+
+export function placeholdersForType(type) {
+  return type === 'promotion' ? promotionPlaceholders : occasionPlaceholders
+}
 
 export function sampleMessage(body, extraPlaceholders = []) {
   const replacements = [...messagePlaceholders, ...extraPlaceholders].flatMap((item) => [

@@ -1,16 +1,8 @@
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
-import { formatCount } from '../../dashboard/format'
 import { campaignTypes, statusLabel } from '../model'
-import {
-  emptyFilters,
-  queryCampaigns,
-  rewardPresenceOptions,
-  rewardTypeFilterOptions,
-  senderOptions,
-  statusOptions,
-} from '../query'
+import { emptyFilters, senderOptions, statusOptions } from '../query'
 import { approvedSenderNames } from '../../sender-ids/model'
 import { useSenderIds } from '../../sender-ids/useSenderIds'
 
@@ -21,7 +13,7 @@ function DrawerHeader({ onClose }) {
     <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
       <div className="min-w-0">
         <h2 className="text-base font-bold text-navy">Filter campaigns</h2>
-        <p className="mt-0.5 text-[13px] text-ink/60">Status, type, reward, and sender. Search stays in the list.</p>
+        <p className="mt-0.5 text-[13px] text-ink/60">Status, type, and sender. Search stays in the list.</p>
       </div>
       <button
         type="button"
@@ -57,10 +49,9 @@ function Group({ legend, children }) {
   )
 }
 
-export function CampaignFilterDrawer({ campaigns, search, filters, onApply, onClose }) {
+export function CampaignFilterDrawer({ campaigns, filters, onApply, onClose }) {
   const [draft, setDraft] = useState(filters)
   const approved = approvedSenderNames(useSenderIds())
-  const count = queryCampaigns(campaigns, { search, ...draft }).length
   const senders = senderOptions(campaigns, approved)
 
   function toggle(key, id) {
@@ -106,37 +97,6 @@ export function CampaignFilterDrawer({ campaigns, search, filters, onApply, onCl
             ))}
           </Group>
 
-          <Group legend="Reward">
-            {rewardPresenceOptions.map((option) => (
-              <label
-                key={option.id}
-                className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
-                  draft.reward === option.id ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="reward-presence"
-                  checked={draft.reward === option.id}
-                  onChange={() => setDraft((current) => ({ ...current, reward: option.id }))}
-                  className="size-4 accent-blue"
-                />
-                {option.label}
-              </label>
-            ))}
-          </Group>
-
-          <Group legend="Reward type">
-            {rewardTypeFilterOptions.map((option) => (
-              <Option
-                key={option.id}
-                label={option.label}
-                checked={draft.rewardTypes.includes(option.id)}
-                onChange={() => toggle('rewardTypes', option.id)}
-              />
-            ))}
-          </Group>
-
           <Group legend="Sender">
             {senders.map((sender) => (
               <Option
@@ -165,7 +125,7 @@ export function CampaignFilterDrawer({ campaigns, search, filters, onApply, onCl
             className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`}
           >
             <Check size={16} strokeWidth={2.4} aria-hidden="true" />
-            Show {formatCount(count)} {count === 1 ? 'campaign' : 'campaigns'}
+            Apply filters
           </button>
         </footer>
       </form>

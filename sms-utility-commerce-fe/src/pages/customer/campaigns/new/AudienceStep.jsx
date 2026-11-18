@@ -1,20 +1,9 @@
 import { GroupChoices } from '../../../../components/form/GroupChoices'
 import { formatCount } from '../../dashboard/format'
-import { RewardStep } from './RewardStep'
 
 const errorColor = '#E0232E'
 
-export function AudienceStep({
-  groups,
-  groupIds,
-  error,
-  onToggle,
-  values,
-  rewardErrors = {},
-  onChange,
-  balance,
-  onAddFunds,
-}) {
+export function AudienceStep({ groups, groupIds, error, onToggle }) {
   const selected = groups.filter((group) => groupIds.includes(group.id))
   const recipients = selected.reduce((sum, group) => sum + group.breakdown.active, 0)
 
@@ -39,17 +28,6 @@ export function AudienceStep({
           {error}
         </p>
       </fieldset>
-
-      <div className="border-t border-ink/10 pt-6">
-        <RewardStep
-          values={values}
-          errors={rewardErrors}
-          onChange={onChange}
-          smsRecipients={recipients}
-          balance={balance}
-          onAddFunds={onAddFunds}
-        />
-      </div>
     </div>
   )
 }

@@ -7,7 +7,12 @@ import { SignupPage } from '../pages/auth/SignupPage'
 import { VerifyPage } from '../pages/auth/VerifyPage'
 import { CampaignDetailPage } from '../pages/customer/campaigns/CampaignDetailPage'
 import { CampaignsPage } from '../pages/customer/campaigns/CampaignsPage'
+import { EditCampaignPage } from '../pages/customer/campaigns/new/EditCampaignPage'
 import { NewCampaignPage } from '../pages/customer/campaigns/new/NewCampaignPage'
+import { RewardsPage } from '../pages/customer/rewards/RewardsPage'
+import { EditSurveyPage } from '../pages/customer/surveys/EditSurveyPage'
+import { NewSurveyPage } from '../pages/customer/surveys/NewSurveyPage'
+import { SurveysPage } from '../pages/customer/surveys/SurveysPage'
 import { MessageDetailPage } from '../pages/customer/messages/MessageDetailPage'
 import { MessagesPage } from '../pages/customer/messages/MessagesPage'
 import { NewMessagePage } from '../pages/customer/messages/new/NewMessagePage'
@@ -107,6 +112,7 @@ export const router = createBrowserRouter([
           { path: 'activity-logs', element: <ActivityLogsPage /> },
           { path: 'campaigns', element: <CampaignsPage /> },
           { path: 'campaigns/new', element: <NewCampaignPage /> },
+          { path: 'campaigns/:campaignId/edit', element: <EditCampaignPage /> },
           { path: 'campaigns/:campaignId', element: <CampaignDetailPage /> },
           { path: 'templates', element: <TemplatesPage /> },
           { path: 'sender-ids', element: <SenderIdsPage /> },
@@ -125,6 +131,10 @@ export const router = createBrowserRouter([
           { path: 'orders/:orderId', element: <OrderDetailPage /> },
           { path: 'utilities', element: <UtilitiesPage /> },
           { path: 'utilities/:service', element: <UtilityServicePage /> },
+          { path: 'rewards', element: <RewardsPage /> },
+          { path: 'surveys', element: <SurveysPage /> },
+          { path: 'surveys/new', element: <NewSurveyPage /> },
+          { path: 'surveys/:surveyId/edit', element: <EditSurveyPage /> },
         ],
       },
     ],

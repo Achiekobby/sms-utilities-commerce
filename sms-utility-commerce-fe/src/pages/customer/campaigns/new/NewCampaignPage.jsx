@@ -1,37 +1,26 @@
-import { ArrowLeft, ArrowRight, CalendarClock, Radio, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
 import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { ConfirmDialog } from '../../../../components/ConfirmDialog'
-import { campaignCreated } from '../../../../features/campaigns/campaignsSlice'
-import { selectWalletBalance, walletDebited } from '../../../../features/wallet/walletSlice'
+import { apiErrorMessage, fieldErrors } from '../../../../features/auth/client'
+import { useNotify } from '../../../../features/notifications/useNotify'
 import { paths } from '../../../../routes/paths'
+import { useCreateCampaignMutation, useUpdateCampaignMutation } from '../../../../services/api/campaigns/campaignsApi'
 import { useDocumentTitle } from '../../../../utils/hooks/useDocumentTitle'
-import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
 import { useGroups } from '../../contacts/useGroups'
-import { formatCount } from '../../dashboard/format'
 import { approvedSenderNames } from '../../sender-ids/model'
 import { useSenderIds } from '../../sender-ids/useSenderIds'
-import { formatUnits, smsCostUnits, unitsPerCedi } from '../../wallet/money'
-import { TopUpDrawer } from '../../wallet/sections/TopUpDrawer'
-import { emptyCta, normalizeCampaignCta } from '../cta'
+import { smsCostUnits } from '../../wallet/money'
+import { emptyCta } from '../cta'
 import { campaignTypes, segmentCount } from '../model'
-import {
-  emptyReward,
-  estimateRewardEligibility,
-  formatRewardMoney,
-  normalizeCampaignReward,
-  rewardAmountCedis,
-  rewardCostUnits,
-  rewardTypeMeta,
-} from '../reward'
+import { emptyReward } from '../reward'
 import { AudienceStep } from './AudienceStep'
 import { MessageStep } from './MessageStep'
 import { ReviewStep } from './ReviewStep'
 import { ScheduleStep } from './ScheduleStep'
 import { StepError, useErrorFocus } from './StepError'
 import { TypeStep } from './TypeStep'
-import { validateAudience, validateMessage, validateReward, validateSchedule, validateType } from './validate'
+import { campaignDraftPayload, formValuesFromCampaign } from './payload'
+import { validateAudience, validateMessage, validateSchedule, validateType } from './validate'
 
 const steps = ['Type', 'Audience', 'Message', 'Schedule', 'Review']
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -134,29 +123,47 @@ function fromTemplate(template, campaignType) {
   }
 }
 
-export function NewCampaignPage() {
-  useDocumentTitle('Create campaign')
-  const dispatch = useDispatch()
+function serverErrors(error) {
+  const fields = fieldErrors(error)
+  const found = {}
+  if (fields.name) found.name = fields.name
+  if (fields.body) found.body = fields.body
+  if (fields.sender) found.sender = fields.sender
+  if (fields.type) found.type = fields.type
+  if (fields.contact_group_ids) found.groupIds = fields.contact_group_ids
+  if (fields.occasion_type) found.occasionType = fields.occasion_type
+  if (fields.custom_date) found.customDate = fields.custom_date
+  if (fields.trigger_offset) found.triggerOffset = fields.trigger_offset
+  if (fields.send_time) found.sendTime = fields.send_time
+  if (fields.send_at) found.sendAt = fields.send_at
+  if (fields['reward.reward_id'] || fields.reward_id) found.rewardId = fields['reward.reward_id'] || fields.reward_id
+  if (fields['reward.type']) found.rewardType = fields['reward.type']
+  if (fields['reward.amount'] || fields['reward.bundle_id']) {
+    found.rewardAmount = fields['reward.amount'] || fields['reward.bundle_id']
+  }
+  return found
+}
+
+export function NewCampaignPage({ campaign = null }) {
+  const editing = Boolean(campaign?.id)
+  useDocumentTitle(editing ? 'Edit campaign' : 'Create campaign')
   const navigate = useNavigate()
+  const notify = useNotify()
   const location = useLocation()
-  const applied = fromTemplate(location.state?.template, location.state?.campaignType)
+  const applied = editing ? null : fromTemplate(location.state?.template, location.state?.campaignType)
   const { groups } = useGroups()
   const approved = approvedSenderNames(useSenderIds())
-  const [step, setStep] = useState(applied ? 1 : 0)
-  const [values, setValues] = useState(applied ?? empty)
+  const [createCampaignRequest, createState] = useCreateCampaignMutation()
+  const [updateCampaignRequest, updateState] = useUpdateCampaignMutation()
+  const [step, setStep] = useState(editing ? 4 : applied ? 1 : 0)
+  const [values, setValues] = useState(() => (editing ? formValuesFromCampaign(campaign) : applied ?? empty))
   const [errors, setErrors] = useState({})
   const [attempt, setAttempt] = useState(0)
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const summaryRef = useErrorFocus(attempt)
   const selectedGroups = groups.filter((group) => values.groupIds.includes(group.id))
-  const balance = useSelector(selectWalletBalance)
-  const topUp = useDisclosure()
   const recipients = selectedGroups.reduce((sum, group) => sum + group.breakdown.active, 0)
   const smsCost = smsCostUnits({ segments: segmentCount(values.body.trim()), recipients })
-  const eligibility = estimateRewardEligibility(recipients)
-  const rewardCost = values.reward?.enabled ? rewardCostUnits(values.reward, eligibility.eligible) : 0
-  const totalCost = smsCost + rewardCost
-  const short = totalCost > balance
+  const saving = createState.isLoading || updateState.isLoading
   const reviewStep = 4
 
   function change(key, value) {
@@ -191,80 +198,23 @@ export function NewCampaignPage() {
     setStep(nextStep)
   }
 
-  function createCampaign() {
-    const body = values.body.trim()
-    if (short) {
-      setConfirmOpen(false)
-      topUp.open()
-      return
+  async function createCampaign() {
+    const payload = campaignDraftPayload(values)
+    try {
+      const result = editing
+        ? await updateCampaignRequest({ id: campaign.id, ...payload }).unwrap()
+        : await createCampaignRequest(payload).unwrap()
+      notify.success(result.message || (editing ? 'Campaign updated.' : 'Campaign saved as draft.'))
+      navigate(editing ? paths.campaign(campaign.id) : paths.campaigns, { replace: true })
+    } catch (error) {
+      notify.error(apiErrorMessage(error))
+      const found = serverErrors(error)
+      fail(found)
+      if (found.type) setStep(0)
+      else if (found.groupIds) setStep(1)
+      else if (found.name || found.body || found.sender) setStep(2)
+      else if (found.occasionType || found.customDate || found.sendTime || found.sendAt) setStep(3)
     }
-
-    const id = crypto.randomUUID()
-    const audience = selectedGroups.map((group) => ({
-      id: group.id,
-      name: group.name,
-      active: group.breakdown.active,
-    }))
-    const isOccasion = values.type === 'occasion'
-    const status = isOccasion ? 'active' : values.when === 'later' ? 'scheduled' : 'sending'
-    const rewardPayload = values.reward?.enabled
-      ? normalizeCampaignReward({
-          ...values.reward,
-          eligibleRecipients: eligibility.eligible,
-          estimatedCost: rewardCost,
-          notEligible: eligibility.notEligible,
-        })
-      : null
-
-    if (totalCost > 0 && !isOccasion && values.when === 'now') {
-      dispatch(
-        walletDebited({
-          id: crypto.randomUUID(),
-          reference: crypto.randomUUID(),
-          amount: totalCost,
-          description: rewardPayload
-            ? `SMS + reward · ${values.name.trim()}`
-            : `SMS · ${values.name.trim()}`,
-          createdAt: new Date().toISOString(),
-          relatedId: id,
-          relatedKind: 'campaign',
-        }),
-      )
-    }
-
-    dispatch(
-      campaignCreated({
-        id,
-        name: values.name.trim(),
-        type: values.type,
-        occasionType: isOccasion ? values.occasionType : '',
-        customDate: isOccasion && values.occasionType === 'custom' ? values.customDate : '',
-        triggerOffset: isOccasion ? values.triggerOffset : '',
-        customOffsetDays: isOccasion && values.triggerOffset === 'custom' ? Number(values.customOffsetDays) : null,
-        sendTime: isOccasion ? values.sendTime : '',
-        repeatYearly: isOccasion ? Boolean(values.repeatYearly) : false,
-        groups: audience,
-        groupName: audience.map((group) => group.name).join(', '),
-        recipients: audience.reduce((sum, group) => sum + group.active, 0),
-        rewardRecipients: rewardPayload?.eligibleRecipients ?? null,
-        sender: values.sender,
-        body,
-        segments: segmentCount(body),
-        sendAt: !isOccasion && values.when === 'later' ? values.sendAt : null,
-        status,
-        createdAt: new Date().toISOString(),
-        reward: rewardPayload,
-        cta: !isOccasion
-          ? normalizeCampaignCta(values.cta, { hasReward: Boolean(rewardPayload) })
-          : null,
-      }),
-    )
-    navigate(paths.campaign(id), {
-      state: {
-        justCreated: true,
-        outcome: isOccasion ? 'activated' : values.when === 'later' ? 'scheduled' : 'sent',
-      },
-    })
   }
 
   function submit(event) {
@@ -281,10 +231,7 @@ export function NewCampaignPage() {
     }
 
     if (step === 1) {
-      const found = {
-        ...validateAudience(selectedGroups),
-        ...validateReward(values, { smsRecipients: recipients, balance }),
-      }
+      const found = validateAudience(selectedGroups)
       if (Object.keys(found).length) {
         fail(found)
         return
@@ -316,70 +263,38 @@ export function NewCampaignPage() {
     const found = {
       ...validateType(values),
       ...validateAudience(selectedGroups),
-      ...validateReward(values, { smsRecipients: recipients, balance }),
       ...validateMessage(values, new Date(), { senders: approved, requireType: false }),
       ...validateSchedule(values),
     }
     if (Object.keys(found).length) {
       fail(found)
       if (found.type) setStep(0)
-      else if (
-        found.groupIds ||
-        found.rewardType ||
-        found.rewardAmount ||
-        found.rewardBundle ||
-        found.rewardBalance
-      ) {
-        setStep(1)
-      }       else if (found.name || found.body || found.sender || found.ctaType || found.ctaValue) setStep(2)
+      else if (found.groupIds) setStep(1)
+      else if (found.name || found.body || found.sender || found.ctaType || found.ctaValue) setStep(2)
       else setStep(3)
-      return
-    }
-
-    if (short) {
-      topUp.open()
-      return
-    }
-
-    if (values.reward?.enabled) {
-      setConfirmOpen(true)
       return
     }
 
     createCampaign()
   }
 
-  const primaryLabel =
-    step < reviewStep
-      ? 'Continue'
-      : values.type === 'occasion'
-        ? 'Activate campaign'
-        : values.when === 'later'
-          ? 'Schedule campaign'
-          : 'Send campaign'
-
-  const rewardConfirmTitle =
-    values.type === 'occasion'
-      ? 'Activate campaign?'
-      : values.when === 'later'
-        ? 'Schedule campaign?'
-        : 'Send campaign?'
-
-  const per = rewardAmountCedis(values.reward)
-  const rewardLabel = rewardTypeMeta(values.reward?.type)?.label?.toLowerCase() ?? 'reward'
+  const primaryLabel = step < reviewStep ? 'Continue' : editing ? 'Save changes' : 'Save draft'
 
   return (
     <div className="w-full">
       <header>
         <p className="text-sm font-medium text-ink/55">
-          <Link to={paths.campaigns} className={`rounded-sm text-blue ${focusClass}`}>
-            Campaigns
+          <Link to={editing ? paths.campaign(campaign.id) : paths.campaigns} className={`rounded-sm text-blue ${focusClass}`}>
+            {editing ? campaign.name : 'Campaigns'}
           </Link>
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem]">Create campaign</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem]">
+          {editing ? 'Edit campaign' : 'Create campaign'}
+        </h1>
       </header>
 
       <form
+        id="campaign-form"
         noValidate
         onSubmit={submit}
         className="mt-6 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6"
@@ -393,6 +308,7 @@ export function NewCampaignPage() {
                 values={values}
                 error={errors.type}
                 onChange={change}
+                locked={editing}
                 onScratch={() => {
                   if (!values.type) {
                     fail(validateType(values))
@@ -407,11 +323,6 @@ export function NewCampaignPage() {
                 groups={groups}
                 groupIds={values.groupIds}
                 error={errors.groupIds}
-                values={values}
-                rewardErrors={errors}
-                onChange={change}
-                balance={balance}
-                onAddFunds={topUp.open}
                 onToggle={(id) => {
                   const next = values.groupIds.includes(id)
                     ? values.groupIds.filter((item) => item !== id)
@@ -425,9 +336,6 @@ export function NewCampaignPage() {
                 {values.templateName ? (
                   <p className="mb-4 rounded-xl bg-[#E7F1FC] px-4 py-3 text-sm leading-6 text-navy">
                     Using {values.templateName}. Change anything that should not go out as written.
-                    {location.state?.template?.suggestedReward && !values.reward?.enabled
-                      ? ' This template suggests a reward — enable it on Audience if you want to include it.'
-                      : null}
                   </p>
                 ) : null}
                 <MessageStep
@@ -446,8 +354,7 @@ export function NewCampaignPage() {
                 values={values}
                 groups={selectedGroups}
                 cost={smsCost}
-                balance={balance}
-                onTopUp={topUp.open}
+                editing={editing}
                 onEdit={go}
               />
             ) : null}
@@ -473,7 +380,7 @@ export function NewCampaignPage() {
           {step > 0 ? (
             <button
               type="submit"
-              disabled={step === reviewStep && short}
+              disabled={saving}
               className={`${primary} disabled:cursor-not-allowed disabled:bg-ink/20`}
             >
               {step < reviewStep ? (
@@ -481,63 +388,16 @@ export function NewCampaignPage() {
                   Continue
                   <ArrowRight size={16} strokeWidth={2.3} aria-hidden="true" />
                 </>
-              ) : values.type === 'occasion' ? (
-                <>
-                  <Radio size={16} strokeWidth={2.3} aria-hidden="true" />
-                  {primaryLabel}
-                </>
-              ) : values.when === 'later' ? (
-                <>
-                  <CalendarClock size={16} strokeWidth={2.3} aria-hidden="true" />
-                  {primaryLabel}
-                </>
               ) : (
                 <>
-                  <Send size={16} strokeWidth={2.3} aria-hidden="true" />
-                  {primaryLabel}
+                  <Save size={16} strokeWidth={2.3} aria-hidden="true" />
+                  {saving ? 'Saving…' : primaryLabel}
                 </>
               )}
             </button>
           ) : null}
         </div>
       </form>
-      {topUp.isOpen ? <TopUpDrawer onClose={topUp.close} /> : null}
-      {confirmOpen ? (
-        <ConfirmDialog
-          tone="caution"
-          title={rewardConfirmTitle}
-          description={
-            <div className="space-y-2">
-              <p>
-                This campaign will send an SMS to approximately {formatCount(recipients)} recipients
-                {values.reward?.enabled
-                  ? ` and ${per > 0 ? formatRewardMoney(per) : ''} ${rewardLabel} to approximately ${formatCount(eligibility.eligible)} eligible recipients`
-                  : ''}
-                .
-              </p>
-              {values.reward?.enabled ? (
-                <p>
-                  Estimated reward cost:{' '}
-                  <span className="font-semibold text-navy tabular-nums">{formatUnits(rewardCost)}</span>
-                  {values.reward.type === 'cash' || rewardCost >= 1000 * unitsPerCedi ? (
-                    <>
-                      . You are about to fund rewards worth approximately{' '}
-                      <span className="font-semibold text-navy tabular-nums">{formatUnits(rewardCost)}</span>.
-                    </>
-                  ) : null}
-                </p>
-              ) : null}
-            </div>
-          }
-          confirmLabel={primaryLabel}
-          busyLabel="Working…"
-          onConfirm={() => {
-            setConfirmOpen(false)
-            createCampaign()
-          }}
-          onClose={() => setConfirmOpen(false)}
-        />
-      ) : null}
     </div>
   )
 }

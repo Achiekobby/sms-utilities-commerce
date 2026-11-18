@@ -1,11 +1,14 @@
-import { ChevronLeft, ChevronRight, Eye, Gift, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { SelectMenu } from '../../../../components/SelectMenu'
 import { TypeBadge } from '../../../../components/TypeBadge'
+import { useApiErrorToast } from '../../../../features/notifications/useApiErrorToast'
 import { paths } from '../../../../routes/paths'
+import { useGetContactGroupsQuery } from '../../../../services/api/contacts/contactsApi'
+import { useGetCampaignsQuery } from '../../../../services/api/campaigns/campaignsApi'
+import { useDebouncedValue } from '../../../../utils/hooks/useDebouncedValue'
 import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
-import { usePagination } from '../../../../utils/hooks/usePagination'
 import { formatCount } from '../../dashboard/format'
 import {
   audienceLabel,
@@ -15,9 +18,11 @@ import {
   statusLabel,
   typeLabel,
 } from '../model'
-import { activeFilterCount, emptyFilters, queryCampaigns, rewardPresenceOptions, rewardTypeFilterOptions, typeTabs } from '../query'
-import { rewardShortLabel } from '../reward'
+import { withGroupNames } from '../fromApi'
+import { activeFilterCount, emptyFilters, typeTabs } from '../query'
+import { CampaignActions } from './CampaignActions'
 import { CampaignFilterDrawer } from './CampaignFilterDrawer'
+import { CampaignMetrics } from './CampaignMetrics'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignsEmpty } from './CampaignsEmpty'
 
@@ -45,17 +50,6 @@ function NameLink({ campaign, className = '' }) {
   )
 }
 
-function RewardHint({ campaign }) {
-  if (!campaign.reward?.enabled) return null
-  const label = rewardShortLabel(campaign.reward)
-  return (
-    <span className="inline-flex items-center gap-1 text-[12px] font-medium text-ink/60">
-      <Gift size={12} strokeWidth={2.2} aria-hidden="true" className="text-green" />
-      {label}
-    </span>
-  )
-}
-
 function CampaignCard({ campaign }) {
   return (
     <li className="rounded-xl border border-[#D8E7FA] bg-white p-4 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_8px_22px_-14px_rgba(20,115,230,0.35)]">
@@ -65,16 +59,9 @@ function CampaignCard({ campaign }) {
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <TypeBadge type={campaign.type} />
             <CampaignStatus status={campaign.status} />
-            <RewardHint campaign={campaign} />
           </div>
         </div>
-        <Link
-          to={paths.campaign(campaign.id)}
-          aria-label={`View ${campaign.name}`}
-          className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/70 hover:border-blue/40 hover:bg-canvas hover:text-blue ${focusClass}`}
-        >
-          <Eye size={15} strokeWidth={2.2} aria-hidden="true" />
-        </Link>
+        <CampaignActions campaign={campaign} includeView iconOnly />
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
         <div>
@@ -95,27 +82,9 @@ function CampaignCard({ campaign }) {
 }
 
 function chipsFor(filters) {
-  const rewardChip =
-    filters.reward && filters.reward !== 'all'
-      ? [
-          {
-            key: `reward-${filters.reward}`,
-            group: 'reward',
-            id: filters.reward,
-            label: rewardPresenceOptions.find((item) => item.id === filters.reward)?.label ?? filters.reward,
-          },
-        ]
-      : []
   return [
     ...filters.statuses.map((id) => ({ key: `status-${id}`, group: 'statuses', id, label: statusLabel[id] })),
     ...filters.types.map((id) => ({ key: `type-${id}`, group: 'types', id, label: typeLabel(id) })),
-    ...rewardChip,
-    ...(filters.rewardTypes ?? []).map((id) => ({
-      key: `rewardType-${id}`,
-      group: 'rewardTypes',
-      id,
-      label: rewardTypeFilterOptions.find((item) => item.id === id)?.label ?? id,
-    })),
     ...filters.senders.map((id) => ({ key: `sender-${id}`, group: 'senders', id, label: id })),
   ]
 }
@@ -224,29 +193,56 @@ function EmptyResults({ query, filtered, onClear }) {
   )
 }
 
-export function CampaignList({ campaigns }) {
+export function CampaignList() {
   const [query, setQuery] = useState('')
   const [typeTab, setTypeTab] = useState('all')
   const [filters, setFilters] = useState(emptyFilters)
+  const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(6)
   const drawer = useDisclosure()
   const filterCount = activeFilterCount(filters)
-  const search = query.trim()
-
-  const results = useMemo(
-    () => queryCampaigns(campaigns, { search, typeTab, ...filters }),
-    [campaigns, search, typeTab, filters],
+  const search = useDebouncedValue(query.trim())
+  const type = typeTab !== 'all' ? typeTab : filters.types
+  const list = useGetCampaignsQuery({
+    page,
+    perPage: pageSize,
+    search,
+    type,
+    status: filters.statuses,
+    sender: filters.senders,
+  })
+  const groups = useGetContactGroupsQuery()
+  useApiErrorToast(list.error, list.isError && !list.isFetching)
+  useApiErrorToast(groups.error, groups.isError && !groups.isFetching)
+  const total = list.data?.total ?? 0
+  const knownCount = list.data?.lastPage
+  const pageCount = knownCount ? Math.max(1, knownCount) : 1
+  const currentPage = knownCount ? Math.min(page, pageCount) : page
+  const campaigns = useMemo(
+    () => (list.data?.rows ?? []).map((campaign) => withGroupNames(campaign, groups.data)),
+    [groups.data, list.data?.rows],
   )
-  const pager = usePagination({ total: results.length, pageSize })
-  const page = results.slice(Math.max(pager.rangeStart - 1, 0), pager.rangeEnd)
+  const pager = {
+    page: currentPage,
+    pageCount,
+    rangeStart: total === 0 ? 0 : (currentPage - 1) * pageSize + 1,
+    rangeEnd: Math.min(currentPage * pageSize, total),
+    setPage,
+    next() {
+      setPage((value) => Math.min(pageCount, value + 1))
+    },
+    previous() {
+      setPage((value) => Math.max(1, value - 1))
+    },
+  }
+  const filtered = filterCount > 0 || typeTab !== 'all' || Boolean(search)
 
   function resetPage() {
-    pager.setPage(1)
+    setPage(1)
   }
 
   function removeFilter(group, id) {
     setFilters((current) => {
-      if (group === 'reward') return { ...current, reward: 'all' }
       return { ...current, [group]: current[group].filter((item) => item !== id) }
     })
     resetPage()
@@ -259,9 +255,11 @@ export function CampaignList({ campaigns }) {
     resetPage()
   }
 
-  if (!campaigns.length) return <CampaignsEmpty />
+  if (list.isSuccess && !total && !filtered && !query.trim()) return <CampaignsEmpty />
 
   return (
+    <>
+    {campaigns.length ? <CampaignMetrics campaigns={campaigns} /> : null}
     <section aria-label="Campaigns" className="mt-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div role="tablist" aria-label="Campaign type" className="flex flex-wrap gap-1.5 rounded-xl bg-[#F3F6FB] p-1">
@@ -331,7 +329,7 @@ export function CampaignList({ campaigns }) {
 
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-[13px] text-ink/60 tabular-nums" aria-live="polite">
-          {formatCount(results.length)} {results.length === 1 ? 'campaign' : 'campaigns'}
+          {formatCount(total)} {total === 1 ? 'campaign' : 'campaigns'}
         </p>
         <FilterChips filters={filters} onRemove={removeFilter} />
         {filterCount || query || typeTab !== 'all' ? (
@@ -346,10 +344,24 @@ export function CampaignList({ campaigns }) {
         ) : null}
       </div>
 
-      {page.length ? (
+      {list.isLoading ? (
+        <div role="status" className="mt-4 space-y-2">
+          <span className="sr-only">Loading campaigns</span>
+          {Array.from({ length: 4 }, (_, index) => (
+            <span key={index} className="skeleton block h-14 rounded-xl" />
+          ))}
+        </div>
+      ) : list.isError ? (
+        <div role="alert" className="mt-4 flex flex-col gap-3 rounded-xl border border-[#E0232E]/25 bg-[#FDECEE] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[#9F1C26]">Campaigns could not be loaded.</p>
+          <button type="button" onClick={list.refetch} className={`h-9 rounded-lg bg-white px-3 text-sm font-semibold text-navy ${focusClass}`}>
+            Try again
+          </button>
+        </div>
+      ) : campaigns.length ? (
         <>
           <ul className="mt-4 space-y-3 md:hidden">
-            {page.map((campaign) => (
+            {campaigns.map((campaign) => (
               <CampaignCard key={campaign.id} campaign={campaign} />
             ))}
           </ul>
@@ -358,7 +370,7 @@ export function CampaignList({ campaigns }) {
             <table className="w-full min-w-[64rem] border-separate border-spacing-0 text-left">
               <thead>
                 <tr>
-                  {['Campaign', 'Type', 'Reward', 'Audience', 'Status', 'Schedule / Trigger', 'Sent', 'Delivery rate', 'Actions'].map(
+                  {['Campaign', 'Type', 'Audience', 'Status', 'Schedule / Trigger', 'Sent', 'Delivery rate', 'Actions'].map(
                     (label) => (
                       <th key={label} scope="col" className={head}>
                         {label}
@@ -368,16 +380,13 @@ export function CampaignList({ campaigns }) {
                 </tr>
               </thead>
               <tbody className="[&>tr:last-child>*]:border-b-0">
-                {page.map((campaign) => (
+                {campaigns.map((campaign) => (
                   <tr key={campaign.id}>
                     <th scope="row" className={`${cell} text-left font-medium text-navy`}>
                       <NameLink campaign={campaign} />
                     </th>
                     <td className={cell}>
                       <TypeBadge type={campaign.type} />
-                    </td>
-                    <td className={cell}>
-                      {campaign.reward?.enabled ? <RewardHint campaign={campaign} /> : <span className="text-ink/35">—</span>}
                     </td>
                     <td className={`${cell} max-w-[12rem] truncate`}>{audienceLabel(campaign)}</td>
                     <td className={cell}>
@@ -389,13 +398,7 @@ export function CampaignList({ campaigns }) {
                     </td>
                     <td className={`${cell} tabular-nums`}>{deliveryRate(campaign)}</td>
                     <td className={cell}>
-                      <Link
-                        to={paths.campaign(campaign.id)}
-                        aria-label={`View ${campaign.name}`}
-                        className={`inline-flex size-8 items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/70 hover:border-blue/40 hover:bg-canvas hover:text-blue ${focusClass}`}
-                      >
-                        <Eye size={15} strokeWidth={2.2} aria-hidden="true" />
-                      </Link>
+                      <CampaignActions campaign={campaign} includeView iconOnly />
                     </td>
                   </tr>
                 ))}
@@ -405,7 +408,7 @@ export function CampaignList({ campaigns }) {
 
           <Pagination
             pager={pager}
-            total={results.length}
+            total={total}
             pageSize={pageSize}
             onPageSize={(value) => {
               setPageSize(Number(value))
@@ -414,13 +417,12 @@ export function CampaignList({ campaigns }) {
           />
         </>
       ) : (
-        <EmptyResults query={query} filtered={filterCount > 0 || typeTab !== 'all'} onClear={clearAll} />
+        <EmptyResults query={query} filtered={filtered} onClear={clearAll} />
       )}
 
       {drawer.isOpen ? (
         <CampaignFilterDrawer
           campaigns={campaigns}
-          search={search}
           filters={filters}
           onApply={(next) => {
             setFilters(next)
@@ -430,5 +432,6 @@ export function CampaignList({ campaigns }) {
         />
       ) : null}
     </section>
+    </>
   )
 }

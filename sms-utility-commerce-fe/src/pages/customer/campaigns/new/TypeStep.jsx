@@ -43,7 +43,7 @@ const startChoices = [
   },
 ]
 
-export function TypeStep({ values, error, onChange, onScratch }) {
+export function TypeStep({ values, error, onChange, onScratch, locked = false }) {
   const navigate = useNavigate()
 
   function chooseStart(id) {
@@ -57,9 +57,13 @@ export function TypeStep({ values, error, onChange, onScratch }) {
   return (
     <div className="space-y-8">
       <fieldset>
-        <legend className="text-base font-bold text-navy sm:text-lg">What would you like to send?</legend>
+        <legend className="text-base font-bold text-navy sm:text-lg">
+          {locked ? 'Campaign type' : 'What would you like to send?'}
+        </legend>
         <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
-          Choose a campaign type based on how you want to reach your customers.
+          {locked
+            ? 'This campaign keeps its type. Continue to update the audience, message, or schedule.'
+            : 'Choose a campaign type based on how you want to reach your customers.'}
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Campaign type">
           {campaignTypes.map((type) => {
@@ -72,10 +76,13 @@ export function TypeStep({ values, error, onChange, onScratch }) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => onChange('type', type.id)}
+                disabled={locked}
+                onClick={() => {
+                  if (!locked) onChange('type', type.id)
+                }}
                 className={`start-choice-card relative rounded-2xl border p-5 text-left sm:p-6 ${look.surface} ${
                   selected ? look.selected : ''
-                } ${focusClass}`}
+                } ${locked && !selected ? 'opacity-45' : ''} ${locked ? 'cursor-default' : ''} ${focusClass}`}
               >
                 <span className={`start-choice-card__tile relative flex size-12 items-center justify-center rounded-xl ${look.tile}`}>
                   <Icon size={22} strokeWidth={2.1} aria-hidden="true" />
@@ -103,7 +110,7 @@ export function TypeStep({ values, error, onChange, onScratch }) {
         ) : null}
       </fieldset>
 
-      {values.type ? (
+      {!locked && values.type ? (
         <fieldset>
           <legend className="text-base font-bold text-navy">How do you want to start?</legend>
           <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">

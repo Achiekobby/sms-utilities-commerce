@@ -121,8 +121,18 @@ export function getNavigation({ isBusiness }) {
       id: 'engagement',
       label: 'Engagement',
       items: [
-        { label: 'Rewards', icon: Gift, keywords: 'airtime data money earn promotions' },
-        { label: 'Surveys', icon: ClipboardList, keywords: 'questions responses' },
+        {
+          label: 'Rewards',
+          icon: Gift,
+          to: paths.rewards,
+          keywords: 'airtime data money cash catalog disbursement',
+        },
+        {
+          label: 'Surveys',
+          icon: ClipboardList,
+          to: paths.surveys,
+          keywords: 'questions responses survey',
+        },
         { label: 'Analytics', icon: ChartColumn, keywords: 'reports usage results charts' },
       ],
     },
