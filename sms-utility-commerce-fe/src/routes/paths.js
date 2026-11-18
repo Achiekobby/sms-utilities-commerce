@@ -36,6 +36,7 @@ export const paths = {
   rewards: '/app/rewards',
   surveys: '/app/surveys',
   newSurvey: '/app/surveys/new',
+  survey: (surveyId) => `/app/surveys/${surveyId}`,
   editSurvey: (surveyId) => `/app/surveys/${surveyId}/edit`,
   apiKeys: '/app/api-keys',
   activityLogs: '/app/activity-logs',

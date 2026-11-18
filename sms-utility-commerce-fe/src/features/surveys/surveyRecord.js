@@ -19,29 +19,46 @@ export function questionFromApi(data) {
     prompt: text(data.prompt),
     required: data.required == null ? true : Boolean(data.required),
     options: choiceTypes.has(type) && options.filter(Boolean).length < 2 ? [...options, '', ''].slice(0, Math.max(2, options.length)) : options,
+    position: Number.isFinite(Number(data.position)) ? Number(data.position) : 0,
   }
+}
+
+export function questionsFromApi(data) {
+  const list = Array.isArray(data) ? data : []
+  return list
+    .map((item, index) => {
+      const question = questionFromApi(item)
+      if (!question) return null
+      if (question.serverId != null) return question
+      return { ...question, id: `${question.id}-${index}` }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.position - b.position)
+}
+
+function invitationBody(value) {
+  return text(value).replace(/\s*\*\{\{link\}\}\*\s*$/i, '').replace(/\s*\{\{link\}\}\s*$/i, '').trim()
 }
 
 export function surveyFromApi(data) {
   if (!data || typeof data !== 'object' || data.id == null) return null
-  const questionList = Array.isArray(data.questions)
-    ? data.questions
-        .map((item, index) => {
-          const question = questionFromApi(item)
-          if (!question || question.serverId != null) return question
-          return { ...question, id: `${question.id}-${index}` }
-        })
-        .filter(Boolean)
-    : null
+  const questionList = Array.isArray(data.questions) ? questionsFromApi(data.questions) : null
   const counted = questionList
     ? questionList.length
     : Number(data.questions_count ?? data.question_count ?? (typeof data.questions === 'number' ? data.questions : NaN))
+  const intro = text(data.intro)
 
   return {
     id: String(data.id),
     name: text(data.name) || text(data.title) || 'Survey',
     status: text(data.status),
-    description: text(data.description) || text(data.intro),
+    intro,
+    description: text(data.description) || intro,
+    body: invitationBody(data.body),
+    sender: text(data.sender),
+    sendAt: text(data.send_at),
+    groupIds: Array.isArray(data.contact_group_ids) ? data.contact_group_ids.map((id) => String(id)) : [],
+    surveyUrl: text(data.survey_url),
     questionCount: Number.isFinite(counted) ? counted : null,
     questions: questionList,
     createdAt: text(data.created_at),

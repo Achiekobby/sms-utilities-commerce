@@ -12,7 +12,7 @@ import {
   Trash2,
   Type,
 } from 'lucide-react'
-import { isChoiceType, newQuestion, questionTypes, withQuestionType } from './model'
+import { isChoiceType, newQuestion, questionTypes, surveyLimits, withQuestionType } from './model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const field =
@@ -33,7 +33,10 @@ export function QuestionList({ questions, activeId, errors = {}, onChange, onAct
     onChange(questions.map((question) => (question.id === id ? { ...question, ...partial } : question)))
   }
 
+  const atQuestionLimit = questions.length >= surveyLimits.questions
+
   function add(type) {
+    if (atQuestionLimit) return
     const question = newQuestion(type)
     const next = [...questions, question]
     onChange(next)
@@ -45,9 +48,11 @@ export function QuestionList({ questions, activeId, errors = {}, onChange, onAct
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-navy">Questions</h2>
-          <p className="mt-1 text-sm text-ink/55">Add a field, write the prompt, then try it in the phone.</p>
+          <p className="mt-1 text-sm text-ink/55">Add up to {surveyLimits.questions} questions, then try them in the phone.</p>
         </div>
-        <p className="text-sm font-semibold text-navy tabular-nums">{questions.length}</p>
+        <p className="text-sm font-semibold text-navy tabular-nums">
+          {questions.length}/{surveyLimits.questions}
+        </p>
       </div>
 
       {errors.form ? (
@@ -100,6 +105,7 @@ export function QuestionList({ questions, activeId, errors = {}, onChange, onAct
                     id={`question-prompt-${question.id}`}
                     value={question.prompt}
                     rows={2}
+                    maxLength={surveyLimits.prompt}
                     placeholder="Ask something clear"
                     onChange={(event) => update(question.id, { prompt: event.target.value })}
                     className={`${field} mt-3 resize-none py-2.5 text-base font-medium`}
@@ -141,6 +147,7 @@ export function QuestionList({ questions, activeId, errors = {}, onChange, onAct
                   </IconButton>
                   <IconButton
                     label="Duplicate question"
+                    disabled={atQuestionLimit}
                     onClick={() => {
                       const copy = { ...newQuestion(question.type), prompt: question.prompt, required: question.required, options: [...question.options] }
                       const next = [...questions]
@@ -178,7 +185,8 @@ export function QuestionList({ questions, activeId, errors = {}, onChange, onAct
                 key={type.id}
                 type="button"
                 onClick={() => add(type.id)}
-                className={`flex items-center gap-2 rounded-xl border border-white bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(20,115,230,0.05)] transition-colors hover:border-blue/40 ${focusClass}`}
+                disabled={atQuestionLimit}
+                className={`flex items-center gap-2 rounded-xl border border-white bg-white px-2.5 py-2 text-left shadow-[0_1px_2px_rgba(20,115,230,0.05)] transition-colors hover:border-blue/40 disabled:cursor-not-allowed disabled:opacity-40 ${focusClass}`}
               >
                 <Icon size={15} strokeWidth={2.2} className="shrink-0 text-blue" aria-hidden="true" />
                 <span className="min-w-0">
@@ -225,14 +233,16 @@ function Options({ question, error, onChange }) {
           {error}
         </p>
       ) : null}
-      <button
-        type="button"
-        onClick={() => onChange([...question.options, ''])}
-        className={`mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-blue ${focusClass}`}
-      >
-        <Plus size={14} strokeWidth={2.4} aria-hidden="true" />
-        Add option
-      </button>
+      {question.options.length < surveyLimits.options ? (
+        <button
+          type="button"
+          onClick={() => onChange([...question.options, ''])}
+          className={`mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-blue ${focusClass}`}
+        >
+          <Plus size={14} strokeWidth={2.4} aria-hidden="true" />
+          Add option
+        </button>
+      ) : null}
     </div>
   )
 }

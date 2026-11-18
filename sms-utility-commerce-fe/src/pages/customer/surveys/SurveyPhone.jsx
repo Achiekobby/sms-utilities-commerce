@@ -4,10 +4,9 @@ import { answerReady, questionTypeMeta } from './model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
-function messageParts(body) {
-  const text = body.trim() || 'Your invitation will appear here.'
-  const parts = text.split('{{link}}')
-  return parts
+function messageText(body) {
+  const text = String(body ?? '').trim()
+  return text || 'Your invitation will appear here.'
 }
 
 export function SurveyPhone({ draft, screen: controlledScreen, onScreen }) {
@@ -137,7 +136,6 @@ export function SurveyPhone({ draft, screen: controlledScreen, onScreen }) {
 }
 
 function Welcome({ draft }) {
-  const parts = messageParts(draft.body)
   return (
     <div className="flex min-h-full flex-col">
       <p className="text-[11px] font-semibold tracking-[0.14em] text-green uppercase">Survey</p>
@@ -147,16 +145,7 @@ function Welcome({ draft }) {
       <p className="mt-3 text-sm leading-6 text-ink/70">{draft.intro.trim() || 'Your introduction will greet people here.'}</p>
       <div className="mt-6 rounded-2xl bg-white p-3 shadow-[0_8px_24px_-18px_rgba(6,32,71,0.7)]">
         <p className="text-[11px] font-semibold tracking-wide text-ink/40 uppercase">{draft.sender || 'Sender'}</p>
-        <p className="mt-1.5 text-sm leading-6 text-navy">
-          {parts.map((part, index) => (
-            <span key={`${index}-${part.slice(0, 12)}`}>
-              {part}
-              {index < parts.length - 1 ? (
-                <span className="font-semibold text-blue underline decoration-blue/30">Open survey</span>
-              ) : null}
-            </span>
-          ))}
-        </p>
+        <p className="mt-1.5 text-sm leading-6 whitespace-pre-wrap text-navy">{messageText(draft.body)}</p>
       </div>
     </div>
   )

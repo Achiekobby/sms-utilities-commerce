@@ -13,6 +13,7 @@ import { RewardsPage } from '../pages/customer/rewards/RewardsPage'
 import { EditSurveyPage } from '../pages/customer/surveys/EditSurveyPage'
 import { NewSurveyPage } from '../pages/customer/surveys/NewSurveyPage'
 import { SurveysPage } from '../pages/customer/surveys/SurveysPage'
+import { SurveyDetailPage } from '../pages/customer/surveys/SurveyDetailPage'
 import { MessageDetailPage } from '../pages/customer/messages/MessageDetailPage'
 import { MessagesPage } from '../pages/customer/messages/MessagesPage'
 import { NewMessagePage } from '../pages/customer/messages/new/NewMessagePage'
@@ -135,6 +136,7 @@ export const router = createBrowserRouter([
           { path: 'surveys', element: <SurveysPage /> },
           { path: 'surveys/new', element: <NewSurveyPage /> },
           { path: 'surveys/:surveyId/edit', element: <EditSurveyPage /> },
+          { path: 'surveys/:surveyId', element: <SurveyDetailPage /> },
         ],
       },
     ],

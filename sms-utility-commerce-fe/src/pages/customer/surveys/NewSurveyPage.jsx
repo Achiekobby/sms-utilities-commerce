@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router'
 import { GroupChoices } from '../../../components/form/GroupChoices'
 import { apiErrorMessage, fieldErrors } from '../../../features/auth/client'
 import { paths } from '../../../routes/paths'
-import { useCreateSurveyMutation } from '../../../services/api/surveys/surveysApi'
+import { useCreateSurveyMutation, useUpdateSurveyMutation } from '../../../services/api/surveys/surveysApi'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { useGroups } from '../contacts/useGroups'
 import { formatCount } from '../dashboard/format'
@@ -12,7 +12,7 @@ import { approvedSenderNames } from '../sender-ids/model'
 import { useSenderIds } from '../sender-ids/useSenderIds'
 import { QuestionList } from './QuestionList'
 import { SurveyPhone } from './SurveyPhone'
-import { emptySurvey, surveyInvitation, surveyPayload, validateSurvey } from './model'
+import { emptySurvey, formValuesFromSurvey, surveyLimits, surveyPayload, surveySendAt, validateSurvey } from './model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const field =
@@ -28,15 +28,18 @@ function Note({ id, children }) {
   )
 }
 
-export function NewSurveyPage() {
-  useDocumentTitle('Create survey')
+export function NewSurveyPage({ survey = null }) {
+  const editing = Boolean(survey)
+  useDocumentTitle(editing ? `Edit ${survey.name}` : 'Create survey')
   const navigate = useNavigate()
   const { groups } = useGroups()
   const senders = approvedSenderNames(useSenderIds())
   const [createSurvey, createState] = useCreateSurveyMutation()
+  const [updateSurvey, updateState] = useUpdateSurveyMutation()
+  const saving = createState.isLoading || updateState.isLoading
   const [step, setStep] = useState(0)
   const [previewKey, setPreviewKey] = useState(0)
-  const [values, setValues] = useState(emptySurvey)
+  const [values, setValues] = useState(() => (survey ? formValuesFromSurvey(survey) : emptySurvey))
   const [mirror, setMirror] = useState('welcome')
   const [errors, setErrors] = useState({})
 
@@ -49,7 +52,7 @@ export function NewSurveyPage() {
     setMirror(index < 0 ? 'welcome' : index)
   }
   const selectedGroups = groups.filter((group) => values.groupIds.includes(group.id))
-  const draft = { ...values, body: surveyInvitation }
+  const draft = values
 
   function patch(partial) {
     setValues((current) => ({ ...current, ...partial }))
@@ -62,13 +65,17 @@ export function NewSurveyPage() {
       ? 'survey-name'
       : found.intro
         ? 'survey-intro'
-        : questionId
-          ? `survey-question-${questionId}`
-          : found.groupIds
-            ? 'survey-groups'
-            : found.sender
-              ? 'survey-sender'
-              : 'survey-questions'
+        : found.body
+          ? 'survey-body'
+          : questionId
+            ? `survey-question-${questionId}`
+            : found.groupIds
+              ? 'survey-groups'
+              : found.sender
+                ? 'survey-sender'
+                : found.sendAt
+                  ? 'survey-send-at'
+                  : 'survey-questions'
     window.requestAnimationFrame(() => {
       document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
@@ -95,16 +102,23 @@ export function NewSurveyPage() {
       return
     }
     try {
-      const result = await createSurvey(surveyPayload(values)).unwrap()
-      navigate(paths.surveys, { state: { saved: result.message || 'Survey created.' } })
+      const payload = surveyPayload(values)
+      const result = editing
+        ? await updateSurvey({ id: survey.id, ...payload }).unwrap()
+        : await createSurvey(payload).unwrap()
+      navigate(paths.surveys, { state: { saved: result.message || (editing ? 'Survey updated.' : 'Survey created.') } })
     } catch (error) {
       const fields = fieldErrors(error)
       const next = {}
       if (fields.name) next.name = fields.name
       if (fields.intro) next.intro = fields.intro
+      if (fields.body) next.body = fields.body
       if (fields.sender) next.sender = fields.sender
+      if (fields.send_at) next.sendAt = fields.send_at
       if (fields.contact_group_ids) next.groupIds = fields.contact_group_ids
-      if (!Object.keys(next).length) next.submit = fields.body || apiErrorMessage(error)
+      const questionMessage = Object.entries(fields).find(([key]) => key === 'questions' || key.startsWith('questions.'))?.[1]
+      if (questionMessage) next.questions = questionMessage
+      if (!Object.keys(next).length) next.submit = apiErrorMessage(error)
       setErrors(next)
       if (next.submit) setStep(1)
       else setStep(0)
@@ -119,13 +133,15 @@ export function NewSurveyPage() {
             Surveys
           </Link>
         </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem]">Create survey</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-navy sm:text-[1.75rem]">{editing ? 'Edit survey' : 'Create survey'}</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
-          Build the questions, walk through them the way a recipient would, then save.
+          {editing
+            ? 'Update the details and questions. Move questions up or down to change their order.'
+            : 'Name the survey, write the invitation, add the questions, then save it as a draft.'}
         </p>
       </header>
 
-      <ol className="mt-5 flex gap-2" aria-label="Create survey">
+      <ol className="mt-5 flex gap-2" aria-label={editing ? 'Edit survey' : 'Create survey'}>
         {['Build', 'Try it'].map((label, index) => (
           <li key={label}>
             <button
@@ -155,22 +171,26 @@ export function NewSurveyPage() {
               <input
                 id="survey-name"
                 value={values.name}
-                placeholder="NPS Q4"
+                maxLength={surveyLimits.name}
+                placeholder="November Customer Satisfaction Survey"
                 onChange={(event) => patch({ name: event.target.value })}
                 className={`${field} h-11`}
               />
+              <Count length={values.name.length} max={surveyLimits.name} />
               <Note id="survey-name-error">{errors.name}</Note>
               <label htmlFor="survey-intro" className="mt-2 mb-1.5 block text-sm font-medium text-navy">
-                Introduction
+                Introduction <span className="font-normal text-ink/45">optional</span>
               </label>
               <textarea
                 id="survey-intro"
                 value={values.intro}
-                rows={2}
-                placeholder="Help us improve"
+                rows={3}
+                maxLength={surveyLimits.intro}
+                placeholder="Thank you for choosing us. Please take a few minutes to share your feedback."
                 onChange={(event) => patch({ intro: event.target.value })}
                 className={`${field} resize-none py-2.5`}
               />
+              <Count length={values.intro.length} max={surveyLimits.intro} />
               <Note>{errors.intro}</Note>
             </section>
 
@@ -187,8 +207,22 @@ export function NewSurveyPage() {
             <section className="rounded-2xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.05)]">
               <h2 className="text-base font-bold text-navy">Invitation</h2>
               <p className="mt-1 text-sm leading-6 text-ink/55">
-                The survey link is added to the invitation automatically. Choose who receives it.
+                Write the SMS, then choose who receives it and when. The survey link is created when the survey is saved.
               </p>
+              <label htmlFor="survey-body" className="mt-4 mb-1.5 block text-sm font-medium text-navy">
+                Message <span className="font-normal text-ink/45">optional</span>
+              </label>
+              <textarea
+                id="survey-body"
+                value={values.body}
+                rows={3}
+                maxLength={surveyLimits.body}
+                placeholder="Hello! We would love to hear your feedback."
+                onChange={(event) => patch({ body: event.target.value })}
+                className={`${field} resize-none py-2.5`}
+              />
+              <Count length={values.body.length} max={surveyLimits.body} />
+              <Note>{errors.body}</Note>
 
               <fieldset id="survey-sender" className="mt-5">
                 <legend className="text-sm font-medium text-navy">Sender</legend>
@@ -234,14 +268,65 @@ export function NewSurveyPage() {
                     groups={groups}
                     groupIds={values.groupIds}
                     onToggle={(id) => {
-                      const next = values.groupIds.includes(id)
+                      const selected = values.groupIds.includes(id)
+                      if (!selected && values.groupIds.length >= surveyLimits.groups) {
+                        setErrors((current) => ({ ...current, groupIds: `Choose at most ${surveyLimits.groups} contact groups.` }))
+                        return
+                      }
+                      const next = selected
                         ? values.groupIds.filter((item) => item !== id)
                         : [...values.groupIds, id]
+                      setErrors((current) => {
+                        if (!current.groupIds) return current
+                        const rest = { ...current }
+                        delete rest.groupIds
+                        return rest
+                      })
                       patch({ groupIds: next })
                     }}
                   />
                 </div>
                 <Note>{errors.groupIds}</Note>
+              </fieldset>
+
+              <fieldset id="survey-send-at" className="mt-5">
+                <legend className="text-sm font-medium text-navy">Send time</legend>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {[
+                    { id: 'none', label: 'Not scheduled' },
+                    { id: 'later', label: 'Schedule' },
+                  ].map((item) => {
+                    const checked = values.when === item.id
+                    return (
+                      <label
+                        key={item.id}
+                        className={`cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold ${
+                          checked ? 'border-navy bg-navy text-white' : 'border-ink/15 text-navy hover:border-blue/40'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="survey-when"
+                          value={item.id}
+                          checked={checked}
+                          onChange={() => patch({ when: item.id, sendAt: item.id === 'none' ? '' : values.sendAt })}
+                          className="sr-only"
+                        />
+                        {item.label}
+                      </label>
+                    )
+                  })}
+                </div>
+                {values.when === 'later' ? (
+                  <input
+                    id="survey-send-at-input"
+                    type="datetime-local"
+                    value={values.sendAt}
+                    onChange={(event) => patch({ sendAt: event.target.value })}
+                    className={`${field} mt-3 h-11`}
+                  />
+                ) : null}
+                <Note>{errors.sendAt}</Note>
               </fieldset>
             </section>
           </div>
@@ -276,10 +361,12 @@ export function NewSurveyPage() {
               <Fact label="Survey" value={values.name.trim()} />
               <Fact label="Questions" value={formatCount(values.questions.length)} />
               <Fact label="Sender" value={values.sender} />
+              <Fact label="Send time" value={surveySendAt(values) || 'Not scheduled'} />
               <Fact
                 label="Groups"
                 value={selectedGroups.length ? selectedGroups.map((group) => group.name).join(', ') : 'None'}
               />
+              <Fact label="Message" value={values.body.trim() || 'No message'} />
             </dl>
             <ol className="mt-5 flex flex-col gap-2">
               {values.questions.map((question, index) => (
@@ -305,15 +392,23 @@ export function NewSurveyPage() {
                 <ArrowLeft size={16} strokeWidth={2.3} aria-hidden="true" />
                 Back to builder
               </button>
-              <button type="button" onClick={submit} disabled={createState.isLoading} className={primary}>
+              <button type="button" onClick={submit} disabled={saving} className={primary}>
                 <Send size={16} strokeWidth={2.3} aria-hidden="true" />
-                {createState.isLoading ? 'Saving…' : 'Create survey'}
+                {saving ? 'Saving…' : editing ? 'Save survey' : 'Create survey'}
               </button>
             </div>
           </section>
         </div>
       )}
     </div>
+  )
+}
+
+function Count({ length, max }) {
+  return (
+    <p className="mt-1 text-right text-xs text-ink/40 tabular-nums">
+      {length}/{max}
+    </p>
   )
 }
 

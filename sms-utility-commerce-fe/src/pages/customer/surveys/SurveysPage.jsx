@@ -3,12 +3,13 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { apiErrorMessage } from '../../../features/auth/client'
 import { formatStamp } from '../../../features/contacts/contactImport'
-import { surveyStatusLabel } from '../../../features/surveys/surveyRecord'
 import { SURVEY_PAGE_SIZE, useGetSurveysQuery } from '../../../services/api/surveys/surveysApi'
 import { paths } from '../../../routes/paths'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { PageBar } from '../contacts/sections/PageBar'
 import { formatCount } from '../dashboard/format'
+import { SurveyActions } from './SurveyActions'
+import { SurveyStatus } from './SurveyStatus'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const control =
@@ -18,24 +19,6 @@ const head =
 const cell = 'border-b border-[#E7EEF8] px-4 py-3.5 align-middle text-sm text-ink/75'
 
 const pageSizes = [3, 6, 12]
-
-function StatusBadge({ status }) {
-  const key = String(status ?? '').toLowerCase()
-  const tone =
-    key === 'active' || key === 'published' || key === 'live'
-      ? 'bg-[#E5F6EC] text-green'
-      : key === 'draft'
-        ? 'bg-[#F3F6FB] text-navy'
-        : key === 'closed' || key === 'archived'
-          ? 'bg-[#EEF2F7] text-ink/55'
-          : 'bg-[#FFF4DF] text-[#B45F06]'
-
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${tone}`}>
-      {surveyStatusLabel(status)}
-    </span>
-  )
-}
 
 export function SurveysPage() {
   useDocumentTitle('Surveys')
@@ -125,17 +108,11 @@ export function SurveysPage() {
                     </th>
                     <td className={`${cell} tabular-nums`}>{survey.questionCount == null ? '—' : formatCount(survey.questionCount)}</td>
                     <td className={cell}>
-                      <StatusBadge status={survey.status} />
+                      <SurveyStatus status={survey.status} />
                     </td>
                     <td className={cell}>{formatStamp(survey.updatedAt || survey.createdAt) || '—'}</td>
                     <td className={`${cell} text-right`}>
-                      <Link
-                        to={paths.editSurvey(survey.id)}
-                        state={{ survey }}
-                        className={`text-sm font-semibold text-blue ${focusClass}`}
-                      >
-                        Edit
-                      </Link>
+                      <SurveyActions survey={survey} />
                     </td>
                   </tr>
                 ))}
