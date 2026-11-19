@@ -298,7 +298,8 @@ export function GroupContacts({ group, onAdd }) {
               to={paths.contactUpload(group.id)}
               className={`inline-flex h-9 items-center gap-2 rounded-lg border border-ink/15 px-3.5 text-[13px] font-semibold text-navy ${focusClass}`}
             >
-              Upload a file
+              <CloudUpload size={15} aria-hidden="true" />
+              Bulk Upload
             </Link>
           </div>
         </div>

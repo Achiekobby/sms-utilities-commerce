@@ -146,6 +146,10 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
             <ArrowLeft strokeWidth={2.2} aria-hidden="true" className={`${actionIcon} text-blue`} />
             <span className={actionLabel}>Groups</span>
           </Link>
+          <Link to={paths.contactUpload(group.id)} aria-label="Bulk upload" className={secondary}>
+            <CloudUpload strokeWidth={2} aria-hidden="true" className={`${actionIcon} text-green`} />
+            <span className={actionLabel}>Bulk Upload</span>
+          </Link>
           <button type="button" onClick={onAddContact} aria-label="Add contact" className={primary}>
             <UserPlus strokeWidth={2} aria-hidden="true" className={actionIcon} />
             <span className={actionLabel}>Add Contact</span>
