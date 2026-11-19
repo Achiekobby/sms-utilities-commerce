@@ -1,5 +1,6 @@
 import { pageResult } from '../../../features/contacts/contactImport'
-import { questionsFromApi, surveyFromApi } from '../../../features/surveys/surveyRecord'
+import { questionsFromApi, responseFromApi, surveyFromApi } from '../../../features/surveys/surveyRecord'
+import { surveyAnalyticsFromApi } from '../../../pages/customer/surveys/insights'
 import { baseApi } from '../baseApi'
 
 export const SURVEY_PAGE_SIZE = 3
@@ -23,6 +24,18 @@ export const surveysApi = baseApi.injectEndpoints({
           ? [...result.rows.map((row) => ({ type: 'Survey', id: row.id })), { type: 'Survey', id: 'LIST' }]
           : [{ type: 'Survey', id: 'LIST' }],
     }),
+    getTrashedSurveys: builder.query({
+      query: (args = {}) => ({
+        url: '/api/client/surveys/trashed',
+        method: 'GET',
+        params: listParams(args),
+      }),
+      transformResponse: (envelope) => pageResult(envelope, surveyFromApi),
+      providesTags: (result) =>
+        result?.rows?.length
+          ? [...result.rows.map((row) => ({ type: 'Survey', id: row.id })), { type: 'Survey', id: 'TRASH' }]
+          : [{ type: 'Survey', id: 'TRASH' }],
+    }),
     getSurvey: builder.query({
       query: (id) => ({
         url: `/api/client/surveys/${id}`,
@@ -37,6 +50,23 @@ export const surveysApi = baseApi.injectEndpoints({
         method: 'GET',
       }),
       transformResponse: (envelope) => questionsFromApi(envelope?.data),
+      providesTags: (_result, _error, id) => [{ type: 'Survey', id: String(id) }],
+    }),
+    getSurveyResponses: builder.query({
+      query: ({ id, page = 1, perPage = 10 }) => ({
+        url: `/api/client/surveys/${id}/responses`,
+        method: 'GET',
+        params: { page, per_page: perPage },
+      }),
+      transformResponse: (envelope) => pageResult(envelope, responseFromApi),
+      providesTags: (_result, _error, arg) => [{ type: 'Survey', id: String(arg.id) }],
+    }),
+    getSurveyAnalytics: builder.query({
+      query: (id) => ({
+        url: `/api/client/surveys/${id}/analytics`,
+        method: 'GET',
+      }),
+      transformResponse: (envelope) => surveyAnalyticsFromApi(envelope?.data),
       providesTags: (_result, _error, id) => [{ type: 'Survey', id: String(id) }],
     }),
     createSurvey: builder.mutation({
@@ -66,16 +96,70 @@ export const surveysApi = baseApi.injectEndpoints({
         { type: 'Survey', id: String(arg.id) },
       ],
     }),
-    deleteSurvey: builder.mutation({
+    surveyAction: builder.mutation({
+      query: ({ id, action }) => ({
+        url: `/api/client/surveys/${id}/${action}`,
+        method: 'POST',
+        body: {},
+      }),
+      transformResponse: (envelope, _meta, arg) => ({
+        survey: surveyFromApi(envelope?.data),
+        message:
+          envelope?.message ||
+          ({
+            activate: 'Survey activated.',
+            pause: 'Survey paused.',
+            resume: 'Survey resumed.',
+            complete: 'Survey completed.',
+            cancel: 'Survey cancelled.',
+          }[arg.action] || 'Survey updated.'),
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: 'Survey', id: 'LIST' },
+        { type: 'Survey', id: String(arg.id) },
+      ],
+    }),
+    archiveSurvey: builder.mutation({
       query: (id) => ({
         url: `/api/client/surveys/${id}`,
         method: 'DELETE',
       }),
       transformResponse: (envelope) => ({
-        message: envelope?.message || 'Survey removed.',
+        message: envelope?.message || 'Survey deleted.',
       }),
       invalidatesTags: (_result, _error, id) => [
         { type: 'Survey', id: 'LIST' },
+        { type: 'Survey', id: 'TRASH' },
+        { type: 'Survey', id: String(id) },
+      ],
+    }),
+    restoreSurvey: builder.mutation({
+      query: (id) => ({
+        url: `/api/client/surveys/${id}/restore`,
+        method: 'POST',
+        body: {},
+      }),
+      transformResponse: (envelope) => ({
+        survey: surveyFromApi(envelope?.data),
+        message: envelope?.message || 'Survey restored.',
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Survey', id: 'LIST' },
+        { type: 'Survey', id: 'TRASH' },
+        { type: 'Survey', id: String(id) },
+      ],
+    }),
+    forceDeleteSurvey: builder.mutation({
+      query: (id) => ({
+        url: `/api/client/surveys/${id}/force`,
+        method: 'DELETE',
+      }),
+      transformResponse: (envelope) => ({
+        message: envelope?.message || 'Survey and its associated records permanently deleted.',
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Survey', id: 'LIST' },
+        { type: 'Survey', id: 'TRASH' },
         { type: 'Survey', id: String(id) },
       ],
     }),
@@ -83,8 +167,14 @@ export const surveysApi = baseApi.injectEndpoints({
 })
 
 export const useGetSurveysQuery = surveysApi.useGetSurveysQuery
+export const useGetTrashedSurveysQuery = surveysApi.useGetTrashedSurveysQuery
 export const useGetSurveyQuery = surveysApi.useGetSurveyQuery
 export const useGetSurveyQuestionsQuery = surveysApi.useGetSurveyQuestionsQuery
+export const useGetSurveyResponsesQuery = surveysApi.useGetSurveyResponsesQuery
+export const useGetSurveyAnalyticsQuery = surveysApi.useGetSurveyAnalyticsQuery
 export const useCreateSurveyMutation = surveysApi.useCreateSurveyMutation
 export const useUpdateSurveyMutation = surveysApi.useUpdateSurveyMutation
-export const useDeleteSurveyMutation = surveysApi.useDeleteSurveyMutation
+export const useSurveyActionMutation = surveysApi.useSurveyActionMutation
+export const useArchiveSurveyMutation = surveysApi.useArchiveSurveyMutation
+export const useRestoreSurveyMutation = surveysApi.useRestoreSurveyMutation
+export const useForceDeleteSurveyMutation = surveysApi.useForceDeleteSurveyMutation

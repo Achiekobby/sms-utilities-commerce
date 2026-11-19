@@ -44,7 +44,11 @@ function scheduleSummary(values) {
       values.repeatYearly ? ' · Every year' : ''
     }`
   }
-  return values.when === 'later' ? formatSendAt(values.sendAt) : 'Send now'
+  if (values.when !== 'later') return 'Send now'
+  if (!values.sendAt) return 'Scheduled'
+  return values.sendTime
+    ? `${formatSendAt(String(values.sendAt).slice(0, 10))} at ${formatSendTime(values.sendTime)}`
+    : formatSendAt(String(values.sendAt).slice(0, 10))
 }
 
 function ReviewCard({ icon: Icon, title, onEdit, children, tone = 'bg-[#F3F6FB] text-blue' }) {

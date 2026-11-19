@@ -1,10 +1,8 @@
 import {
   CalendarClock,
-  ChartColumn,
   ClipboardList,
   Code,
   FileText,
-  Gift,
   IdCard,
   LayoutDashboard,
   Megaphone,
@@ -122,18 +120,11 @@ export function getNavigation({ isBusiness }) {
       label: 'Engagement',
       items: [
         {
-          label: 'Rewards',
-          icon: Gift,
-          to: paths.rewards,
-          keywords: 'airtime data money cash catalog disbursement',
-        },
-        {
           label: 'Surveys',
           icon: ClipboardList,
           to: paths.surveys,
           keywords: 'questions responses survey',
         },
-        { label: 'Analytics', icon: ChartColumn, keywords: 'reports usage results charts' },
       ],
     },
     {

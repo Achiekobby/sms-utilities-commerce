@@ -61,6 +61,11 @@ export function surveyFromApi(data) {
     surveyUrl: text(data.survey_url),
     questionCount: Number.isFinite(counted) ? counted : null,
     questions: questionList,
+    activatedAt: text(data.activated_at),
+    completedAt: text(data.completed_at),
+    cancelledAt: text(data.cancelled_at),
+    deleted: data.is_deleted === true,
+    deletedAt: text(data.deleted_at),
     createdAt: text(data.created_at),
     updatedAt: text(data.updated_at),
   }
@@ -71,4 +76,31 @@ export function surveyStatusLabel(status) {
   if (!key) return '—'
   if (key === 'in_progress') return 'In progress'
   return key.charAt(0).toUpperCase() + key.slice(1).replaceAll('_', ' ')
+}
+
+function stamp(value) {
+  const raw = text(value)
+  if (!raw) return null
+  return raw.includes('T') ? raw : raw.replace(' ', 'T')
+}
+
+function answerList(value) {
+  if (Array.isArray(value)) return value
+  if (value && typeof value === 'object') return value
+  return null
+}
+
+export function responseFromApi(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || data.id == null) return null
+  return {
+    id: String(data.id),
+    surveyId: data.survey_id == null ? null : String(data.survey_id),
+    contactId: data.contact_id == null ? null : String(data.contact_id),
+    phone: text(data.phone),
+    status: text(data.status),
+    answers: answerList(data.answers ?? data.responses),
+    createdAt: stamp(data.created_at),
+    updatedAt: stamp(data.updated_at),
+    completedAt: stamp(data.completed_at),
+  }
 }

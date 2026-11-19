@@ -1,4 +1,5 @@
 import { bodyHasWebLink, emptyCta } from '../cta'
+import { normalizeTriggerOffset } from '../model'
 import { airtimePresets, dataBundles, emptyReward } from '../reward'
 
 function clock(value) {
@@ -6,7 +7,7 @@ function clock(value) {
   return match ? `${match[1]}:${match[2]}` : null
 }
 
-function promotionDate(value) {
+function promotionDay(value) {
   const day = String(value ?? '').slice(0, 10)
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null
 }
@@ -24,16 +25,45 @@ function promotionCta(values) {
   }
 }
 
+function promotionSchedule(values) {
+  if (values.when !== 'later') {
+    return {
+      send_at: null,
+      send_time: null,
+    }
+  }
+
+  const day = promotionDay(values.sendAt)
+  const time = clock(values.sendTime) || '09:00'
+  if (!day) {
+    return {
+      send_at: null,
+      send_time: time,
+    }
+  }
+
+  return {
+    send_at: `${day} ${time}:00`,
+    send_time: time,
+  }
+}
+
 function occasionFields(values) {
-  const customDate = values.occasionType === 'custom' ? values.customDate || null : null
-  const customOffset = values.triggerOffset === 'custom' ? Number(values.customOffsetDays) || null : null
+  const birthday = values.occasionType === 'birthday'
+  const triggerOffset = normalizeTriggerOffset(values.triggerOffset)
+  const customDate = birthday || values.occasionType !== 'custom' ? null : promotionDay(values.customDate)
+  const customOffset = triggerOffset === 'custom' ? Number(values.customOffsetDays) || null : null
+
   return {
     occasion_type: values.occasionType || null,
+    // Birthdays match each contact's date_of_birth — never send custom_date.
     custom_date: customDate,
-    trigger_offset: values.triggerOffset || 'on',
+    trigger_offset: triggerOffset || 'on',
     custom_offset_days: customOffset,
     send_time: clock(values.sendTime),
-    repeat_yearly: values.repeatYearly !== false,
+    // Birthdays always repeat yearly.
+    repeat_yearly: birthday ? true : values.repeatYearly === true,
+    // Occasions never use send_at.
     send_at: null,
     cta: null,
   }
@@ -57,9 +87,8 @@ export function campaignDraftPayload(values) {
     custom_date: null,
     trigger_offset: null,
     custom_offset_days: null,
-    send_time: null,
     repeat_yearly: false,
-    send_at: values.when === 'later' ? promotionDate(values.sendAt) : null,
+    ...promotionSchedule(values),
     cta: promotionCta(values),
   }
 }
@@ -81,10 +110,26 @@ function formCta(campaign) {
   return blank
 }
 
-function promotionSendAt(value) {
-  if (!value) return ''
-  const day = String(value).slice(0, 10)
-  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : ''
+function promotionFormSchedule(campaign) {
+  const raw = campaign.sendAt
+  if (!raw) {
+    return {
+      when: 'now',
+      sendAt: '',
+      sendTime: clock(campaign.sendTime) || '09:00',
+    }
+  }
+
+  const text = String(raw)
+  const day = text.slice(0, 10)
+  const fromStamp = text.match(/[T ](\d{2}):(\d{2})/)
+  const sendTime = clock(campaign.sendTime) || (fromStamp ? `${fromStamp[1]}:${fromStamp[2]}` : '09:00')
+
+  return {
+    when: promotionDay(day) ? 'later' : 'now',
+    sendAt: promotionDay(day) || '',
+    sendTime,
+  }
 }
 
 function rewardForm(reward) {
@@ -110,21 +155,35 @@ function rewardForm(reward) {
 
 export function formValuesFromCampaign(campaign) {
   const occasion = campaign.type === 'occasion'
-  const sendAt = occasion ? '' : promotionSendAt(campaign.sendAt)
+  const schedule = occasion
+    ? {
+        when: 'now',
+        sendAt: '',
+        sendTime: campaign.sendTime || '09:00',
+      }
+    : promotionFormSchedule(campaign)
+
   return {
     groupIds: (campaign.groups ?? []).map((group) => String(group.id)),
     name: campaign.name ?? '',
     type: campaign.type === 'occasion' || campaign.type === 'promotion' ? campaign.type : 'promotion',
     occasionType: occasion ? campaign.occasionType || 'birthday' : '',
-    customDate: campaign.customDate ? String(campaign.customDate).slice(0, 10) : '',
-    triggerOffset: occasion ? campaign.triggerOffset || 'on' : 'on',
+    customDate:
+      occasion && campaign.occasionType === 'custom' && campaign.customDate
+        ? String(campaign.customDate).slice(0, 10)
+        : '',
+    triggerOffset: occasion ? normalizeTriggerOffset(campaign.triggerOffset) : 'on',
     customOffsetDays: campaign.customOffsetDays == null ? '3' : String(campaign.customOffsetDays),
-    sendTime: occasion ? campaign.sendTime || '09:00' : '09:00',
-    repeatYearly: occasion ? campaign.repeatYearly === true : false,
+    sendTime: occasion ? campaign.sendTime || '09:00' : schedule.sendTime,
+    repeatYearly: occasion
+      ? campaign.occasionType === 'birthday'
+        ? true
+        : campaign.repeatYearly === true
+      : false,
     sender: campaign.sender || '',
     body: campaign.body ?? '',
-    when: sendAt ? 'later' : 'now',
-    sendAt,
+    when: schedule.when,
+    sendAt: schedule.sendAt,
     reward: rewardForm(campaign.reward),
     cta: occasion ? emptyCta() : formCta(campaign),
   }

@@ -182,7 +182,10 @@ export function NewCampaignPage({ campaign = null }) {
         next.repeatYearly = true
         next.cta = emptyCta()
       }
-      if (key === 'occasionType' && value !== 'custom') next.customDate = ''
+      if (key === 'occasionType') {
+        if (value !== 'custom') next.customDate = ''
+        if (value === 'birthday') next.repeatYearly = true
+      }
       return next
     })
     setErrors((current) => ({ ...current, [key]: undefined, submit: undefined }))

@@ -1,4 +1,5 @@
 import {
+  Building2,
   CalendarClock,
   Cake,
   Gift,
@@ -28,6 +29,7 @@ const placeholderIcons = {
   lastName: User,
   name: UserRound,
   fullName: Users,
+  businessName: Building2,
   email: Mail,
   dob: Cake,
   region: MapPinned,

@@ -24,11 +24,30 @@ export const occasionTypes = [
 
 export const triggerOffsets = [
   { id: 'on', label: 'On the occasion', days: 0 },
-  { id: '1', label: '1 day before', days: 1 },
-  { id: '3', label: '3 days before', days: 3 },
-  { id: '7', label: '7 days before', days: 7 },
+  { id: 'one_day_before', label: '1 day before', days: 1 },
+  { id: 'three_days_before', label: '3 days before', days: 3 },
+  { id: 'one_week_before', label: '1 week before', days: 7 },
   { id: 'custom', label: 'Custom', days: null },
 ]
+
+const triggerOffsetAliases = {
+  on: 'on',
+  same_day: 'on',
+  one_day_before: 'one_day_before',
+  '1': 'one_day_before',
+  three_days_before: 'three_days_before',
+  '3': 'three_days_before',
+  one_week_before: 'one_week_before',
+  '7': 'one_week_before',
+  before: 'custom',
+  after: 'custom',
+  custom: 'custom',
+}
+
+export function normalizeTriggerOffset(value) {
+  const key = String(value ?? '').trim().toLowerCase()
+  return triggerOffsetAliases[key] || (triggerOffsets.some((item) => item.id === key) ? key : 'on')
+}
 
 export const statusLabel = {
   draft: 'Draft',
@@ -76,7 +95,8 @@ export function occasionTypeLabel(id) {
 }
 
 export function triggerOffsetLabel(id) {
-  return triggerOffsets.find((item) => item.id === id)?.label ?? id
+  const key = normalizeTriggerOffset(id)
+  return triggerOffsets.find((item) => item.id === key)?.label ?? id
 }
 
 export function segmentCount(body) {
@@ -191,6 +211,13 @@ export const promotionPlaceholders = [
   { id: 'firstName', token: '{firstName}', label: 'First name', sample: 'John', aliases: ['{first_name}'] },
   { id: 'lastName', token: '{lastName}', label: 'Last name', sample: 'Mensah', aliases: ['{last_name}'] },
   { id: 'fullName', token: '{fullName}', label: 'Full name', sample: 'John Mensah', aliases: ['{full_name}'] },
+  {
+    id: 'businessName',
+    token: '{businessName}',
+    label: 'Business name',
+    sample: 'Cellogent',
+    aliases: ['{business_name}'],
+  },
 ]
 
 export const occasionPlaceholders = [
@@ -198,6 +225,13 @@ export const occasionPlaceholders = [
   { id: 'lastName', token: '{lastName}', label: 'Last name', sample: 'Mensah', aliases: ['{last_name}'] },
   { id: 'name', token: '{name}', label: 'Name', sample: 'John' },
   { id: 'fullName', token: '{fullName}', label: 'Full name', sample: 'John Mensah', aliases: ['{full_name}'] },
+  {
+    id: 'businessName',
+    token: '{businessName}',
+    label: 'Business name',
+    sample: 'Cellogent',
+    aliases: ['{business_name}'],
+  },
   { id: 'email', token: '{email}', label: 'Email', sample: 'john@mensahstores.test' },
   {
     id: 'dob',

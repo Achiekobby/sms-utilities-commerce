@@ -242,42 +242,61 @@ function OccasionSchedule({ values, errors, onChange }) {
               <FieldError>{errors.sendTime}</FieldError>
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={values.repeatYearly}
-              onClick={() => onChange('repeatYearly', !values.repeatYearly)}
-              className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${focusClass} ${
-                values.repeatYearly
-                  ? 'border-blue/30 bg-blue/[0.05]'
-                  : 'border-ink/10 bg-white hover:border-blue/30'
-              }`}
-            >
-              <span className="flex min-w-0 items-center gap-3">
-                <span
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
-                    values.repeatYearly ? 'bg-blue text-white' : 'bg-[#F3F6FB] text-blue'
-                  }`}
-                >
-                  <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
+            {values.occasionType === 'birthday' ? (
+              <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-blue/30 bg-blue/[0.05] px-4 py-3 text-left">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue text-white">
+                    <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-navy">Repeats every year</span>
+                    <span className="mt-0.5 block text-xs text-ink/55">
+                      Birthday campaigns always follow each contact’s date of birth yearly.
+                    </span>
+                  </span>
                 </span>
-                <span>
-                  <span className="block text-sm font-semibold text-navy">Repeat every year</span>
-                  <span className="mt-0.5 block text-xs text-ink/55">Ideal for birthdays and anniversaries</span>
+                <span className="relative h-6 w-11 shrink-0 rounded-full bg-blue">
+                  <span className="absolute top-0.5 left-0.5 size-5 translate-x-5 rounded-full bg-white shadow" />
                 </span>
-              </span>
-              <span
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  values.repeatYearly ? 'bg-blue' : 'bg-ink/15'
+              </div>
+            ) : (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={values.repeatYearly}
+                onClick={() => onChange('repeatYearly', !values.repeatYearly)}
+                className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${focusClass} ${
+                  values.repeatYearly
+                    ? 'border-blue/30 bg-blue/[0.05]'
+                    : 'border-ink/10 bg-white hover:border-blue/30'
                 }`}
               >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                      values.repeatYearly ? 'bg-blue text-white' : 'bg-[#F3F6FB] text-blue'
+                    }`}
+                  >
+                    <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-navy">Repeat every year</span>
+                    <span className="mt-0.5 block text-xs text-ink/55">Ideal for anniversaries and recurring dates</span>
+                  </span>
+                </span>
                 <span
-                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
-                    values.repeatYearly ? 'translate-x-5' : 'translate-x-0'
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                    values.repeatYearly ? 'bg-blue' : 'bg-ink/15'
                   }`}
-                />
-              </span>
-            </button>
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform ${
+                      values.repeatYearly ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -344,7 +363,7 @@ function PromotionSchedule({ values, errors, onChange }) {
             {
               id: 'later',
               title: 'Schedule for later',
-              detail: 'Pick the day this promotion should send.',
+              detail: 'Pick the day and time this promotion should send.',
               icon: CalendarClock,
             },
           ].map((item) => {
@@ -356,7 +375,11 @@ function PromotionSchedule({ values, errors, onChange }) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => onChange('when', item.id)}
+                onClick={() => {
+                  onChange('when', item.id)
+                  if (item.id === 'now') onChange('sendAt', '')
+                  if (item.id === 'later' && !values.sendTime) onChange('sendTime', '09:00')
+                }}
                 className={`relative overflow-hidden rounded-2xl border p-5 text-left transition-colors ${focusClass} ${
                   selected
                     ? 'border-blue bg-[linear-gradient(180deg,#F5F9FF_0%,#FFFFFF_70%)] shadow-[0_1px_2px_rgba(20,115,230,0.08),0_14px_28px_-20px_rgba(20,115,230,0.45)]'
@@ -389,27 +412,56 @@ function PromotionSchedule({ values, errors, onChange }) {
         >
           <div className="overflow-hidden">
             <div className="rounded-2xl border border-ink/10 bg-[#F8FAFC] p-4 sm:p-5">
-              <label htmlFor="send-at" className="mb-1.5 block text-sm font-semibold text-navy">
-                Send date
-              </label>
-              <p className="mb-3 text-[13px] text-ink/55">The promotion is saved for this day.</p>
-              <div className="relative max-w-md">
-                <CalendarClock
-                  size={15}
-                  strokeWidth={2.1}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink/40"
-                />
-                <input
-                  id="send-at"
-                  type="date"
-                  value={String(values.sendAt ?? '').slice(0, 10)}
-                  onChange={(event) => onChange('sendAt', event.target.value)}
-                  aria-invalid={errors.sendAt ? true : undefined}
-                  className={`${field} bg-white pl-10`}
-                />
+              <p className="text-sm font-semibold text-navy">Send date & time</p>
+              <p className="mt-0.5 mb-4 text-[13px] text-ink/55">
+                Use today with a later clock time, or pick a future day and time.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="send-at" className="mb-1.5 block text-xs font-semibold text-navy">
+                    Date
+                  </label>
+                  <div className="relative">
+                    <CalendarClock
+                      size={15}
+                      strokeWidth={2.1}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink/40"
+                    />
+                    <input
+                      id="send-at"
+                      type="date"
+                      value={String(values.sendAt ?? '').slice(0, 10)}
+                      onChange={(event) => onChange('sendAt', event.target.value)}
+                      aria-invalid={errors.sendAt ? true : undefined}
+                      className={`${field} bg-white pl-10`}
+                    />
+                  </div>
+                  <FieldError>{errors.sendAt}</FieldError>
+                </div>
+                <div>
+                  <label htmlFor="promotion-send-time" className="mb-1.5 block text-xs font-semibold text-navy">
+                    Time
+                  </label>
+                  <div className="relative">
+                    <AlarmClock
+                      size={15}
+                      strokeWidth={2.1}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink/40"
+                    />
+                    <input
+                      id="promotion-send-time"
+                      type="time"
+                      value={values.sendTime || ''}
+                      onChange={(event) => onChange('sendTime', event.target.value)}
+                      aria-invalid={errors.sendTime ? true : undefined}
+                      className={`${field} bg-white pl-10`}
+                    />
+                  </div>
+                  <FieldError>{errors.sendTime}</FieldError>
+                </div>
               </div>
-              <FieldError>{errors.sendAt}</FieldError>
             </div>
           </div>
         </div>
@@ -419,9 +471,9 @@ function PromotionSchedule({ values, errors, onChange }) {
         eyebrow="Send preview"
         headline={
           later
-            ? values.sendAt
-              ? `This promotion will send on ${formatSendAt(String(values.sendAt).slice(0, 10))}.`
-              : 'Pick a date to finish scheduling.'
+            ? values.sendAt && values.sendTime
+              ? `This promotion will send on ${formatSendAt(String(values.sendAt).slice(0, 10))} at ${formatSendTime(values.sendTime)}.`
+              : 'Pick a date and time to finish scheduling.'
             : 'This promotion will start sending right after you confirm.'
         }
         points={[
@@ -431,10 +483,19 @@ function PromotionSchedule({ values, errors, onChange }) {
             value: later ? 'Scheduled' : 'Send now',
           },
           {
-            icon: AlarmClock,
-            label: 'When',
-            value: later ? (values.sendAt ? formatSendAt(values.sendAt) : 'Awaiting date') : 'Immediately after review',
+            icon: CalendarDays,
+            label: 'Date',
+            value: later ? (values.sendAt ? formatSendAt(String(values.sendAt).slice(0, 10)) : 'Awaiting date') : 'Immediately after review',
           },
+          ...(later
+            ? [
+                {
+                  icon: AlarmClock,
+                  label: 'Time',
+                  value: values.sendTime ? formatSendTime(values.sendTime) : 'Awaiting time',
+                },
+              ]
+            : []),
         ]}
       />
     </div>

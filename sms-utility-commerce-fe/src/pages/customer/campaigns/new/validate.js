@@ -1,5 +1,5 @@
 import { bodyContainsLink, bodyHasCtaToken, bodyHasWebLink, validateCtaValue } from '../cta'
-import { campaignTypes, maxSegments, segmentCount } from '../model'
+import { campaignTypes, maxSegments, normalizeTriggerOffset, segmentCount } from '../model'
 import { rewardTypes } from '../reward'
 
 export function validateCta(values) {
@@ -82,8 +82,9 @@ export function validateSchedule(values, now = new Date()) {
         if (Number.isNaN(date.getTime())) errors.customDate = 'Enter a valid date.'
       }
     }
-    if (!values.triggerOffset) errors.triggerOffset = 'Choose when the message should send.'
-    if (values.triggerOffset === 'custom') {
+    const triggerOffset = normalizeTriggerOffset(values.triggerOffset)
+    if (!triggerOffset) errors.triggerOffset = 'Choose when the message should send.'
+    if (triggerOffset === 'custom') {
       const days = Number(values.customOffsetDays)
       if (!Number.isFinite(days) || days < 1) errors.customOffsetDays = 'Enter days before the occasion.'
     }
@@ -92,11 +93,32 @@ export function validateSchedule(values, now = new Date()) {
   }
 
   if (values.when === 'later') {
-    const day = String(values.sendAt ?? '').slice(0, 10)
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`) : null
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    if (!date || Number.isNaN(date.getTime())) errors.sendAt = 'Choose a date.'
-    else if (date < today) errors.sendAt = 'Choose today or a future date.'
+    Object.assign(errors, validatePromotionSchedule(values, now))
+  }
+
+  return errors
+}
+
+function clock(value) {
+  const match = String(value ?? '').match(/^(\d{2}):(\d{2})/)
+  return match ? `${match[1]}:${match[2]}` : null
+}
+
+function validatePromotionSchedule(values, now = new Date()) {
+  const errors = {}
+  const day = String(values.sendAt ?? '').slice(0, 10)
+  const time = clock(values.sendTime)
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`) : null
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  if (!date || Number.isNaN(date.getTime())) errors.sendAt = 'Choose a date.'
+  else if (date < today) errors.sendAt = 'Choose today or a future date.'
+
+  if (!time) errors.sendTime = 'Choose a send time.'
+  else if (date && !Number.isNaN(date.getTime()) && date.getTime() === today.getTime()) {
+    const [hours, minutes] = time.split(':').map(Number)
+    const scheduled = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0)
+    if (scheduled <= now) errors.sendTime = 'Choose a time later than now.'
   }
 
   return errors
@@ -122,11 +144,7 @@ export function validateMessage(
 
   // Keep schedule validation available when MessageStep still owns when/sendAt (e.g. messages flow).
   if (values.when === 'later' && values.type !== 'occasion') {
-    const day = String(values.sendAt ?? '').slice(0, 10)
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`) : null
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    if (!date || Number.isNaN(date.getTime())) errors.sendAt = 'Choose a date.'
-    else if (date < today) errors.sendAt = 'Choose today or a future date.'
+    Object.assign(errors, validatePromotionSchedule(values, now))
   }
 
   return errors

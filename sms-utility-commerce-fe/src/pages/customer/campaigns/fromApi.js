@@ -1,4 +1,4 @@
-import { segmentCount } from './model'
+import { normalizeTriggerOffset, segmentCount } from './model'
 
 function text(value) {
   if (value == null) return ''
@@ -60,11 +60,11 @@ export function campaignFromApi(data) {
     type: text(data.type),
     status: text(data.status) || 'draft',
     occasionType: text(data.occasion_type),
-    triggerOffset: text(data.trigger_offset) || 'on',
+    triggerOffset: normalizeTriggerOffset(data.trigger_offset),
     customOffsetDays: data.custom_offset_days,
     customDate: data.custom_date,
     sendTime: text(data.send_time).slice(0, 5),
-    repeatYearly: data.repeat_yearly === true,
+    repeatYearly: text(data.occasion_type) === 'birthday' ? data.repeat_yearly !== false : data.repeat_yearly === true,
     sender: text(data.sender),
     body,
     sendAt: stamp(data.send_at),
