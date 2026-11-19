@@ -220,6 +220,7 @@ export function ProfilePage() {
                   submitting={saving}
                   formError={formError}
                   currentPhoto={user?.profileImage || ''}
+                  savedPhone={saved.phone}
                   hidePhoto
                 />
               </div>

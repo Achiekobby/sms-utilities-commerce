@@ -36,10 +36,8 @@ export function SelectField({ id, label, error, hint, value, onChange, dense = f
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           onChange={onChange}
-          className={`h-full w-full appearance-none rounded-xl bg-transparent pr-10 pl-4 outline-none ${
+          className={`h-full w-full appearance-none rounded-xl bg-transparent pr-10 pl-4 text-ink outline-none ${
             dense ? 'text-sm' : 'text-base'
-          } ${
-            value ? 'text-ink' : 'text-ink/35'
           }`}
         >
           {children}

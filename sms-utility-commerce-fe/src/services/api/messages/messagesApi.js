@@ -30,7 +30,7 @@ export const messagesApi = baseApi.injectEndpoints({
         data: envelope?.data ?? null,
         message: messageOf(envelope, 'Message sent.'),
       }),
-      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet', { type: 'Subscription', id: 'CURRENT' }],
     }),
     sendBulkSms: builder.mutation({
       query: (body) => ({
@@ -42,7 +42,7 @@ export const messagesApi = baseApi.injectEndpoints({
         data: envelope?.data ?? null,
         message: messageOf(envelope, 'Message queued for sending.'),
       }),
-      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet', { type: 'Subscription', id: 'CURRENT' }],
     }),
     reblastSms: builder.mutation({
       query: ({ smsId, message }) => ({
@@ -54,7 +54,7 @@ export const messagesApi = baseApi.injectEndpoints({
         data: envelope?.data ?? null,
         message: messageOf(envelope, 'Failed recipients queued for sending.'),
       }),
-      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet', { type: 'Subscription', id: 'CURRENT' }],
     }),
     resendSms: builder.mutation({
       query: ({ smsId, message }) => ({
@@ -66,7 +66,7 @@ export const messagesApi = baseApi.injectEndpoints({
         data: envelope?.data ?? null,
         message: messageOf(envelope, 'Message queued for sending.'),
       }),
-      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet'],
+      invalidatesTags: [{ type: 'Sms', id: 'LIST' }, 'Wallet', { type: 'Subscription', id: 'CURRENT' }],
     }),
   }),
 })

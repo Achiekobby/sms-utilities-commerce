@@ -202,7 +202,7 @@ function BillingToggle({ periods, value, onChange, savings }) {
   )
 }
 
-function PlanCard({ plan, index, period, onCheckout }) {
+function PlanCard({ plan, index, period, onCheckout, current = false }) {
   const selected = planPrice(plan, period)
   const perks = planPerks(plan, period).slice(0, 4)
   const standout = planStandout(plan, period)
@@ -267,7 +267,7 @@ function PlanCard({ plan, index, period, onCheckout }) {
           dark ? 'bg-white text-navy hover:bg-white/90' : 'bg-green text-white hover:bg-[#006B46]'
         }`}
       >
-        Subscribe
+        {current ? 'Buy again' : 'Subscribe'}
         <ArrowRight size={15} strokeWidth={2.4} aria-hidden="true" />
       </button>
 
@@ -404,15 +404,25 @@ export function PricingPage() {
               initial="hidden"
               animate="show"
             >
-              {plans.map((plan, index) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  index={index}
-                  period={selectedPeriod}
-                  onCheckout={onCheckout}
-                />
-              ))}
+              {plans.map((plan, index) => {
+                const samePlan =
+                  Boolean(subscription?.planId) && String(subscription.planId) === String(plan.id)
+                const samePeriod = subscription?.nonExpiry
+                  ? isNonExpiryPeriod(selectedPeriod)
+                  : !isNonExpiryPeriod(selectedPeriod) &&
+                    Number(subscription?.months) === Number(selectedPeriod)
+
+                return (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    index={index}
+                    period={selectedPeriod}
+                    current={samePlan && samePeriod}
+                    onCheckout={onCheckout}
+                  />
+                )
+              })}
             </motion.div>
           ) : null}
         </section>

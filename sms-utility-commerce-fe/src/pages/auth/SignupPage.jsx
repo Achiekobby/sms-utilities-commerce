@@ -4,13 +4,16 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { AuthShell } from '../../components/AuthShell'
+import { AvailabilityMark } from '../../components/AvailabilityMark'
 import { GoogleButton } from '../../components/GoogleButton'
+import { CitySelectField } from '../../components/CitySelectField'
 import { SelectField } from '../../components/SelectField'
 import { TextField } from '../../components/TextField'
 import { beginVerification, setCredentials } from '../../features/auth/authSlice'
 import { apiErrorMessage, fieldErrors, signupBody, verificationFrom } from '../../features/auth/client'
 import { googleSession } from '../../features/auth/session'
 import { genders, ghanaRegions } from '../../features/auth/regions'
+import { useAvailabilityCheck } from '../../features/auth/useAvailabilityCheck'
 import { countryCode, emailPattern, toPhoneIdentifier } from '../../features/auth/validation'
 import { useSignupMutation } from '../../services/api/auth/authApi'
 import { paths, safeCustomerReturn } from '../../routes/paths'
@@ -302,7 +305,10 @@ function RegionCityFields({ fieldIds, values, errors, onChange }) {
         dense
         value={values.region}
         error={errors.region}
-        onChange={(event) => onChange('region', event.target.value)}
+        onChange={(event) => {
+          onChange('region', event.target.value)
+          onChange('city', '')
+        }}
       >
         <option value="">Select a region</option>
         {ghanaRegions.map((region) => (
@@ -311,15 +317,13 @@ function RegionCityFields({ fieldIds, values, errors, onChange }) {
           </option>
         ))}
       </SelectField>
-      <TextField
+      <CitySelectField
         id={fieldIds.city}
-        name="city"
-        label="City"
-        autoComplete="address-level2"
         dense
+        region={values.region}
         value={values.city}
         error={errors.city}
-        onChange={(event) => onChange('city', event.target.value)}
+        onChange={(city) => onChange('city', city)}
       />
     </div>
   )
@@ -332,6 +336,8 @@ function DetailsStep({
   formError,
   attempt,
   submitting,
+  emailCheck,
+  phoneCheck,
   onChange,
   onBack,
   onSubmit,
@@ -353,6 +359,12 @@ function DetailsStep({
     businessName: `${id}-business`,
     profileImage: `${id}-photo`,
   }
+  const shownErrors = {
+    ...errors,
+    email: errors.email || emailCheck.error,
+    phone: errors.phone || phoneCheck.error,
+  }
+  const checkingAvailability = emailCheck.blocked || phoneCheck.blocked
 
   useEffect(() => {
     if (!attempt) return
@@ -364,7 +376,7 @@ function DetailsStep({
       {attempt > 0 ? (
         <ErrorSummary
           summaryRef={summaryRef}
-          errors={errors}
+          errors={shownErrors}
           formError={formError}
           fieldIds={fieldIds}
           isIndividual={!isBusiness}
@@ -421,7 +433,15 @@ function DetailsStep({
         autoFocus={isBusiness}
         dense
         value={values.email}
-        error={errors.email}
+        error={shownErrors.email}
+        status={!shownErrors.email ? emailCheck.status : ''}
+        suffix={
+          <AvailabilityMark
+            checking={emailCheck.checking}
+            available={emailCheck.available}
+            taken={emailCheck.taken}
+          />
+        }
         onChange={(event) => onChange('email', event.target.value)}
       />
 
@@ -437,7 +457,15 @@ function DetailsStep({
         maxLength={13}
         dense
         value={values.phone}
-        error={errors.phone}
+        error={shownErrors.phone}
+        status={!shownErrors.phone ? phoneCheck.status : ''}
+        suffix={
+          <AvailabilityMark
+            checking={phoneCheck.checking}
+            available={phoneCheck.available}
+            taken={phoneCheck.taken}
+          />
+        }
         onChange={(event) => onChange('phone', event.target.value.replace(/[^\d\s]/g, ''))}
       />
 
@@ -534,11 +562,11 @@ function DetailsStep({
 
       <button
         type="submit"
-        disabled={submitting}
-        aria-busy={submitting}
+        disabled={submitting || checkingAvailability}
+        aria-busy={submitting || checkingAvailability}
         className="group mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-green text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(0,136,89,0.65)] transition-all duration-200 hover:bg-[#006B46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue active:scale-[0.99] disabled:cursor-wait disabled:opacity-70"
       >
-        {submitting ? 'Creating account' : 'Create account'}
+        {submitting ? 'Creating account' : checkingAvailability ? 'Checking details' : 'Create account'}
         <ArrowRight
           size={16}
           strokeWidth={2.4}
@@ -612,6 +640,8 @@ export function SignupPage() {
   const [attempt, setAttempt] = useState(0)
   const [signup, { isLoading }] = useSignupMutation()
   const photoUrlRef = useRef('')
+  const emailCheck = useAvailabilityCheck({ type: 'email', value: values.email, enabled: step === 1 })
+  const phoneCheck = useAvailabilityCheck({ type: 'phone', value: values.phone, enabled: step === 1 })
 
   function go(next) {
     setDirection(next > step ? 1 : -1)
@@ -663,6 +693,14 @@ export function SignupPage() {
     event.preventDefault()
 
     const found = validate(accountType, values)
+    if (emailCheck.taken) found.email = emailCheck.error
+    if (phoneCheck.taken) found.phone = phoneCheck.error
+    if (emailCheck.checking || phoneCheck.checking) {
+      setErrors(found)
+      setFormError('Wait a moment while we check your email and phone number.')
+      setAttempt((count) => count + 1)
+      return
+    }
     if (Object.keys(found).length > 0) {
       setErrors(found)
       setFormError('')
@@ -719,6 +757,8 @@ export function SignupPage() {
               formError={formError}
               attempt={attempt}
               submitting={isLoading}
+              emailCheck={emailCheck}
+              phoneCheck={phoneCheck}
               onChange={changeValue}
               onBack={() => go(0)}
               onSubmit={createAccount}

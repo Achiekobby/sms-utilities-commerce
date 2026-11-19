@@ -31,8 +31,17 @@ function Section({ title, children }) {
 }
 
 function unitsValue(value) {
-  if (value == null || Number.isNaN(Number(value))) return '—'
-  return formatCount(value)
+  if (value == null || value === '') return '—'
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '—'
+  return formatCount(number)
+}
+
+function unitsAfter(message) {
+  if (message.unitsBefore == null || !Number.isFinite(Number(message.unitsBefore))) return null
+  const used = Number(message.unitsUsed) || 0
+  const refunded = Number(message.unitsRefunded) || 0
+  return Number(message.unitsBefore) - used + refunded
 }
 
 export function MessageDetailsDrawer({
@@ -162,10 +171,18 @@ export function MessageDetailsDrawer({
           </Section>
 
           <Section title="Units">
-            <dl>
-              <Fact label="Used">{unitsValue(message.unitsUsed)}</Fact>
-              <Fact label="Refunded">{unitsValue(message.unitsRefunded)}</Fact>
-              <Fact label="Balance before">{unitsValue(message.unitsBefore)}</Fact>
+            <dl className="mt-3 grid grid-cols-2 gap-2">
+              {[
+                ['Used', message.unitsUsed],
+                ['Refunded', message.unitsRefunded],
+                ['Balance before', message.unitsBefore],
+                ['Balance after', unitsAfter(message)],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-[#E7EEF8] bg-canvas px-3 py-3">
+                  <dt className="text-[11px] font-semibold tracking-wide text-ink/50 uppercase">{label}</dt>
+                  <dd className="mt-1 text-lg font-bold text-navy tabular-nums">{unitsValue(value)}</dd>
+                </div>
+              ))}
             </dl>
           </Section>
         </div>

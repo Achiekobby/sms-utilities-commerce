@@ -55,7 +55,12 @@ export const walletApi = baseApi.injectEndpoints({
         message: envelope?.message || 'Complete the payment on the checkout page.',
         completed: String(envelope?.data?.status ?? '').toLowerCase() === 'completed',
       }),
-      invalidatesTags: ['Wallet', { type: 'Payment', id: 'LIST' }, { type: 'Order', id: 'LIST' }],
+      // Pending top-ups redirect to checkout — invalidating here refetches wallet
+      // queries that abort on navigation and flash a false "could not reach server" error.
+      invalidatesTags: (result) =>
+        result?.completed
+          ? ['Wallet', { type: 'Payment', id: 'LIST' }, { type: 'Order', id: 'LIST' }]
+          : [],
     }),
   }),
 })

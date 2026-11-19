@@ -1,5 +1,4 @@
 import {
-  CalendarClock,
   ClipboardList,
   Code,
   FileText,
@@ -57,12 +56,6 @@ export function getNavigation({ isBusiness }) {
           icon: MessageSquare,
           to: paths.messages,
           keywords: 'numbers groups send report direct',
-        },
-        {
-          label: 'Scheduled',
-          icon: CalendarClock,
-          to: paths.scheduled,
-          keywords: 'schedule later queue waiting send time',
         },
         {
           label: 'Templates',

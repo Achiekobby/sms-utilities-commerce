@@ -56,6 +56,24 @@ export const authApi = baseApi.injectEndpoints({
         timeout: 8000,
       }),
     }),
+    // POST body is either `{ email }` or `{ phone_number }` — not both.
+    // Taken responses stay HTTP 200 with reason email_taken / phone_taken.
+    checkAvailability: builder.mutation({
+      query: (body) => ({
+        url: '/api/client/check_availability',
+        method: 'POST',
+        body,
+      }),
+      transformResponse: (envelope) => {
+        const data = envelope?.data
+        if (!data || typeof data !== 'object') return null
+        return {
+          ...data,
+          message: typeof envelope?.message === 'string' ? envelope.message : '',
+          reason: typeof envelope?.reason === 'string' ? envelope.reason : '',
+        }
+      },
+    }),
   }),
 })
 
@@ -67,4 +85,5 @@ export const {
   useLogoutMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
+  useCheckAvailabilityMutation,
 } = authApi

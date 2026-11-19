@@ -1,7 +1,10 @@
 import { Check, ImagePlus, Lock, Undo2, X } from 'lucide-react'
+import { AvailabilityMark } from '../../../../components/AvailabilityMark'
+import { CitySelectField } from '../../../../components/CitySelectField'
 import { SelectField } from '../../../../components/SelectField'
 import { TextField } from '../../../../components/TextField'
 import { genders, ghanaRegions } from '../../../../features/auth/regions'
+import { useAvailabilityCheck } from '../../../../features/auth/useAvailabilityCheck'
 import { countryCode } from '../../../../features/auth/validation'
 
 const errorColor = '#9F1C26'
@@ -71,11 +74,26 @@ export function ProfileForm({
   formError = '',
   currentPhoto = '',
   hidePhoto = false,
+  savedPhone = '',
 }) {
+  const phoneCheck = useAvailabilityCheck({
+    type: 'phone',
+    value: values.phone,
+    skipValue: savedPhone,
+  })
+  const phoneError = errors.phone || phoneCheck.error
+  const busy = submitting || (dirty && phoneCheck.blocked)
+
   return (
     <form
       noValidate
-      onSubmit={onSubmit}
+      onSubmit={(event) => {
+        if (phoneCheck.blocked) {
+          event.preventDefault()
+          return
+        }
+        onSubmit(event)
+      }}
       className="rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6"
     >
       {showSummary ? (
@@ -230,7 +248,15 @@ export function ProfileForm({
             prefix={countryCode}
             maxLength={13}
             value={values.phone}
-            error={errors.phone}
+            error={phoneError}
+            status={!phoneError ? phoneCheck.status : ''}
+            suffix={
+              <AvailabilityMark
+                checking={phoneCheck.checking}
+                available={phoneCheck.available}
+                taken={phoneCheck.taken}
+              />
+            }
             onChange={(event) => onChange('phone', event.target.value.replace(/[^\d\s]/g, ''))}
             onBlur={(event) => onBlur('phone', event.target.value)}
           />
@@ -251,7 +277,10 @@ export function ProfileForm({
               label="Region"
               value={values.region}
               error={errors.region}
-              onChange={(event) => onChange('region', event.target.value)}
+              onChange={(event) => {
+                onChange('region', event.target.value)
+                onChange('city', '')
+              }}
             >
               <option value="">Select a region</option>
               {ghanaRegions.map((region) => (
@@ -262,15 +291,13 @@ export function ProfileForm({
             </SelectField>
           </div>
           <div className="scroll-mt-28">
-            <TextField
+            <CitySelectField
               id={fieldIds.city}
-              name="city"
-              label="City"
-              autoComplete="address-level2"
+              region={values.region}
               value={values.city}
               error={errors.city}
-              onChange={(event) => onChange('city', event.target.value)}
-              onBlur={(event) => onBlur('city', event.target.value)}
+              onChange={(city) => onChange('city', city)}
+              onBlur={(city) => onBlur('city', city)}
             />
           </div>
         </div>
@@ -305,12 +332,12 @@ export function ProfileForm({
           </button>
           <button
             type="submit"
-            disabled={!dirty || submitting}
-            aria-busy={submitting}
+            disabled={!dirty || busy}
+            aria-busy={busy}
             className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors duration-200 hover:bg-[#006B46] disabled:cursor-not-allowed disabled:bg-ink/10 disabled:text-ink/35 disabled:shadow-none ${focusClass}`}
           >
             <Check size={16} strokeWidth={2.4} aria-hidden="true" />
-            {submitting ? 'Saving' : 'Save changes'}
+            {submitting ? 'Saving' : phoneCheck.checking ? 'Checking number' : 'Save changes'}
           </button>
         </div>
       </div>

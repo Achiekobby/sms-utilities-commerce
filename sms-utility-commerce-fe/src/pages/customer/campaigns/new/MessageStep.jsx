@@ -6,6 +6,7 @@ import {
   Mail,
   MapPin,
   MapPinned,
+  Plus,
   Send,
   User,
   UserRound,
@@ -61,16 +62,24 @@ export function MessageStep({
   sendersLoading = false,
   sendersError = '',
   onRetrySenders,
+  onRequestSender,
   allowSchedule = true,
   showPlaceholders = true,
   showName = true,
   showType = true,
+  unitMeter = null,
 }) {
   const type = campaignTypes.find((item) => item.id === values.type) ?? campaignTypes[0]
   const segments = segmentCount(values.body)
   const over = segments > maxSegments
   const earliest = localDateTimeValue(new Date())
   const placeholders = placeholdersForType(values.type)
+  const planUnitsPerMessage = Number(unitMeter?.unitsPerMessage) || 0
+  const planRecipients = Math.max(0, Number(unitMeter?.recipients) || 0)
+  const planSendUnits = Math.max(0, Number(unitMeter?.sendUnits) || planUnitsPerMessage * planRecipients)
+  const planAvailable = unitMeter?.available
+  const planKnown = planAvailable != null && Number.isFinite(planAvailable)
+  const planRemaining = planKnown ? planAvailable - planSendUnits : null
   const senderChoices = useChoicePage(senders, {
     pageSize: 6,
     matches: (sender, term) => sender.toLowerCase().includes(term),
@@ -194,45 +203,66 @@ export function MessageStep({
         ) : null}
         {!sendersLoading && !sendersError ? (
           <>
-            <ChoiceSearch
-              label="Search sender IDs"
-              placeholder="Search sender IDs"
-              value={senderChoices.query}
-              onChange={senderChoices.search}
-            />
-            {senderChoices.pageItems.length ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {senderChoices.pageItems.map((sender) => {
-                  const checked = values.sender === sender
-                  return (
-                    <label
-                      key={sender}
-                      className={`cursor-pointer rounded-lg border px-3 py-2 font-mono text-sm font-semibold tracking-wide transition-colors duration-200 ${
-                        checked ? 'border-navy bg-navy text-white' : 'border-ink/15 text-navy hover:border-blue/40'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="sender"
-                        value={sender}
-                        checked={checked}
-                        onChange={() => onChange('sender', sender)}
-                        className="sr-only"
-                      />
-                      {sender}
-                    </label>
-                  )
-                })}
+            {senders.length ? (
+              <>
+                <ChoiceSearch
+                  label="Search sender IDs"
+                  placeholder="Search sender IDs"
+                  value={senderChoices.query}
+                  onChange={senderChoices.search}
+                />
+                {senderChoices.pageItems.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {senderChoices.pageItems.map((sender) => {
+                      const checked = values.sender === sender
+                      return (
+                        <label
+                          key={sender}
+                          className={`cursor-pointer rounded-lg border px-3 py-2 font-mono text-sm font-semibold tracking-wide transition-colors duration-200 ${
+                            checked ? 'border-navy bg-navy text-white' : 'border-ink/15 text-navy hover:border-blue/40'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="sender"
+                            value={sender}
+                            checked={checked}
+                            onChange={() => onChange('sender', sender)}
+                            className="sr-only"
+                          />
+                          {sender}
+                        </label>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <ChoiceEmpty term={senderChoices.term} noun="sender IDs" />
+                )}
+                <ChoicePager
+                  label="Sender ID pages"
+                  noun="sender IDs"
+                  pager={senderChoices.pager}
+                  total={senderChoices.filtered.length}
+                />
+              </>
+            ) : null}
+            {onRequestSender ? (
+              <div className="mt-3 rounded-xl border border-[#F0D7A8] bg-[#FFF8EC] px-3.5 py-3">
+                <p className="text-sm leading-6 text-[#8A4B08]">
+                  {senders.length
+                    ? 'Need another sender? New requests go through Cellogent approval before you can use them here.'
+                    : 'No approved sender ID yet. Request one below — it must go through Cellogent approval before you can send with it.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={onRequestSender}
+                  className={`mt-2.5 inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#E2C48A] bg-white px-3 text-sm font-semibold text-[#8A4B08] transition-colors hover:bg-[#FFF4DF] ${focusClass}`}
+                >
+                  <Plus size={15} strokeWidth={2.6} aria-hidden="true" />
+                  Add a sender ID
+                </button>
               </div>
-            ) : (
-              <ChoiceEmpty term={senderChoices.term} noun="sender IDs" />
-            )}
-            <ChoicePager
-              label="Sender ID pages"
-              noun="sender IDs"
-              pager={senderChoices.pager}
-              total={senderChoices.filtered.length}
-            />
+            ) : null}
           </>
         ) : null}
         <FieldError id="campaign-sender-error">{errors.sender}</FieldError>
@@ -277,19 +307,64 @@ export function MessageStep({
           rows={5}
           maxLength={maxBodyLength}
           value={values.body}
-          placeholder={type.placeholder}
+          placeholder={
+            showPlaceholders
+              ? type.placeholder
+              : 'Write the SMS exactly as each number should receive it.'
+          }
           aria-invalid={errors.body ? true : undefined}
           aria-describedby={errors.body ? 'campaign-body-count campaign-body-error' : 'campaign-body-count'}
           onChange={(event) => onChange('body', event.target.value)}
           className={`${field} py-3`}
         />
-        <p
-          id="campaign-body-count"
-          className={`mt-1.5 text-xs tabular-nums ${over ? 'font-medium' : 'text-ink/55'}`}
-          style={over ? { color: errorColor } : undefined}
-        >
-          {values.body.length} characters · {segments} {segments === 1 ? 'segment' : 'segments'}
-        </p>
+        {unitMeter ? (
+          <div
+            id="campaign-body-count"
+            className="mt-2 rounded-xl border border-[#D8E7FA] bg-[#F7FBFF] px-3 py-2.5"
+          >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs tabular-nums">
+              <span className="font-semibold text-navy">{values.body.length} characters</span>
+              <span className="text-ink/30" aria-hidden="true">
+                ·
+              </span>
+              <span className="font-semibold text-navy">
+                {planUnitsPerMessage} {planUnitsPerMessage === 1 ? 'unit' : 'units'} / recipient
+              </span>
+              {planRecipients > 0 ? (
+                <>
+                  <span className="text-ink/30" aria-hidden="true">
+                    ·
+                  </span>
+                  <span className="font-semibold text-navy">
+                    {planSendUnits} total {planSendUnits === 1 ? 'unit' : 'units'}
+                  </span>
+                </>
+              ) : null}
+            </div>
+            <p className="mt-1 text-[11px] leading-4 text-ink/50">1 unit = 160 characters. Longer text uses more units.</p>
+            {planKnown ? (
+              <p
+                className={`mt-1.5 text-xs tabular-nums ${
+                  planRemaining != null && planRemaining < 0 ? 'font-semibold text-[#C21F2D]' : 'text-ink/60'
+                }`}
+              >
+                Plan balance {planAvailable} · after this send {planRemaining}
+              </p>
+            ) : unitMeter.loading ? (
+              <p className="mt-1.5 text-xs text-ink/50">Loading plan units…</p>
+            ) : (
+              <p className="mt-1.5 text-xs text-ink/50">No active plan units on file.</p>
+            )}
+          </div>
+        ) : (
+          <p
+            id="campaign-body-count"
+            className={`mt-1.5 text-xs tabular-nums ${over ? 'font-medium' : 'text-ink/55'}`}
+            style={over ? { color: errorColor } : undefined}
+          >
+            {values.body.length} characters · {segments} {segments === 1 ? 'segment' : 'segments'}
+          </p>
+        )}
         <FieldError id="campaign-body-error">{errors.body}</FieldError>
       </div>
 

@@ -1,21 +1,19 @@
 import { useState } from 'react'
-import { ConfirmDialog } from '../../../../components/ConfirmDialog'
 import { apiErrorMessage } from '../../../../features/auth/client'
 import { useNotify } from '../../../../features/notifications/useNotify'
 import {
   useReblastSmsMutation,
   useResendSmsMutation,
 } from '../../../../services/api/messages/messagesApi'
-import { formatCount } from '../../dashboard/format'
 import {
   canReblastMessage,
   canResendMessage,
   defaultReblastMessage,
   defaultResendMessage,
   messageFailedCount,
+  messageRecipientCount,
 } from '../model'
-
-const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+import { MessageActionDialog } from './MessageActionDialog'
 
 export function useMessageActions({ onDone } = {}) {
   const notify = useNotify()
@@ -65,31 +63,18 @@ export function useMessageActions({ onDone } = {}) {
     }
   }
 
-  const failed = pending ? messageFailedCount(pending.message) : 0
+  const recipientCount = pending
+    ? pending.type === 'reblast'
+      ? messageFailedCount(pending.message)
+      : messageRecipientCount(pending.message)
+    : 0
+
   const dialog = pending ? (
-    <ConfirmDialog
-      tone="restore"
-      title={pending.type === 'reblast' ? 'Reblast failed recipients?' : 'Resend this message?'}
-      description={
-        <div className="space-y-3">
-          <p>
-            {pending.type === 'reblast'
-              ? `Queue a new send to ${formatCount(failed)} failed recipient${failed === 1 ? '' : 's'}.`
-              : 'Queue a new send to the same recipients.'}
-          </p>
-          <label className="block">
-            <span className="mb-1.5 block text-[12px] font-medium text-ink/55">Message</span>
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              rows={4}
-              className={`w-full resize-y rounded-lg border border-ink/15 bg-white px-3 py-2.5 text-sm leading-6 text-navy outline-none transition-colors hover:border-blue/35 focus:border-blue ${focusClass}`}
-            />
-          </label>
-        </div>
-      }
-      confirmLabel={pending.type === 'reblast' ? 'Reblast' : 'Resend'}
-      busyLabel={pending.type === 'reblast' ? 'Queueing reblast…' : 'Queueing resend…'}
+    <MessageActionDialog
+      type={pending.type}
+      recipientCount={recipientCount}
+      draft={draft}
+      onDraftChange={setDraft}
       busy={busy}
       onConfirm={confirm}
       onClose={close}

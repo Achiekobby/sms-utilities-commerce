@@ -167,11 +167,11 @@ function ImportDone({ added, skipped, group, onAnother }) {
         {skipped ? `. ${formatCount(skipped)} ${skipped === 1 ? 'row was' : 'rows were'} left out.` : '.'}
       </p>
 
-      <div className="mt-7 flex flex-wrap justify-center gap-2.5">
-        <Link to={paths.contactGroup(group.id)} className={primaryButton}>
+      <div className="mt-7 flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
+        <Link to={paths.contactGroup(group.id)} className={`${primaryButton} w-full sm:w-auto`}>
           View group
         </Link>
-        <button type="button" onClick={onAnother} className={secondaryButton}>
+        <button type="button" onClick={onAnother} className={`${secondaryButton} w-full sm:w-auto`}>
           Upload another file
         </button>
       </div>
@@ -452,27 +452,35 @@ export function ContactsUploadPage() {
             ) : null}
 
             {ready && !imported ? (
-              <section aria-labelledby="import-heading" className={`${card} flex flex-wrap items-center gap-4 p-4 sm:p-5`}>
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#DDF3E6] text-green">
-                  <CheckCircle2 size={22} aria-hidden="true" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h2 id="import-heading" className="text-base font-bold text-navy">
-                    {result.failed === 0 && !cleaned ? 'Everything looks good. ' : ''}
-                    Ready to upload {formatCount(result.valid)} {result.valid === 1 ? 'contact' : 'contacts'}
-                  </h2>
-                  <p className="mt-0.5 text-[13px] text-ink/60">
-                    The file is checked here, then added to <span className="font-semibold text-navy">{group.name}</span> in
-                    the background. You can leave the uploads page while it finishes.
-                    {result.empty ? ` ${formatCount(result.empty)} blank ${result.empty === 1 ? 'row is' : 'rows are'} skipped.` : ''}
-                  </p>
-                  {importState.status === 'error' ? (
-                    <p role="alert" className="mt-2 text-[13px] text-[#C21F2D]">
-                      {importState.error}
+              <section
+                aria-labelledby="import-heading"
+                className={`${card} flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-5`}
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-4">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#DDF3E6] text-green">
+                    <CheckCircle2 size={22} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h2 id="import-heading" className="text-base font-bold text-navy">
+                      {result.failed === 0 && !cleaned ? 'Everything looks good. ' : ''}
+                      Ready to upload {formatCount(result.valid)} {result.valid === 1 ? 'contact' : 'contacts'}
+                    </h2>
+                    <p className="mt-0.5 text-[13px] leading-5 text-ink/60">
+                      The file is checked here, then added to{' '}
+                      <span className="font-semibold text-navy">{group.name}</span> in the background. You can leave the
+                      uploads page while it finishes.
+                      {result.empty
+                        ? ` ${formatCount(result.empty)} blank ${result.empty === 1 ? 'row is' : 'rows are'} skipped.`
+                        : ''}
                     </p>
-                  ) : null}
+                    {importState.status === 'error' ? (
+                      <p role="alert" className="mt-2 text-[13px] text-[#C21F2D]">
+                        {importState.error}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <button type="submit" disabled={importing} className={primaryButton}>
+                <button type="submit" disabled={importing} className={`${primaryButton} w-full shrink-0 sm:w-auto`}>
                   {importing ? <Loader2 size={17} aria-hidden="true" className="animate-spin" /> : null}
                   {importing ? 'Uploading file…' : 'Upload file'}
                 </button>

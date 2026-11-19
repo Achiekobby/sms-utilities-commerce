@@ -35,7 +35,7 @@ function toneFor(id) {
 
 function MessagesBadge({ dnd, compact = false }) {
   const Icon = dnd ? Ban : CheckCircle2
-  const label = dnd ? (compact ? 'DND' : 'Do not disturb') : 'Can receive'
+  const label = dnd ? (compact ? 'DND' : 'Do not disturb') : compact ? 'OK' : 'Can receive'
   return (
     <span
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${
@@ -268,16 +268,18 @@ export function UploadContactsDrawer({ groupId, upload, onClose }) {
 
                 <ul className="mt-4 divide-y divide-[#E7EEF8] rounded-xl border border-[#E1EAF6] sm:hidden">
                   {rows.map((contact) => (
-                    <li key={contact.id} className="p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-navy">{contactName(contact)}</p>
-                          <p className="mt-0.5 text-xs text-ink/60 tabular-nums">{contact.phone}</p>
-                          {contact.email ? <p className="truncate text-xs text-ink/55">{contact.email}</p> : null}
+                    <li key={contact.id} className="min-w-0 px-3 py-2.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="min-w-0 truncate text-sm font-semibold text-navy">{contactName(contact)}</p>
+                            <MessagesBadge dnd={contact.dnd} compact />
+                          </div>
+                          <p className="truncate text-xs text-ink/60 tabular-nums">
+                            {contact.phone}
+                            {contact.email ? ` · ${contact.email}` : ''}
+                          </p>
                         </div>
-                        <MessagesBadge dnd={contact.dnd} compact />
-                      </div>
-                      <div className="mt-2">
                         <Actions
                           contact={contact}
                           onView={(item) => setViewId(item.id)}

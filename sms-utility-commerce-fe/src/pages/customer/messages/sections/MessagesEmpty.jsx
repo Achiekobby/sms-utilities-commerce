@@ -1,8 +1,5 @@
-import { Hash, MessageSquarePlus, Plus, Users } from 'lucide-react'
-import { Link } from 'react-router'
-import { paths } from '../../../../routes/paths'
-
-const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+import { Hash, MessageSquarePlus, Users } from 'lucide-react'
+import { NewMessageButton } from './NewMessageButton'
 
 export function MessagesEmpty() {
   return (
@@ -42,13 +39,7 @@ export function MessagesEmpty() {
         </li>
       </ul>
 
-      <Link
-        to={paths.newMessage}
-        className={`relative mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-green px-5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors duration-200 hover:bg-[#006B46] ${focusClass}`}
-      >
-        <Plus size={17} strokeWidth={2.6} aria-hidden="true" />
-        New message
-      </Link>
+      <NewMessageButton look="empty" />
     </section>
   )
 }

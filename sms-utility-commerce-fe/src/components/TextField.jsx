@@ -1,12 +1,13 @@
 const errorColor = '#E0232E'
+const statusColor = '#008859'
 
 // Labelled input with an optional fixed prefix (for example the +233 country code)
-// and a reserved line for the error so the layout does not jump.
-export function TextField({ id, label, error, prefix, suffix, hint, dense = false, ...inputProps }) {
+// and a reserved line for the error/status so the layout does not jump.
+export function TextField({ id, label, error, status, prefix, suffix, hint, dense = false, ...inputProps }) {
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
   const locked = Boolean(inputProps.readOnly || inputProps.disabled)
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
+  const describedBy = [hint ? hintId : null, error || status ? errorId : null].filter(Boolean).join(' ') || undefined
 
   return (
     <div>
@@ -53,11 +54,11 @@ export function TextField({ id, label, error, prefix, suffix, hint, dense = fals
       </div>
       <p
         id={errorId}
-        role="alert"
+        role={error ? 'alert' : 'status'}
         className={`mt-1.5 ${dense ? 'min-h-4 text-[13px]' : 'min-h-5 text-sm'}`}
-        style={{ color: errorColor }}
+        style={{ color: error ? errorColor : status ? statusColor : errorColor }}
       >
-        {error}
+        {error || status || ''}
       </p>
     </div>
   )

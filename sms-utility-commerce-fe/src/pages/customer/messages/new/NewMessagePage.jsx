@@ -1,32 +1,35 @@
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react'
 import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router'
-import { apiErrorMessage } from '../../../../features/auth/client'
+import { apiErrorMessage, fieldErrors } from '../../../../features/auth/client'
 import { messageCreated } from '../../../../features/messages/messagesSlice'
 import { useNotify } from '../../../../features/notifications/useNotify'
-import { selectWalletBalance, walletDebited } from '../../../../features/wallet/walletSlice'
+import { walletDebited } from '../../../../features/wallet/walletSlice'
 import { paths } from '../../../../routes/paths'
 import { useSendBulkSmsMutation, useSendQuickSmsMutation } from '../../../../services/api/messages/messagesApi'
-import { useGetSenderIdsQuery } from '../../../../services/api/sender-ids/senderIdsApi'
+import { useCreateSenderIdMutation, useGetSenderIdsQuery } from '../../../../services/api/sender-ids/senderIdsApi'
+import { useGetClientSubscriptionQuery } from '../../../../services/api/subscriptions/subscriptionsApi'
 import { useDocumentTitle } from '../../../../utils/hooks/useDocumentTitle'
-import { segmentCount } from '../../campaigns/model'
 import { MessageStep } from '../../campaigns/new/MessageStep'
 import { StepError, useErrorFocus } from '../../campaigns/new/StepError'
 import { validateMessage } from '../../campaigns/new/validate'
 import { useGroups } from '../../contacts/useGroups'
 import { approvedSenderNames } from '../../sender-ids/model'
-import { smsCostUnits } from '../../wallet/money'
+import { SenderFormDrawer } from '../../sender-ids/sections/SenderFormDrawer'
 import {
   bulkSmsBody,
   messageFromBulkSend,
   messageFromQuickSend,
   parseNumberList,
   quickSmsBody,
+  smsSendUnits,
+  smsUnitCount,
   validateGroups,
   validateNumbers,
 } from '../model'
 import { AudienceFields } from './AudienceFields'
+import { MessageSendingModal } from './MessageSendingModal'
 import { ReviewFields } from './ReviewFields'
 
 const steps = ['Audience', 'Message', 'Review']
@@ -84,20 +87,32 @@ export function NewMessagePage() {
   const approved = approvedSenderNames(sendersQuery.data?.rows ?? [])
   const [sendQuickSms, { isLoading: sendingQuick }] = useSendQuickSmsMutation()
   const [sendBulkSms, { isLoading: sendingBulk }] = useSendBulkSmsMutation()
+  const [createSender, createState] = useCreateSenderIdMutation()
   const [step, setStep] = useState(0)
   const [values, setValues] = useState(empty)
   const [errors, setErrors] = useState({})
   const [attempt, setAttempt] = useState(0)
+  const [senderRequest, setSenderRequest] = useState(null)
+  const [senderField, setSenderField] = useState('')
+  const [senderError, setSenderError] = useState('')
+  const [sendStage, setSendStage] = useState(null)
   const summaryRef = useErrorFocus(attempt)
 
+  const subscriptionQuery = useGetClientSubscriptionQuery()
   const selectedGroups = groups.filter((group) => values.groupIds.includes(group.id))
   const parsed = parseNumberList(values.numbers)
-  const balance = useSelector(selectWalletBalance)
+  const availableUnits =
+    subscriptionQuery.data?.units != null && Number.isFinite(subscriptionQuery.data.units)
+      ? subscriptionQuery.data.units
+      : null
   const recipients =
     values.kind === 'numbers' ? parsed.valid.length : selectedGroups.reduce((sum, group) => sum + group.breakdown.active, 0)
-  const cost = smsCostUnits({ segments: segmentCount(values.body.trim()), recipients })
+  const unitsPerMessage = smsUnitCount(values.body)
+  const trimmedUnitsPerMessage = smsUnitCount(values.body.trim())
+  const cost = smsSendUnits({ body: values.body.trim(), recipients })
+  const liveCost = smsSendUnits({ body: values.body, recipients })
   const toNumbers = values.kind === 'numbers'
-  const busy = sendingQuick || sendingBulk
+  const busy = sendingQuick || sendingBulk || Boolean(sendStage)
 
   const senderSource = approved.join('\0')
   const [seenSenders, setSeenSenders] = useState(senderSource)
@@ -126,6 +141,29 @@ export function NewMessagePage() {
       }
       return next
     })
+  }
+
+  function openSenderRequest() {
+    setSenderField('')
+    setSenderError('')
+    setSenderRequest({ phase: 'form' })
+  }
+
+  async function submitSenderRequest(name) {
+    setSenderField('')
+    setSenderError('')
+    try {
+      const result = await createSender({ name }).unwrap()
+      setSenderRequest({
+        phase: 'success',
+        name: result.sender?.name || name.trim(),
+        message: result.message || '',
+      })
+    } catch (error) {
+      const fields = fieldErrors(error)
+      if (fields.name) setSenderField(fields.name)
+      else setSenderError(apiErrorMessage(error))
+    }
   }
 
   function audienceErrors() {
@@ -167,12 +205,15 @@ export function NewMessagePage() {
       )
     }
     dispatch(messageCreated(record))
-    navigate(paths.message(record.id))
+    setSendStage('opening')
+    window.setTimeout(() => {
+      navigate(paths.messages)
+    }, 650)
   }
 
   async function submit(event) {
     event.preventDefault()
-    if (busy) return
+    if (busy || sendStage) return
 
     if (step === 0) {
       const found = audienceErrors()
@@ -204,7 +245,8 @@ export function NewMessagePage() {
     }
 
     const body = values.body.trim()
-    const segments = segmentCount(body)
+    const segments = trimmedUnitsPerMessage
+    setSendStage('sending')
 
     try {
       if (toNumbers) {
@@ -244,6 +286,7 @@ export function NewMessagePage() {
         }),
       )
     } catch (error) {
+      setSendStage(null)
       const message = apiErrorMessage(error)
       fail({ submit: message })
       notify.error(message)
@@ -282,10 +325,18 @@ export function NewMessagePage() {
               sendersLoading={sendersQuery.isLoading}
               sendersError={sendersQuery.isError ? apiErrorMessage(sendersQuery.error) : ''}
               onRetrySenders={sendersQuery.refetch}
+              onRequestSender={openSenderRequest}
               allowSchedule={false}
               showPlaceholders={!toNumbers}
               showName={false}
               showType={false}
+              unitMeter={{
+                recipients,
+                available: availableUnits,
+                unitsPerMessage,
+                sendUnits: liveCost,
+                loading: subscriptionQuery.isLoading,
+              }}
             />
           ) : null}
           {step === 2 ? (
@@ -294,7 +345,8 @@ export function NewMessagePage() {
               groups={selectedGroups}
               numbers={parsed.valid}
               cost={cost}
-              balance={balance}
+              availableUnits={availableUnits}
+              unitsLoading={subscriptionQuery.isLoading}
               immediate
             />
           ) : null}
@@ -340,6 +392,34 @@ export function NewMessagePage() {
           </button>
         </div>
       </form>
+
+      {senderRequest ? (
+        <SenderFormDrawer
+          mode="create"
+          busy={createState.isLoading}
+          serverField={senderField}
+          serverError={senderError}
+          success={
+            senderRequest.phase === 'success'
+              ? { name: senderRequest.name, message: senderRequest.message }
+              : null
+          }
+          onSubmit={submitSenderRequest}
+          onViewSenders={() => navigate(paths.senderIds)}
+          onClose={() => {
+            if (createState.isLoading) return
+            setSenderRequest(null)
+          }}
+        />
+      ) : null}
+
+      <MessageSendingModal
+        open={Boolean(sendStage)}
+        stage={sendStage || 'sending'}
+        kind={values.kind}
+        recipientCount={recipients}
+        unitCost={cost}
+      />
     </div>
   )
 }

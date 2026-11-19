@@ -1,17 +1,18 @@
 import { ArrowLeft } from 'lucide-react'
-import { useSelector } from 'react-redux'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
+import { apiErrorMessage } from '../../../features/auth/client'
+import { formatWalletAmount } from '../../../features/wallet/walletRecord'
 import { paths } from '../../../routes/paths'
+import { useGetWalletQuery } from '../../../services/api/wallet/walletApi'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
-import { formatUnits } from './money'
 import { TopUpForm } from './sections/TopUpForm'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 export function TopUpPage() {
   useDocumentTitle('Top up')
-  const navigate = useNavigate()
-  const balance = useSelector((state) => state.wallet.balance)
+  const wallet = useGetWalletQuery()
+  const account = wallet.data
 
   return (
     <div className="w-full">
@@ -27,11 +28,19 @@ export function TopUpPage() {
           </p>
         </div>
         <p className="text-sm text-ink/60">
-          Balance <span className="font-semibold text-navy tabular-nums">{formatUnits(balance)}</span>
+          Balance{' '}
+          <span className="font-semibold text-navy tabular-nums">
+            {wallet.isLoading ? '…' : account ? formatWalletAmount(account.balance, account.currency) : '—'}
+          </span>
         </p>
       </header>
+      {wallet.isError && wallet.error?.status !== 'FETCH_ERROR' ? (
+        <p role="alert" className="mt-4 text-sm text-[#9F1C26]">
+          {apiErrorMessage(wallet.error)}
+        </p>
+      ) : null}
       <div className="mt-6 rounded-xl border border-[#D8E7FA] bg-white p-5 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_12px_28px_-18px_rgba(11,31,91,0.45)] sm:p-6">
-        <TopUpForm onDone={() => navigate(paths.wallet)} />
+        <TopUpForm currency={account?.currency} />
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 import { Wallet, X } from 'lucide-react'
 import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
+import { PaymentRedirectModal } from '../../../../components/PaymentRedirectModal'
 import { apiErrorMessage } from '../../../../features/auth/client'
 import { useNotify } from '../../../../features/notifications/useNotify'
 import { formatWalletAmount, parseTopUpAmount } from '../../../../features/wallet/walletRecord'
@@ -15,9 +16,11 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
   const [amount, setAmount] = useState('50')
   const [attempted, setAttempted] = useState(false)
   const [formError, setFormError] = useState('')
+  const [paymentStage, setPaymentStage] = useState('')
   const code = currency || 'GHS'
   const parsed = parseTopUpAmount(amount)
   const amountError = parsed == null ? 'Enter an amount greater than zero.' : ''
+  const openingPayment = Boolean(paymentStage) || isLoading
 
   function onAmount(event) {
     const next = event.target.value.replace(/[^\d.]/g, '')
@@ -31,20 +34,27 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
 
   async function submit(event) {
     event.preventDefault()
-    if (isLoading) return
+    if (openingPayment) return
     setAttempted(true)
     setFormError('')
     if (amountError) return
 
+    let stage = 'preparing'
+    setPaymentStage(stage)
     try {
       const result = await createTopUp({ amount: parsed }).unwrap()
       if (result.topUp?.nextUrl) {
+        stage = 'redirecting'
+        setPaymentStage(stage)
         window.location.assign(result.topUp.nextUrl)
         return
       }
+      setPaymentStage('')
       notify.success(result.message)
       onClose()
     } catch (error) {
+      if (stage === 'redirecting') return
+      setPaymentStage('')
       setFormError(apiErrorMessage(error))
     }
   }
@@ -65,7 +75,7 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
           <button
             type="button"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={openingPayment}
             aria-label="Close"
             className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink/55 hover:bg-canvas hover:text-navy disabled:opacity-50 ${focusClass}`}
           >
@@ -136,13 +146,23 @@ export function WalletTopUpDrawer({ currency = '', onClose }) {
         <footer className="border-t border-[#E3ECF7] bg-[#F7FAFD] px-5 py-4">
           <button
             type="submit"
-            disabled={isLoading || parsed == null}
+            disabled={openingPayment || parsed == null}
             className={`inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-navy text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
           >
-            {isLoading ? 'Opening payment…' : parsed == null ? 'Top up' : `Top up ${formatWalletAmount(parsed, code)}`}
+            {openingPayment
+              ? 'Opening payment…'
+              : parsed == null
+                ? 'Top up'
+                : `Top up ${formatWalletAmount(parsed, code)}`}
           </button>
         </footer>
       </form>
+
+      <PaymentRedirectModal
+        open={openingPayment}
+        stage={paymentStage || 'preparing'}
+        amountLabel={parsed == null ? '' : formatWalletAmount(parsed, code)}
+      />
     </Drawer>
   )
 }

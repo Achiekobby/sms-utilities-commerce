@@ -218,16 +218,22 @@ export function MessageDetailPage() {
 
       <section className={`${card} mt-4`}>
         <h2 className="text-base font-bold text-navy">Units</h2>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ['Used', message.unitsUsed],
             ['Refunded', message.unitsRefunded],
             ['Balance before', message.unitsBefore],
+            [
+              'Balance after',
+              message.unitsBefore == null || !Number.isFinite(Number(message.unitsBefore))
+                ? null
+                : Number(message.unitsBefore) - (Number(message.unitsUsed) || 0) + (Number(message.unitsRefunded) || 0),
+            ],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl bg-canvas px-3 py-3">
               <dt className="text-xs text-ink/50">{label}</dt>
               <dd className="mt-1 text-lg font-semibold text-navy tabular-nums">
-                {value == null ? '—' : formatCount(value)}
+                {value == null || !Number.isFinite(Number(value)) ? '—' : formatCount(value)}
               </dd>
             </div>
           ))}

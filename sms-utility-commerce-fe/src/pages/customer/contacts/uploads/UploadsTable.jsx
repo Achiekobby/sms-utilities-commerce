@@ -130,7 +130,9 @@ function StatusPill({ item }) {
   const Icon = look.icon
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${look.pill}`}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ring-1 ring-inset ${look.pill}`}
+    >
       <Icon
         size={13}
         strokeWidth={2.4}
@@ -142,13 +144,13 @@ function StatusPill({ item }) {
   )
 }
 
-function ProgressCell({ item }) {
+function ProgressCell({ item, wide = false }) {
   const width = item.running ? Math.max(item.progress, 8) : item.progress
   const bar = item.status === 'failed' ? 'bg-[#C21F2D]' : item.status === 'completed' ? 'bg-green' : 'bg-blue'
 
   return (
     <div
-      className="w-full min-w-[7.5rem] max-w-[11rem]"
+      className={wide ? 'w-full min-w-0' : 'w-full min-w-[7.5rem] max-w-[11rem]'}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
@@ -162,7 +164,7 @@ function ProgressCell({ item }) {
         </span>
         <span className="tabular-nums text-navy">{item.progress}%</span>
       </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/[0.08]">
+      <div className={`${wide ? 'mt-1' : 'mt-1.5'} h-1.5 overflow-hidden rounded-full bg-ink/[0.08]`}>
         <div className={`relative h-full rounded-full transition-[width] duration-500 ease-out ${bar}`} style={{ width: `${width}%` }}>
           {item.running ? <span className="upload-slide absolute inset-y-0 w-1/3 bg-white/50" /> : null}
         </div>
@@ -291,7 +293,7 @@ function DesktopRow({ item, featured, onViewContacts, onReviewSkipped, onDelete 
 function MobileRow({ item, featured, onViewContacts, onReviewSkipped, onDelete }) {
   return (
     <article
-      className={`relative rounded-xl border p-4 transition-colors ${
+      className={`relative min-w-0 overflow-hidden rounded-xl border p-3 transition-colors ${
         featured || item.running
           ? 'border-blue/25 bg-blue/[0.04] shadow-[0_1px_2px_rgba(20,115,230,0.06)]'
           : item.status === 'failed'
@@ -300,30 +302,38 @@ function MobileRow({ item, featured, onViewContacts, onReviewSkipped, onDelete }
       }`}
     >
       {(featured || item.running) && (
-        <span aria-hidden="true" className="absolute inset-y-3 left-0 w-0.5 rounded-r-full bg-blue" />
+        <span aria-hidden="true" className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-blue" />
       )}
-      <div className="flex items-start justify-between gap-3">
-        <FileCell item={item} />
-        <StatusPill item={item} />
-      </div>
-      <div className="mt-3.5">
-        <ProgressCell item={item} />
-      </div>
-      <dl className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[
-          ['In File', item.total],
-          ['Added', item.inserted],
-          ['Skipped', item.skipped],
-          ['Failed', item.failed],
-        ].map(([label, value]) => (
-          <div key={label} className="min-w-0 rounded-lg bg-[#F5F8FC] px-2.5 py-2 text-center">
-            <dt className="text-[10px] font-semibold tracking-wide text-ink/50 uppercase">{label}</dt>
-            <dd className="mt-0.5 text-sm font-bold text-navy tabular-nums">{formatCount(value)}</dd>
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                item.running
+                  ? 'bg-[#EAF2FE] text-blue'
+                  : item.status === 'failed'
+                    ? 'bg-[#FDECEE] text-[#C21F2D]'
+                    : item.status === 'completed'
+                      ? 'bg-[#E7F7EE] text-green'
+                      : 'bg-[#FFF4DF] text-[#B45F06]'
+              }`}
+            >
+              {item.running ? (
+                <Loader2 size={15} strokeWidth={2.2} className="animate-spin motion-reduce:animate-none" />
+              ) : (
+                <FileSpreadsheet size={15} strokeWidth={2.1} />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-navy">{item.fileName}</p>
+              <p className="truncate text-[11px] text-ink/45">
+                {item.createdAt ? formatStamp(item.createdAt) : item.fileSize ? formatBytes(item.fileSize) : 'Excel file'}
+              </p>
+            </div>
           </div>
-        ))}
-      </dl>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        {item.createdAt ? <p className="text-xs text-ink/45">{formatStamp(item.createdAt)}</p> : <span />}
+        </div>
+        <StatusPill item={item} />
         <RowActions
           item={item}
           onViewContacts={onViewContacts}
@@ -331,6 +341,22 @@ function MobileRow({ item, featured, onViewContacts, onReviewSkipped, onDelete }
           onDelete={onDelete}
         />
       </div>
+      <div className="mt-2">
+        <ProgressCell item={item} wide />
+      </div>
+      <dl className="mt-2 grid grid-cols-4 gap-1.5">
+        {[
+          ['In File', item.total],
+          ['Added', item.inserted],
+          ['Skipped', item.skipped],
+          ['Failed', item.failed],
+        ].map(([label, value]) => (
+          <div key={label} className="min-w-0 overflow-hidden rounded-md bg-[#F5F8FC] px-1.5 py-1.5 text-center">
+            <dt className="truncate text-[9px] font-semibold tracking-wide text-ink/50 uppercase">{label}</dt>
+            <dd className="truncate text-xs font-bold text-navy tabular-nums">{formatCount(value)}</dd>
+          </div>
+        ))}
+      </dl>
     </article>
   )
 }
@@ -501,7 +527,7 @@ export function UploadsTable({ items, featuredId = '', onViewContacts, onReviewS
             </table>
           </div>
 
-          <div className="mt-4 grid gap-3 md:hidden">
+          <div className="mt-4 grid gap-2.5 md:hidden">
             {page.map((item) => (
               <MobileRow
                 key={item.id}

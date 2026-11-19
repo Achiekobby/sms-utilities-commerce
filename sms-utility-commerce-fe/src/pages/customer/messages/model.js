@@ -13,8 +13,21 @@ export const messageKinds = [
 
 export const maxNumbers = 500
 
+/** Plan SMS billing: 1 unit covers up to 160 characters; 161–320 uses 2 units, and so on. */
+export const charsPerSmsUnit = 160
+
 export function kindLabel(kind) {
   return messageKinds.find((item) => item.id === kind)?.label ?? kind
+}
+
+export function smsUnitCount(body) {
+  const length = String(body ?? '').length
+  if (length <= 0) return 0
+  return Math.ceil(length / charsPerSmsUnit)
+}
+
+export function smsSendUnits({ body, recipients }) {
+  return smsUnitCount(body) * Math.max(0, Number(recipients) || 0)
 }
 
 export function toStoredNumber(raw) {
@@ -89,6 +102,18 @@ function storedNumberFromApi(raw) {
   return toStoredNumber(raw) || String(raw ?? '')
 }
 
+function readUnitField(data, ...keys) {
+  if (!data || typeof data !== 'object') return null
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(data, key)) continue
+    const raw = data[key]
+    if (raw == null || raw === '') continue
+    const value = Number(raw)
+    if (Number.isFinite(value)) return value
+  }
+  return null
+}
+
 export function smsFromApi(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data) || data.id == null) return null
 
@@ -103,6 +128,7 @@ export function smsFromApi(data) {
       active: Number(group.count_of_contacts) || 0,
     }))
   const numbers = (Array.isArray(data.to) ? data.to : []).map(storedNumberFromApi).filter(Boolean)
+  const unitsBag = data.units && typeof data.units === 'object' && !Array.isArray(data.units) ? data.units : null
 
   return {
     id: String(data.id),
@@ -128,9 +154,12 @@ export function smsFromApi(data) {
     status: String(data.status ?? 'completed').toLowerCase() || 'completed',
     createdAt: data.created_at ? String(data.created_at).replace(' ', 'T') : '',
     completedAt: data.completed_at ? String(data.completed_at).replace(' ', 'T') : '',
-    unitsUsed: data.units_used == null ? null : Number(data.units_used),
-    unitsRefunded: data.units_refunded == null ? null : Number(data.units_refunded),
-    unitsBefore: data.units_before == null ? null : Number(data.units_before),
+    unitsUsed: readUnitField(data, 'units_used', 'unitsUsed') ?? readUnitField(unitsBag, 'used', 'units_used'),
+    unitsRefunded:
+      readUnitField(data, 'units_refunded', 'unitsRefunded') ?? readUnitField(unitsBag, 'refunded', 'units_refunded'),
+    unitsBefore:
+      readUnitField(data, 'units_before', 'unitsBefore', 'balance_before', 'balanceBefore') ??
+      readUnitField(unitsBag, 'before', 'units_before', 'balance_before'),
     ...deliveryFromApi(data),
   }
 }
@@ -271,14 +300,21 @@ export function messageFailedCount(message) {
   return Number.isFinite(value) && value > 0 ? value : 0
 }
 
-/** Reblast only when delivery reported failed recipients. */
-export function canReblastMessage(message) {
-  return Boolean(message?.id) && messageFailedCount(message) > 0
+export function messageRecipientCount(message) {
+  const recipients = Number(message?.recipients)
+  if (Number.isFinite(recipients) && recipients > 0) return recipients
+  return messageDeliveryTotal(message)
 }
 
-/** Resend for any saved message that is not still mid-send. */
+/** Reblast is for bulk (group) SMS when delivery reported failed recipients. */
+export function canReblastMessage(message) {
+  if (!message?.id || message.kind !== 'groups') return false
+  return messageFailedCount(message) > 0
+}
+
+/** Resend is for quick SMS (to numbers) that is not still mid-send. */
 export function canResendMessage(message) {
-  if (!message?.id) return false
+  if (!message?.id || message.kind !== 'numbers') return false
   const status = String(message.status ?? '').toLowerCase()
   return status !== 'queued' && status !== 'sending' && status !== 'processing'
 }

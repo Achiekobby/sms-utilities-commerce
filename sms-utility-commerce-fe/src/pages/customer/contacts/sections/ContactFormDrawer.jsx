@@ -1,5 +1,6 @@
 import { Loader2, X } from 'lucide-react'
 import { useState } from 'react'
+import { CitySelectField } from '../../../../components/CitySelectField'
 import { Drawer } from '../../../../components/Drawer'
 import { SelectField } from '../../../../components/SelectField'
 import { apiErrorMessage, fieldErrors } from '../../../../features/auth/client'
@@ -157,7 +158,17 @@ export function ContactFormDrawer({ groupId, contact = null, onClose, onSaved })
             <TextField id="contact-dob" label="Date of birth" type="date" value={values.dateOfBirth} error={errorFor('dateOfBirth')} onChange={(event) => set('dateOfBirth', event.target.value)} />
           </div>
           <div className="grid gap-x-3 sm:grid-cols-2">
-            <SelectField id="contact-region" label="Region" dense value={values.region} error={errorFor('region')} onChange={(event) => set('region', event.target.value)}>
+            <SelectField
+              id="contact-region"
+              label="Region"
+              dense
+              value={values.region}
+              error={errorFor('region')}
+              onChange={(event) => {
+                set('region', event.target.value)
+                set('city', '')
+              }}
+            >
               <option value="">Select</option>
               {regions.map((region) => (
                 <option key={region} value={region}>
@@ -165,7 +176,14 @@ export function ContactFormDrawer({ groupId, contact = null, onClose, onSaved })
                 </option>
               ))}
             </SelectField>
-            <TextField id="contact-city" label="City" value={values.city} error={errorFor('city')} onChange={(event) => set('city', event.target.value)} />
+            <CitySelectField
+              id="contact-city"
+              dense
+              region={values.region}
+              value={values.city}
+              error={errorFor('city')}
+              onChange={(city) => set('city', city)}
+            />
           </div>
           <TextField id="contact-gps" label="GPS address" value={values.gpsAddress} error={errorFor('gpsAddress')} onChange={(event) => set('gpsAddress', event.target.value)} />
           <TextField id="contact-address" label="Address" value={values.address} error={errorFor('address')} onChange={(event) => set('address', event.target.value)} />

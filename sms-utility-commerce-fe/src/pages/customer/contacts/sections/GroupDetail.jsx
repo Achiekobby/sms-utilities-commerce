@@ -108,8 +108,8 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
       aria-labelledby="group-heading"
       className="@container/detail min-w-0 flex-1 rounded-xl border border-[#D8E7FA] bg-white p-4 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_8px_22px_-14px_rgba(20,115,230,0.35)] sm:p-5"
     >
-      <header className="flex flex-nowrap items-center gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <header className="flex flex-col gap-3 @2xl/detail:flex-row @2xl/detail:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-3 overflow-hidden">
           <span
             className="flex size-11 shrink-0 items-center justify-center rounded-xl @3xl/detail:size-14"
             style={{ backgroundColor: group.tint, color: group.color }}
@@ -117,21 +117,26 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
             <Icon aria-hidden="true" className="size-5 @3xl/detail:size-[26px]" />
           </span>
 
-          <div className="min-w-0">
-            <div className="flex min-w-0 items-center gap-x-2.5">
-              <h2 id="group-heading" className="truncate text-base font-bold tracking-tight text-navy @3xl/detail:text-lg @5xl/detail:text-xl">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+              <h2
+                id="group-heading"
+                className="max-w-full truncate text-base font-bold tracking-tight text-navy @3xl/detail:text-lg @5xl/detail:text-xl"
+              >
                 {group.name}
               </h2>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#E4ECFA] px-2.5 py-0.5 text-[11px] font-semibold text-navy tabular-nums @3xl/detail:px-3 @3xl/detail:py-1 @3xl/detail:text-xs">
-                <Users size={12} strokeWidth={2.3} aria-hidden="true" />
-                {formatCount(group.count)} contacts
+              <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#E4ECFA] px-2.5 py-0.5 text-[11px] font-semibold text-navy tabular-nums @3xl/detail:px-3 @3xl/detail:py-1 @3xl/detail:text-xs">
+                <Users size={12} strokeWidth={2.3} aria-hidden="true" className="shrink-0" />
+                <span className="truncate">{formatCount(group.count)} contacts</span>
               </span>
             </div>
-            <p className="mt-0.5 truncate text-xs text-ink/60 @3xl/detail:text-[13px]">{group.description}</p>
+            {group.description ? (
+              <p className="mt-0.5 truncate text-xs text-ink/60 @3xl/detail:text-[13px]">{group.description}</p>
+            ) : null}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 @3xl/detail:gap-2">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 @2xl/detail:gap-2">
           <ActionMenu
             label="Actions"
             items={groupActions({ group, onArchive, onEdit, onOpenInsights })}
@@ -148,21 +153,26 @@ export function GroupDetail({ group, onAddContact, onArchive, onEdit, onOpenInsi
         </div>
       </header>
 
-      <dl className="mt-4 grid grid-cols-2 gap-2.5 @3xl/detail:grid-cols-4">
+      <dl className="mt-4 grid grid-cols-2 gap-2 @3xl/detail:grid-cols-4 @3xl/detail:gap-2.5">
         {breakdownTiles.map((tile) => {
           const TileIcon = tile.icon
           return (
-            <div key={tile.key} className="flex items-center gap-2.5 rounded-xl border border-[#E1EAF6] bg-white p-3">
+            <div
+              key={tile.key}
+              className="flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-[#E1EAF6] bg-white p-2.5 @3xl/detail:gap-2.5 @3xl/detail:p-3"
+            >
               <span
                 aria-hidden="true"
-                className="flex size-10 shrink-0 items-center justify-center rounded-lg"
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg @3xl/detail:size-10"
                 style={{ backgroundColor: tile.tint, color: tile.color }}
               >
-                <TileIcon size={20} />
+                <TileIcon size={18} />
               </span>
-              <div className="min-w-0">
-                <dt className="text-xs font-semibold text-navy">{tile.label}</dt>
-                <dd className="text-xl leading-7 font-bold tracking-tight text-navy tabular-nums">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <dt className="truncate text-[11px] font-semibold text-navy @3xl/detail:text-xs" title={tile.label}>
+                  {tile.label}
+                </dt>
+                <dd className="truncate text-lg leading-6 font-bold tracking-tight text-navy tabular-nums @3xl/detail:text-xl @3xl/detail:leading-7">
                   {formatCount(group.breakdown[tile.key])}
                 </dd>
               </div>

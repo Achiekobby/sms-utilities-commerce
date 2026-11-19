@@ -1,158 +1,198 @@
-import { X, ArrowUpRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Drawer } from "../../../../components/Drawer";
-import { senderIdError, senderIdMax, validationGuide } from "../rules";
-import GuideContainer from "./GuideContainer";
+import { ArrowUpRight, CheckCircle2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Drawer } from '../../../../components/Drawer'
+import { senderIdError, senderIdMax, validationGuide } from '../rules'
+import GuideContainer from './GuideContainer'
 
-const focusClass =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue";
+const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
 export function SenderFormDrawer({
-  mode = "create",
-  initialName = "",
+  mode = 'create',
+  initialName = '',
   busy = false,
-  serverField = "",
-  serverError = "",
+  serverField = '',
+  serverError = '',
+  success = null,
   onSubmit,
+  onViewSenders,
   onClose,
 }) {
-  const [name, setName] = useState(initialName);
-  const [showGuide, setShowGuide] = useState(false);
-  const [attempted, setAttempted] = useState(false);
-  const [hideServer, setHideServer] = useState(false);
-  const error = senderIdError(name);
-  const visibleError = (!hideServer && serverField) || (attempted ? error : "");
+  const [name, setName] = useState(initialName)
+  const [showGuide, setShowGuide] = useState(false)
+  const [attempted, setAttempted] = useState(false)
+  const [hideServer, setHideServer] = useState(false)
+  const error = senderIdError(name)
+  const visibleError = (!hideServer && serverField) || (attempted ? error : '')
+  const editing = mode === 'edit'
+  const done = Boolean(success)
 
   useEffect(() => {
-    setHideServer(false);
-  }, [serverField, serverError]);
-  const editing = mode === "edit";
+    setHideServer(false)
+  }, [serverField, serverError])
 
   function submit(event) {
-    event.preventDefault();
-    if (busy) return;
-    setAttempted(true);
-    if (error) return;
-    onSubmit(name);
+    event.preventDefault()
+    if (busy || done) return
+    setAttempted(true)
+    if (error) return
+    onSubmit(name)
   }
 
   return (
     <Drawer
-      label={editing ? "Edit sender ID" : "Create sender ID"}
+      label={done ? 'Sender ID submitted' : editing ? 'Edit sender ID' : 'Create sender ID'}
       onClose={onClose}
       widthClass="w-[min(28rem,calc(100vw-1.5rem))]"
     >
-      <form
-        onSubmit={submit}
-        className="flex h-full flex-col bg-white"
-        noValidate
-      >
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-navy">
-              {editing ? "Edit sender ID" : "Create sender ID"}
-            </h2>
-            <p className="mt-1 text-[13px] leading-5 text-ink/60">
-              {editing
-                ? "Changing this sender ID will submit it for approval again."
-                : "Sender IDs identify your business or service as the sender of an SMS."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            aria-label="Close"
-            className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink/55 hover:bg-canvas hover:text-navy disabled:opacity-50 ${focusClass}`}
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
-        </header>
+      {done ? (
+        <div className="flex h-full flex-col bg-white">
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
+            <div>
+              <h2 className="text-base font-semibold text-navy">Sender ID submitted</h2>
+              <p className="mt-1 text-[13px] leading-5 text-ink/60">
+                Cellogent will review it before you can send with it.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink/55 hover:bg-canvas hover:text-navy ${focusClass}`}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <label
-              htmlFor="sender-id-name"
-              className="text-sm font-semibold text-navy"
-            >
-              Sender ID
-            </label>
-            <p
-              className={`text-xs tabular-nums ${name.length > senderIdMax ? "font-semibold text-[#9F1C26]" : "text-ink/45"}`}
-            >
-              {name.length} / {senderIdMax}
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto px-5 py-8 text-center">
+            <span className="flex size-14 items-center justify-center rounded-2xl bg-[#E7F7EE] text-green ring-1 ring-[#B7E4C7]/70">
+              <CheckCircle2 size={28} strokeWidth={2} aria-hidden="true" />
+            </span>
+            <p className="mt-4 text-lg font-bold tracking-tight text-navy">Request received</p>
+            {success.name ? (
+              <p className="mt-2 font-mono text-sm font-semibold tracking-wide text-navy">{success.name}</p>
+            ) : null}
+            <p className="mt-2 max-w-sm text-sm leading-6 text-ink/60">
+              {success.message ||
+                'Your sender ID is pending Cellogent approval. It will appear in your approved list once the review is complete.'}
             </p>
           </div>
-          <input
-            id="sender-id-name"
-            name="name"
-            value={name}
-            autoComplete="off"
-            spellCheck="false"
-            data-autofocus
-            aria-invalid={visibleError ? true : undefined}
-            aria-describedby={visibleError ? "sender-id-error" : undefined}
-            onChange={(event) => {
-              setName(event.target.value);
-              setHideServer(true);
-            }}
-            placeholder="CelloBot"
-            className="mt-1.5 h-11 w-full rounded-lg border border-ink/15 bg-white px-3 text-sm text-navy outline-none placeholder:text-ink/35 focus:border-blue"
-          />
-          {visibleError ? (
-            <p
-              id="sender-id-error"
-              className="mt-1.5 text-[13px] text-[#9F1C26]"
+
+          <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-ink/10 px-5 py-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-semibold text-navy hover:bg-canvas ${focusClass}`}
             >
-              {visibleError}
-            </p>
-          ) : null}
-          {serverError ? (
-            <p
-              role="alert"
-              className="mt-3 rounded-lg bg-[#FDECEE] px-3 py-2 text-[13px] text-[#9F1C26]"
-            >
-              {serverError}
-            </p>
-          ) : null}
-          {showGuide ? (
-            <GuideContainer guideData={validationGuide()} setShowGuide={setShowGuide} />
-          ) : (
-            <div className="mt-3 flex justify-end">
+              Close
+            </button>
+            {onViewSenders ? (
               <button
                 type="button"
-                onClick={() => setShowGuide(true)}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-blue transition-colors hover:bg-blue/[0.06] ${focusClass}`}
+                data-autofocus
+                onClick={onViewSenders}
+                className={`inline-flex h-10 items-center justify-center rounded-lg bg-navy px-4 text-sm font-semibold text-white hover:bg-navy/90 ${focusClass}`}
               >
-                Show guide
-                <ArrowUpRight size={14} aria-hidden="true" />
+                Go to Sender IDs
               </button>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex h-full flex-col bg-white" noValidate>
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
+            <div>
+              <h2 className="text-base font-semibold text-navy">
+                {editing ? 'Edit sender ID' : 'Create sender ID'}
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-ink/60">
+                {editing
+                  ? 'Changing this sender ID will submit it for approval again.'
+                  : 'Sender IDs identify your business as the sender of an SMS. New requests go through Cellogent approval before you can use them.'}
+              </p>
             </div>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              aria-label="Close"
+              className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink/55 hover:bg-canvas hover:text-navy disabled:opacity-50 ${focusClass}`}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </header>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-ink/10 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className={`inline-flex h-10 items-center rounded-lg px-3 text-sm font-semibold text-navy hover:bg-canvas disabled:opacity-50 ${focusClass}`}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className={`inline-flex h-10 items-center rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-wait disabled:opacity-70 ${focusClass}`}
-          >
-            {busy
-              ? "Submitting..."
-              : editing
-                ? "Update sender ID"
-                : "Create sender ID"}
-          </button>
-        </div>
-      </form>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor="sender-id-name" className="text-sm font-semibold text-navy">
+                Sender ID
+              </label>
+              <p
+                className={`text-xs tabular-nums ${name.length > senderIdMax ? 'font-semibold text-[#9F1C26]' : 'text-ink/45'}`}
+              >
+                {name.length} / {senderIdMax}
+              </p>
+            </div>
+            <input
+              id="sender-id-name"
+              name="name"
+              value={name}
+              autoComplete="off"
+              spellCheck="false"
+              data-autofocus
+              aria-invalid={visibleError ? true : undefined}
+              aria-describedby={visibleError ? 'sender-id-error' : undefined}
+              onChange={(event) => {
+                setName(event.target.value)
+                setHideServer(true)
+              }}
+              placeholder="CelloBot"
+              className="mt-1.5 h-11 w-full rounded-lg border border-ink/15 bg-white px-3 text-sm text-navy outline-none placeholder:text-ink/35 focus:border-blue"
+            />
+            {visibleError ? (
+              <p id="sender-id-error" className="mt-1.5 text-[13px] text-[#9F1C26]">
+                {visibleError}
+              </p>
+            ) : null}
+            {serverError ? (
+              <p role="alert" className="mt-3 rounded-lg bg-[#FDECEE] px-3 py-2 text-[13px] text-[#9F1C26]">
+                {serverError}
+              </p>
+            ) : null}
+            {showGuide ? (
+              <GuideContainer guideData={validationGuide()} setShowGuide={setShowGuide} />
+            ) : (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowGuide(true)}
+                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-blue transition-colors hover:bg-blue/[0.06] ${focusClass}`}
+                >
+                  Show guide
+                  <ArrowUpRight size={14} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-ink/10 px-5 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={busy}
+              className={`inline-flex h-10 items-center rounded-lg px-3 text-sm font-semibold text-navy hover:bg-canvas disabled:opacity-50 ${focusClass}`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className={`inline-flex h-10 items-center rounded-lg bg-green px-4 text-sm font-semibold text-white hover:bg-[#006B46] disabled:cursor-wait disabled:opacity-70 ${focusClass}`}
+            >
+              {busy ? 'Submitting...' : editing ? 'Update sender ID' : 'Create sender ID'}
+            </button>
+          </div>
+        </form>
+      )}
     </Drawer>
-  );
+  )
 }
