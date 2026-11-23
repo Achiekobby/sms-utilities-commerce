@@ -1,3 +1,4 @@
+import { UnitsLeft } from '../../../../components/UnitsLeft'
 import { NewMessageButton } from './NewMessageButton'
 
 export function MessagesHeader() {
@@ -9,7 +10,10 @@ export function MessagesHeader() {
           Send to numbers you type, or to contact groups, then follow each report here.
         </p>
       </div>
-      <NewMessageButton look="header" />
+      <div className="flex flex-wrap items-center gap-2">
+        <UnitsLeft />
+        <NewMessageButton look="header" />
+      </div>
     </header>
   )
 }

@@ -13,6 +13,7 @@ export function MessageSendingModal({
   recipientCount = 0,
   unitCost = 0,
   kind = 'numbers',
+  scheduled = false,
 }) {
   const dialogRef = useRef(null)
   const titleId = useId()
@@ -65,14 +66,28 @@ export function MessageSendingModal({
           </div>
 
           <h2 id={titleId} className="relative mt-5 text-lg font-bold tracking-tight text-navy">
-            {opening ? 'Returning to messages' : bulk ? 'Sending to groups' : 'Sending your message'}
+            {opening
+              ? 'Returning to messages'
+              : scheduled
+                ? bulk
+                  ? 'Scheduling group blast'
+                  : 'Scheduling your message'
+                : bulk
+                  ? 'Sending to groups'
+                  : 'Sending your message'}
           </h2>
           <p id={descriptionId} className="relative mx-auto mt-2 max-w-[18rem] text-sm leading-6 text-ink/65">
             {opening
-              ? 'Your SMS is on its way. Taking you back to Messages next.'
-              : bulk
-                ? 'Hold on while we queue this send to your selected contact groups.'
-                : 'Hold on while we deliver this SMS to the numbers you entered.'}
+              ? scheduled
+                ? 'Your SMS is scheduled. Taking you back to Messages next.'
+                : 'Your SMS is on its way. Taking you back to Messages next.'
+              : scheduled
+                ? bulk
+                  ? 'Hold on while we schedule this blast to your selected contact groups.'
+                  : 'Hold on while we schedule this SMS for the date and time you chose.'
+                : bulk
+                  ? 'Hold on while we queue this send to your selected contact groups.'
+                  : 'Hold on while we deliver this SMS to the numbers you entered.'}
           </p>
 
           {(recipientCount > 0 || unitCost > 0) && !opening ? (

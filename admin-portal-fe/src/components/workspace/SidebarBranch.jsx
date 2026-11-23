@@ -6,7 +6,15 @@ import { SidebarItem } from './SidebarItem'
 
 function childIsCurrent(pathname, to) {
   if (pathname === to) return true
-  return to === paths.clients && pathname.startsWith(`${paths.clients}/`)
+  if (to === paths.clients && pathname.startsWith(`${paths.clients}/`)) return true
+  if (
+    to === paths.templates &&
+    pathname.startsWith(`${paths.templates}/`) &&
+    pathname !== paths.newTemplate
+  ) {
+    return true
+  }
+  return false
 }
 
 export function SidebarBranch({ item, iconOnly, onNavigate }) {

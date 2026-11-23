@@ -3,6 +3,7 @@ import {
   ChartColumn,
   CircleCheck,
   CreditCard,
+  FileText,
   IdCard,
   Key,
   KeyRound,
@@ -12,6 +13,7 @@ import {
   LockKeyhole,
   MessageSquare,
   Package,
+  Plus,
   Radio,
   ScrollText,
   Send,
@@ -102,6 +104,27 @@ const navigation = [
             icon: Radio,
             permissions: ['sms.aggregator'],
             summary: 'SMS aggregator connections will be managed here.',
+          },
+        ],
+      },
+      {
+        id: 'templates',
+        label: 'Templates',
+        icon: FileText,
+        children: [
+          {
+            id: 'add-template',
+            label: 'Add Template',
+            to: paths.newTemplate,
+            icon: Plus,
+            summary: 'Create a new SMS message template.',
+          },
+          {
+            id: 'all-templates',
+            label: 'All Templates',
+            to: paths.templates,
+            icon: FileText,
+            summary: 'Browse and manage SMS message templates.',
           },
         ],
       },
@@ -283,6 +306,8 @@ const readyPaths = new Set([
   paths.admins,
   paths.adminOnboarding,
   paths.profile,
+  paths.templates,
+  paths.newTemplate,
 ])
 
 export function isComingSoon(to) {
@@ -355,6 +380,12 @@ export function matchSearchEntries(entries, query) {
 
 export function titleForPath(pathname) {
   if (pathname.startsWith(`${paths.clients}/`)) return 'Client'
+  if (pathname === paths.templates || pathname.startsWith(`${paths.templates}/`)) {
+    if (pathname === paths.newTemplate) return 'Add Template'
+    if (pathname.endsWith('/edit')) return 'Edit Template'
+    if (pathname !== paths.templates && pathname !== paths.newTemplate) return 'Template'
+    return 'All Templates'
+  }
   const match = flattenNavigation([...navigation, { id: 'account', items: footerItems }]).find(
     (item) => item.to === pathname,
   )

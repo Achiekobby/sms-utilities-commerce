@@ -11,6 +11,7 @@ import Images from '../utils/Images'
 const links = [
   { to: paths.home, label: 'Home', end: true },
   { to: paths.pricing, label: 'Pricing' },
+  { to: paths.docs, label: 'API docs' },
 ]
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'

@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router'
 import { paths } from '../../../routes/paths'
 import { useGetSurveyQuery, useGetSurveyQuestionsQuery } from '../../../services/api/surveys/surveysApi'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
+import { canEditSurvey } from './actions'
 import { NewSurveyPage } from './NewSurveyPage'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -13,7 +14,8 @@ export function EditSurveyPage() {
   const survey = detail.data ?? null
   const loading = detail.isLoading || questions.isLoading
 
-  useDocumentTitle(survey?.name ? `Edit ${survey.name}` : 'Edit survey')
+  const locked = Boolean(survey) && !canEditSurvey(survey.status)
+  useDocumentTitle(locked ? survey.name : survey?.name ? `Edit ${survey.name}` : 'Edit survey')
 
   if (loading) {
     return (
@@ -50,6 +52,20 @@ export function EditSurveyPage() {
         <p className="mt-2 max-w-xl text-sm leading-6 text-ink/60">That survey is not in this workspace.</p>
         <Link to={paths.surveys} className={`mt-3 inline-flex text-sm font-semibold text-blue ${focusClass}`}>
           Back to surveys
+        </Link>
+      </div>
+    )
+  }
+
+  if (locked) {
+    return (
+      <div className="rounded-2xl border border-[#D8E7FA] bg-white px-5 py-8">
+        <p className="text-sm font-semibold text-navy">This survey can no longer be edited</p>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-ink/60">
+          {survey.name} is {String(survey.status).toLowerCase()}. Changes are only available while a survey is still a draft.
+        </p>
+        <Link to={paths.survey(survey.id)} className={`mt-3 inline-flex text-sm font-semibold text-blue ${focusClass}`}>
+          View survey
         </Link>
       </div>
     )

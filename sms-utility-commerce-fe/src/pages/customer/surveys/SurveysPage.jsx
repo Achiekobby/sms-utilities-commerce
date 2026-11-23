@@ -154,8 +154,17 @@ export function SurveysPage() {
             <p className="mt-1 text-sm text-ink/55">
               {archived
                 ? 'When you archive a survey, it waits here until you restore or remove it.'
-                : 'Surveys you create will show up in this list.'}
+                : 'Create one from a survey template or start from scratch.'}
             </p>
+            {!archived ? (
+              <Link
+                to={paths.newSurvey}
+                className={`mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-green px-3 text-sm font-semibold text-white hover:bg-[#006B46] ${focusClass}`}
+              >
+                <Plus size={15} strokeWidth={2.4} aria-hidden="true" />
+                Create survey
+              </Link>
+            ) : null}
           </div>
         ) : (
           <div className="overflow-x-auto">

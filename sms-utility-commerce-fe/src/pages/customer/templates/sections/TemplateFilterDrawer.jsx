@@ -1,36 +1,29 @@
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
-import { formatCount } from '../../dashboard/format'
-import { campaignTypes, typeLabel } from '../../campaigns/model'
-import { emptyTemplateFilters, queryTemplates, templateSenders } from '../query'
+import { occasionTypes } from '../../../../features/templates/templateForm'
+import { templateStatuses } from '../../../../features/templates/templateModel'
+import {
+  emptyTemplateFilters,
+  templateFilterTypeOptions,
+} from '../query'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+const field =
+  'h-11 w-full rounded-xl border border-ink/15 bg-white px-3.5 text-sm text-navy outline-none transition-colors focus:border-blue focus:ring-4 focus:ring-blue/15'
 
-function Option({ checked, label, onChange }) {
-  return (
-    <label
-      className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-colors duration-200 ${
-        checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/15 text-navy hover:border-blue/40'
-      }`}
-    >
-      <input type="checkbox" checked={checked} onChange={onChange} className="size-4 accent-blue" />
-      {label}
-    </label>
-  )
-}
-
-export function TemplateFilterDrawer({ templates, search, filters, onApply, onClose }) {
+export function TemplateFilterDrawer({ filters, onApply, onClose }) {
   const [draft, setDraft] = useState(filters)
-  const count = queryTemplates(templates, { search, ...draft }).length
-  const senders = templateSenders(templates)
+  const filterCount =
+    (draft.type ? 1 : 0) +
+    (draft.status ? 1 : 0) +
+    (draft.category ? 1 : 0) +
+    (draft.scope ? 1 : 0) +
+    (draft.owner ? 1 : 0) +
+    (draft.occasionType ? 1 : 0)
 
-  function toggle(key, id) {
-    setDraft((current) => {
-      const selected = current[key]
-      const next = selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id]
-      return { ...current, [key]: next }
-    })
+  function setField(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }))
   }
 
   return (
@@ -46,7 +39,7 @@ export function TemplateFilterDrawer({ templates, search, filters, onApply, onCl
         <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-base font-bold text-navy">Filter templates</h2>
-            <p className="mt-0.5 text-[13px] text-ink/60">Type and sender. Search stays in the list.</p>
+            <p className="mt-0.5 text-[13px] text-ink/60">Type, status, category, and ownership.</p>
           </div>
           <button
             type="button"
@@ -59,42 +52,116 @@ export function TemplateFilterDrawer({ templates, search, filters, onApply, onCl
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-navy">Type</legend>
-            <div className="grid gap-2">
-              {campaignTypes.map((type) => (
-                <Option
-                  key={type.id}
-                  label={type.label}
-                  checked={draft.types.includes(type.id)}
-                  onChange={() => toggle('types', type.id)}
-                />
+          <div>
+            <label htmlFor="template-filter-type" className="mb-2 block text-sm font-semibold text-navy">
+              Type
+            </label>
+            <select
+              id="template-filter-type"
+              value={draft.type}
+              onChange={(event) => setField('type', event.target.value)}
+              className={field}
+            >
+              <option value="">Any type</option>
+              {templateFilterTypeOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
               ))}
-            </div>
-          </fieldset>
+            </select>
+          </div>
 
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-navy">Sender</legend>
-            <div className="grid gap-2">
-              {senders.map((sender) => (
-                <Option
-                  key={sender}
-                  label={sender}
-                  checked={draft.senders.includes(sender)}
-                  onChange={() => toggle('senders', sender)}
-                />
+          {draft.type === 'campaign_occasion' ? (
+            <div>
+              <label htmlFor="template-filter-occasion" className="mb-2 block text-sm font-semibold text-navy">
+                Occasion
+              </label>
+              <select
+                id="template-filter-occasion"
+                value={draft.occasionType}
+                onChange={(event) => setField('occasionType', event.target.value)}
+                className={field}
+              >
+                <option value="">Any occasion</option>
+                {occasionTypes.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
+
+          <div>
+            <label htmlFor="template-filter-status" className="mb-2 block text-sm font-semibold text-navy">
+              Status
+            </label>
+            <select
+              id="template-filter-status"
+              value={draft.status}
+              onChange={(event) => setField('status', event.target.value)}
+              className={field}
+            >
+              {templateStatuses.map((option) => (
+                <option key={option.value || 'any'} value={option.value}>
+                  {option.label}
+                </option>
               ))}
-            </div>
-          </fieldset>
+            </select>
+          </div>
 
-          <p className="text-[13px] leading-5 text-ink/55">Leave a group empty to include every value in it.</p>
+          <div>
+            <label htmlFor="template-filter-category" className="mb-2 block text-sm font-semibold text-navy">
+              Category
+            </label>
+            <input
+              id="template-filter-category"
+              type="text"
+              value={draft.category}
+              placeholder="e.g. Marketing"
+              onChange={(event) => setField('category', event.target.value)}
+              className={field}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="template-filter-scope" className="mb-2 block text-sm font-semibold text-navy">
+              Scope
+            </label>
+            <select
+              id="template-filter-scope"
+              value={draft.scope}
+              onChange={(event) => setField('scope', event.target.value)}
+              className={field}
+            >
+              <option value="">Any scope</option>
+              <option value="global">Global</option>
+              <option value="tenant">Workspace</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="template-filter-owner" className="mb-2 block text-sm font-semibold text-navy">
+              Owner
+            </label>
+            <select
+              id="template-filter-owner"
+              value={draft.owner}
+              onChange={(event) => setField('owner', event.target.value)}
+              className={field}
+            >
+              <option value="">Anyone</option>
+              <option value="mine">My templates</option>
+            </select>
+          </div>
         </div>
 
         <footer className="flex items-center justify-between gap-3 border-t border-ink/10 px-5 py-4">
           <button
             type="button"
             onClick={() => setDraft(emptyTemplateFilters)}
-            className={`inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-ink/70 transition-colors hover:text-navy ${focusClass}`}
+            disabled={!filterCount}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-ink/70 transition-colors hover:text-navy disabled:opacity-40 ${focusClass}`}
           >
             <X size={15} strokeWidth={2.2} aria-hidden="true" />
             Clear
@@ -104,17 +171,10 @@ export function TemplateFilterDrawer({ templates, search, filters, onApply, onCl
             className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`}
           >
             <Check size={16} strokeWidth={2.4} aria-hidden="true" />
-            Show {formatCount(count)} {count === 1 ? 'template' : 'templates'}
+            Apply filters
           </button>
         </footer>
       </form>
     </Drawer>
   )
-}
-
-export function templateFilterChips(filters) {
-  return [
-    ...filters.types.map((id) => ({ key: `type-${id}`, group: 'types', id, label: typeLabel(id) })),
-    ...filters.senders.map((id) => ({ key: `sender-${id}`, group: 'senders', id, label: id })),
-  ]
 }

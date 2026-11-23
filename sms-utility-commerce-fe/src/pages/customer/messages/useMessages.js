@@ -1,9 +1,21 @@
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
-import { useGetMessagesQuery } from '../../../services/api/messages/messagesApi'
+import { useGetMessagesQuery, useGetSmsQuery } from '../../../services/api/messages/messagesApi'
+import { emptyMessageFilters, messagesQueryParams } from './query'
 
-export function useMessages({ page = 1, perPage = 15 } = {}) {
-  const query = useGetMessagesQuery({ page, perPage })
+export function useMessages({ page = 1, perPage = 15, filters = emptyMessageFilters } = {}) {
+  const params = messagesQueryParams(filters, { page, perPage })
+  const query = useGetMessagesQuery({
+    page: params.page,
+    perPage: params.per_page,
+    contactGroupId: params.contact_group_id ?? '',
+    type: params.type ?? '',
+    status: params.status ?? '',
+    requestType: params.request_type ?? '',
+    mode: params.mode ?? '',
+    fromDate: params.from_date ?? '',
+    toDate: params.to_date ?? '',
+  })
 
   return {
     messages: query.data?.rows ?? [],
@@ -24,13 +36,15 @@ export function useMessage(id, seed = null) {
   const created = useSelector((state) => state.messages.created)
   const local = useMemo(() => created.find((message) => String(message.id) === key) ?? null, [created, key])
   const seeded = seed && String(seed.id) === key ? seed : null
-  // Always load the list so delivery/status stay current after send (local cache can be stale).
-  const list = useGetMessagesQuery({ page: 1, perPage: 100 }, { skip: !key })
-  const fromList = useMemo(
-    () => (list.data?.rows ?? []).find((message) => String(message.id) === key) ?? null,
-    [list.data?.rows, key],
-  )
+  const detail = useGetSmsQuery(key, { skip: !key })
+  const message = detail.data ?? local ?? seeded ?? null
 
-  if (!key) return null
-  return fromList ?? local ?? seeded ?? null
+  return {
+    message,
+    isLoading: Boolean(key) && detail.isLoading && !message,
+    isFetching: detail.isFetching,
+    isError: detail.isError,
+    error: detail.error,
+    refetch: detail.refetch,
+  }
 }

@@ -18,6 +18,9 @@ import { PlansPage } from '../pages/workspace/plans/PlansPage'
 import { RolesPage } from '../pages/workspace/roles/RolesPage'
 import { SenderIdsPage } from '../pages/workspace/sender-ids/SenderIdsPage'
 import { SubscriptionsPage } from '../pages/workspace/subscriptions/SubscriptionsPage'
+import { NewTemplatePage } from '../pages/workspace/templates/NewTemplatePage'
+import { TemplateDetailPage } from '../pages/workspace/templates/TemplateDetailPage'
+import { TemplatesPage } from '../pages/workspace/templates/TemplatesPage'
 import { ProfilePage } from '../pages/workspace/profile/ProfilePage'
 import { AuthGuard, GuestGuard, VerifyGuard } from './guards'
 import { paths } from './paths'
@@ -35,6 +38,7 @@ function elementFor(route) {
   if (route.to === paths.permissions) return <PermissionsPage />
   if (route.to === paths.activityLogs) return <ActivityLogsPage />
   if (route.to === paths.subscriptions) return <SubscriptionsPage />
+  if (route.to === paths.templates) return <TemplatesPage />
   return <GuardedPage permissions={route.permissions} title={route.label} />
 }
 
@@ -66,6 +70,10 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: 'clients/:clientId', element: <ClientDetailPage /> },
           { path: 'sender-ids/:senderId', element: <Navigate to={paths.senderIds} replace /> },
+          { path: 'templates', element: <TemplatesPage /> },
+          { path: 'templates/new', element: <NewTemplatePage /> },
+          { path: 'templates/:templateId', element: <TemplateDetailPage /> },
+          { path: 'templates/:templateId/edit', element: <NewTemplatePage /> },
           ...guardedRoutes,
         ],
       },

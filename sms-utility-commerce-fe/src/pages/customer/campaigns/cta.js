@@ -7,9 +7,16 @@ export const ctaTypes = [
     inputMode: 'url',
   },
   {
+    id: 'ussd',
+    label: 'USSD code',
+    description: 'Dial code added at the end of the SMS.',
+    placeholder: '*714*20#',
+    inputMode: 'text',
+  },
+  {
     id: 'phone',
     label: 'Phone number',
-    description: 'Customer taps to call this number.',
+    description: 'Number the customer can call.',
     placeholder: '0241234567',
     inputMode: 'tel',
   },
@@ -76,6 +83,7 @@ export function linkWithScheme(value) {
 
 export function formatCtaValue(cta) {
   if (!cta?.enabled || !cta.value) return '—'
+  if (cta.type === 'ussd' || cta.type === 'phone') return String(cta.value).trim()
   if (cta.type === 'whatsapp') {
     const digits = String(cta.value).replace(/\D/g, '')
     return digits ? `https://wa.me/${digits}` : cta.value
@@ -97,6 +105,7 @@ export function ctaInsertText(cta) {
   const label = String(cta.label ?? '').trim()
   if (label) return `${label}: ${value}`
   if (cta.type === 'phone') return `Call ${value}`
+  if (cta.type === 'ussd') return `Dial ${value}`
   if (cta.type === 'whatsapp') return `WhatsApp us: ${value}`
   return value
 }
@@ -114,6 +123,12 @@ export function messageWithCta(body, cta) {
 export function validateCtaValue(cta) {
   const value = String(cta?.value ?? '').trim()
   if (!value) return 'Enter the CTA destination.'
+
+  if (cta.type === 'ussd') {
+    const code = value.replace(/\s/g, '')
+    if (!/^\*[0-9*]+#$/.test(code)) return 'Enter a USSD code like *714*20#.'
+    return ''
+  }
 
   if (cta.type === 'link') {
     const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`

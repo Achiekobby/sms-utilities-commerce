@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, Clock3, RefreshCw, RotateCcw, Send, XCircle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router'
 import { KindBadge } from './sections/KindBadge'
 import { paths } from '../../../routes/paths'
@@ -7,13 +7,12 @@ import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { formatCount } from '../dashboard/format'
 import { CampaignStatus } from '../campaigns/sections/CampaignStatus'
 import { formatCreated, messageCount, whenLabel } from '../campaigns/model'
-import {
-  formatStoredNumber,
-  messageDeliveryRate,
-  messageFailedCount,
-  messageHasDelivery,
-} from './model'
+import { messageHasActions } from './actions'
+import { formatStoredNumber } from './model'
 import { useMessage } from './useMessages'
+import { MessageActions } from './sections/MessageActions'
+import { MessageDeliveryReport } from './sections/MessageDeliveryReport'
+import { MessageRecipients } from './sections/MessageRecipients'
 import { useMessageActions } from './sections/useMessageActions'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -25,20 +24,6 @@ function Fact({ label, value }) {
     <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 py-3 last:border-b-0">
       <dt className="text-sm text-ink/55">{label}</dt>
       <dd className="text-right text-sm font-medium text-navy">{value ?? '—'}</dd>
-    </div>
-  )
-}
-
-function DeliveryStat({ label, value, icon: Icon, tone }) {
-  return (
-    <div className={`rounded-xl px-3 py-3 ${tone}`}>
-      <dt className="flex items-center gap-1.5 text-xs font-medium text-ink/55">
-        <Icon size={13} strokeWidth={2.3} aria-hidden="true" />
-        {label}
-      </dt>
-      <dd className="mt-1 text-lg font-semibold text-navy tabular-nums">
-        {value == null ? '—' : formatCount(value)}
-      </dd>
     </div>
   )
 }
@@ -63,19 +48,46 @@ export function MessageDetailPage() {
   const { messageId } = useParams()
   const location = useLocation()
   const seed = location.state?.message && typeof location.state.message === 'object' ? location.state.message : null
-  const message = useMessage(messageId, seed)
+  const { message, isLoading, isError, error, refetch } = useMessage(messageId, seed)
   const actions = useMessageActions()
   useDocumentTitle(message ? message.name : 'Message')
 
+  if (isLoading) {
+    return (
+      <div role="status" className="space-y-3">
+        <span className="sr-only">Loading message</span>
+        <span className="skeleton block h-8 w-48 rounded-lg" />
+        <span className="skeleton block h-12 w-full max-w-xl rounded-xl" />
+        <span className="skeleton block h-64 rounded-xl" />
+      </div>
+    )
+  }
+
+  if (!message && isError) {
+    if (error?.status === 404) return <MissingMessage />
+    return (
+      <div
+        role="alert"
+        className="flex flex-col gap-3 rounded-xl border border-[#E0232E]/25 bg-[#FDECEE] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p className="text-sm text-[#9F1C26]">This message could not be loaded.</p>
+        <button
+          type="button"
+          onClick={refetch}
+          className={`h-9 rounded-lg bg-white px-3 text-sm font-semibold text-navy ${focusClass}`}
+        >
+          Try again
+        </button>
+      </div>
+    )
+  }
+
   if (!message) return <MissingMessage />
 
-  const reported = messageHasDelivery(message)
   const created = formatStamp(message.createdAt) || formatCreated(message.createdAt)
   const completed = formatStamp(message.completedAt)
   const isBulk = message.kind === 'groups'
-  const failed = messageFailedCount(message)
-  const canResend = actions.canResend(message)
-  const canReblast = actions.canReblast(message)
+  const showActions = messageHasActions(message)
 
   return (
     <div className="w-full">
@@ -98,30 +110,9 @@ export function MessageDetailPage() {
             {completed ? ` · Completed ${completed}` : ''}
           </p>
         </div>
-        {canResend || canReblast ? (
-          <div className="flex flex-wrap gap-2 self-start">
-            {canResend ? (
-              <button
-                type="button"
-                disabled={actions.busy}
-                onClick={() => actions.ask('resend', message)}
-                className={`inline-flex h-10 items-center gap-2 rounded-xl border border-ink/15 bg-white px-3.5 text-sm font-semibold text-navy hover:bg-canvas disabled:opacity-60 ${focusClass}`}
-              >
-                <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
-                Resend
-              </button>
-            ) : null}
-            {canReblast ? (
-              <button
-                type="button"
-                disabled={actions.busy}
-                onClick={() => actions.ask('reblast', message)}
-                className={`inline-flex h-10 items-center gap-2 rounded-xl bg-navy px-3.5 text-sm font-semibold text-white hover:bg-navy/90 disabled:opacity-60 ${focusClass}`}
-              >
-                <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-                Reblast failed{failed ? ` (${formatCount(failed)})` : ''}
-              </button>
-            ) : null}
+        {showActions ? (
+          <div className="self-start">
+            <MessageActions message={message} actions={actions} />
           </div>
         ) : null}
       </header>
@@ -192,28 +183,12 @@ export function MessageDetailPage() {
       </div>
 
       <section aria-labelledby="message-delivery" className={`${card} mt-4`}>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="message-delivery" className="text-base font-bold text-navy">
-              Delivery
-            </h2>
-            {reported ? (
-              <p className="mt-1 text-3xl font-bold tracking-tight text-navy tabular-nums">
-                {messageDeliveryRate(message)}
-              </p>
-            ) : null}
-          </div>
+        <h2 id="message-delivery" className="text-base font-bold text-navy">
+          Delivery
+        </h2>
+        <div className="mt-3">
+          <MessageDeliveryReport message={message} />
         </div>
-        {reported ? (
-          <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <DeliveryStat label="Sent" value={message.sent} icon={Send} tone="bg-[#E7F1FC]" />
-            <DeliveryStat label="Delivered" value={message.delivered} icon={CheckCircle2} tone="bg-[#E5F6EC]" />
-            <DeliveryStat label="Pending" value={message.pending} icon={Clock3} tone="bg-[#FFF8EE]" />
-            <DeliveryStat label="Failed" value={message.failed} icon={XCircle} tone="bg-[#FDECEE]" />
-          </dl>
-        ) : (
-          <p className="mt-3 text-sm leading-6 text-ink/60">Delivery has not been reported yet.</p>
-        )}
       </section>
 
       <section className={`${card} mt-4`}>
@@ -239,6 +214,10 @@ export function MessageDetailPage() {
           ))}
         </dl>
       </section>
+
+      <div className={`${card} mt-4`}>
+        <MessageRecipients smsId={message.id} />
+      </div>
 
       {actions.dialog}
     </div>

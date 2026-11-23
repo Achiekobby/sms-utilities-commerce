@@ -1,4 +1,4 @@
-import { RefreshCw, RotateCcw, X } from 'lucide-react'
+import { ArrowUpRight, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { Drawer } from '../../../../components/Drawer'
 import { formatStamp } from '../../../../features/contacts/contactImport'
@@ -6,9 +6,13 @@ import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
 import { CampaignStatus } from '../../campaigns/sections/CampaignStatus'
 import { messageCount } from '../../campaigns/model'
-import { formatStoredNumber, messageDeliveryRate, messageFailedCount, messageHasDelivery } from '../model'
+import { useGetSmsQuery } from '../../../../services/api/messages/messagesApi'
+import { formatStoredNumber } from '../model'
 import { messageTypeLabel } from '../query'
 import { KindBadge } from './KindBadge'
+import { MessageActions } from './MessageActions'
+import { MessageDeliveryReport } from './MessageDeliveryReport'
+import { MessageRecipients } from './MessageRecipients'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 
@@ -44,21 +48,13 @@ function unitsAfter(message) {
   return Number(message.unitsBefore) - used + refunded
 }
 
-export function MessageDetailsDrawer({
-  message,
-  onClose,
-  onResend,
-  onReblast,
-  canResend = false,
-  canReblast = false,
-  busy = false,
-}) {
+export function MessageDetailsDrawer({ message: seed, onClose, actions }) {
+  const detail = useGetSmsQuery(seed?.id, { skip: seed?.id == null })
+  const message = detail.data ?? seed
   const isBulk = message.kind === 'groups'
   const created = formatStamp(message.createdAt) || '—'
   const completed = formatStamp(message.completedAt)
-  const reported = messageHasDelivery(message)
-  const failed = messageFailedCount(message)
-  const showActions = canResend || canReblast
+  const showActions = Boolean(actions)
 
   return (
     <Drawer label="Message details" onClose={onClose} widthClass="w-[min(32rem,calc(100vw-1.5rem))]">
@@ -146,28 +142,9 @@ export function MessageDetailsDrawer({
           </Section>
 
           <Section title="Delivery">
-            {reported ? (
-              <>
-                <p className="mt-3 text-2xl font-bold tracking-tight text-navy tabular-nums">{messageDeliveryRate(message)}</p>
-                <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    ['Sent', message.sent],
-                    ['Delivered', message.delivered],
-                    ['Pending', message.pending],
-                    ['Failed', message.failed],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-xl bg-canvas px-3 py-3">
-                      <dt className="text-xs text-ink/50">{label}</dt>
-                      <dd className="mt-1 text-base font-semibold text-navy tabular-nums">
-                        {value == null ? '—' : formatCount(value)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
-            ) : (
-              <p className="mt-3 text-sm leading-6 text-ink/60">Delivery has not been reported yet.</p>
-            )}
+            <div className="mt-3">
+              <MessageDeliveryReport message={message} compact />
+            </div>
           </Section>
 
           <Section title="Units">
@@ -185,34 +162,26 @@ export function MessageDetailsDrawer({
               ))}
             </dl>
           </Section>
+
+          <Section title="Recipients">
+            <div className="mt-3">
+              <MessageRecipients smsId={message.id} />
+            </div>
+            <Link
+              to={paths.message(message.id)}
+              state={{ message }}
+              onClick={onClose}
+              className={`mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue ${focusClass}`}
+            >
+              Open full report
+              <ArrowUpRight size={14} strokeWidth={2.2} aria-hidden="true" />
+            </Link>
+          </Section>
         </div>
 
         {showActions ? (
           <footer className="border-t border-ink/10 px-5 py-4">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {canResend ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={onResend}
-                  className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-3 text-sm font-semibold text-navy hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-60 ${focusClass}`}
-                >
-                  <RefreshCw size={15} strokeWidth={2.2} aria-hidden="true" />
-                  Resend
-                </button>
-              ) : null}
-              {canReblast ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={onReblast}
-                  className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-navy px-3 text-sm font-semibold text-white hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-60 ${focusClass}`}
-                >
-                  <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
-                  Reblast failed{failed ? ` (${formatCount(failed)})` : ''}
-                </button>
-              ) : null}
-            </div>
+            <MessageActions message={message} actions={actions} />
           </footer>
         ) : null}
       </div>

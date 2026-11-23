@@ -107,6 +107,39 @@ export function formValuesFromSurvey(survey) {
   };
 }
 
+/** Prefill the survey builder from a survey template. */
+export function formValuesFromTemplate(template) {
+  if (!template) return { ...emptySurvey };
+  const questions = (Array.isArray(template.questions) ? template.questions : []).map(
+    (question) => {
+      const type = questionTypes.some((item) => item.id === question?.type)
+        ? question.type
+        : "text";
+      const base = newQuestion(type);
+      const options = Array.isArray(question?.options)
+        ? question.options.map((item) => String(item))
+        : [];
+      return {
+        ...base,
+        prompt: String(question?.prompt ?? ""),
+        required: question?.required !== false,
+        options: isChoiceType(type)
+          ? options.filter((item) => item.trim()).length
+            ? options
+            : base.options
+          : [],
+      };
+    },
+  );
+  return {
+    ...emptySurvey,
+    name: String(template.name ?? ""),
+    intro: String(template.intro || template.description || ""),
+    body: String(template.body ?? ""),
+    questions,
+  };
+}
+
 export function questionPayload(question, position = 0) {
   const item = {
     prompt: question.prompt.trim(),

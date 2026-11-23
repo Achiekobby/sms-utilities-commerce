@@ -23,6 +23,7 @@ import { activeFilterCount, emptyFilters, typeTabs } from '../query'
 import { CampaignActions } from './CampaignActions'
 import { CampaignFilterDrawer } from './CampaignFilterDrawer'
 import { CampaignMetrics } from './CampaignMetrics'
+import { CampaignSourceBadge, campaignSourceMeta } from './CampaignSourceBadge'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignsEmpty } from './CampaignsEmpty'
 
@@ -42,6 +43,11 @@ function pageList(current, count) {
   return [1, 'gap-start', current - 1, current, current + 1, 'gap-end', count]
 }
 
+function CampaignKind({ campaign }) {
+  if (campaignSourceMeta(campaign.source)) return <CampaignSourceBadge source={campaign.source} />
+  return <TypeBadge type={campaign.type} />
+}
+
 function NameLink({ campaign, className = '' }) {
   return (
     <Link to={paths.campaign(campaign.id)} className={`${className} ${focusClass} rounded-sm hover:text-blue`}>
@@ -57,7 +63,7 @@ function CampaignCard({ campaign }) {
         <div className="min-w-0">
           <NameLink campaign={campaign} className="block truncate text-[15px] font-bold text-navy" />
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <TypeBadge type={campaign.type} />
+            <CampaignKind campaign={campaign} />
             <CampaignStatus status={campaign.status} />
           </div>
         </div>
@@ -386,7 +392,7 @@ export function CampaignList() {
                       <NameLink campaign={campaign} />
                     </th>
                     <td className={cell}>
-                      <TypeBadge type={campaign.type} />
+                      <CampaignKind campaign={campaign} />
                     </td>
                     <td className={`${cell} max-w-[12rem] truncate`}>{audienceLabel(campaign)}</td>
                     <td className={cell}>

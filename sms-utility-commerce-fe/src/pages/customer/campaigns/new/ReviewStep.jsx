@@ -12,7 +12,7 @@ import { TypeBadge } from '../../../../components/TypeBadge'
 import { PhonePreview } from '../sections/PhonePreview'
 import { formatCount } from '../../dashboard/format'
 import { formatUnits } from '../../wallet/money'
-import { formatCtaValue, messageWithCta } from '../cta'
+import { ctaInsertText, formatCtaValue, messageWithCta } from '../cta'
 import {
   formatCreated,
   formatSendAt,
@@ -91,6 +91,7 @@ export function ReviewStep({ values, groups, cost, onEdit, editing = false }) {
   const recipients = groups.reduce((sum, group) => sum + group.breakdown.active, 0)
   const estimated = recipients * Math.max(segments, 1)
   const TypeIcon = values.type === 'occasion' ? Cake : Megaphone
+  const ctaSuffix = ctaInsertText({ ...values.cta, enabled: true })
 
   return (
     <div>
@@ -171,12 +172,12 @@ export function ReviewStep({ values, groups, cost, onEdit, editing = false }) {
               ) : (
                 <>
                   <dl className="grid gap-3 sm:grid-cols-2">
-                    <Meta label="CTA" value={formatCtaValue({ ...values.cta, enabled: true, type: 'link' })} />
+                    <Meta label="CTA" value={formatCtaValue({ ...values.cta, enabled: true })} />
                     <Meta label="Label" value={values.cta.label?.trim() || '—'} />
                   </dl>
                   <p className="mt-3 text-[13px] leading-5 text-ink/55">
-                    {values.cta.label?.trim()
-                      ? `Added at the end as “${values.cta.label.trim()}: …”`
+                    {ctaSuffix
+                      ? `Added at the end as “${ctaSuffix}”.`
                       : 'Added at the end of the message.'}
                   </p>
                 </>

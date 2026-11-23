@@ -1,4 +1,5 @@
 import {
+  AlarmClock,
   Building2,
   CalendarClock,
   Cake,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useRef } from 'react'
 import { ChoiceEmpty, ChoicePager, ChoiceSearch, useChoicePage } from '../../../../components/form/ChoiceList'
+import { PlaceholderTextarea } from '../../../../components/PlaceholderTextarea'
 import { typeIcons } from '../../../../components/TypeBadge'
 import {
   campaignTypes,
@@ -72,7 +74,7 @@ export function MessageStep({
   const type = campaignTypes.find((item) => item.id === values.type) ?? campaignTypes[0]
   const segments = segmentCount(values.body)
   const over = segments > maxSegments
-  const earliest = localDateTimeValue(new Date())
+  const earliestDate = localDateTimeValue(new Date()).slice(0, 10)
   const placeholders = placeholdersForType(values.type)
   const planUnitsPerMessage = Number(unitMeter?.unitsPerMessage) || 0
   const planRecipients = Math.max(0, Number(unitMeter?.recipients) || 0)
@@ -300,13 +302,17 @@ export function MessageStep({
         ) : (
           <p className="mb-2 text-xs leading-5 text-ink/55">This text is sent as written to every number.</p>
         )}
-        <textarea
+        <PlaceholderTextarea
           ref={bodyRef}
           id="campaign-body-input"
           name="body"
           rows={5}
           maxLength={maxBodyLength}
           value={values.body}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="off"
+          highlight={showPlaceholders}
           placeholder={
             showPlaceholders
               ? type.placeholder
@@ -392,7 +398,12 @@ export function MessageStep({
                     checked={checked}
                     onChange={() => {
                       onChange('when', item.id)
-                      if (item.id === 'now') onChange('sendAt', '')
+                      if (item.id === 'now') {
+                        onChange('sendAt', '')
+                        onChange('sendTime', '')
+                      } else if (!values.sendTime) {
+                        onChange('sendTime', '09:00')
+                      }
                     }}
                     className="sr-only"
                   />
@@ -403,22 +414,60 @@ export function MessageStep({
             })}
           </div>
           {values.when === 'later' ? (
-            <div className="mt-3">
-              <label htmlFor="campaign-send-at-input" className="sr-only">
-                Date and time
-              </label>
-              <input
-                id="campaign-send-at-input"
-                type="datetime-local"
-                name="sendAt"
-                min={earliest}
-                value={values.sendAt}
-                aria-invalid={errors.sendAt ? true : undefined}
-                aria-describedby={errors.sendAt ? 'campaign-send-at-error' : undefined}
-                onChange={(event) => onChange('sendAt', event.target.value)}
-                className={`${field} h-12`}
-              />
-              <FieldError id="campaign-send-at-error">{errors.sendAt}</FieldError>
+            <div className="mt-3 rounded-xl border border-ink/10 bg-[#F8FAFC] p-3.5 sm:p-4">
+              <p className="text-sm font-semibold text-navy">Send date & time</p>
+              <p className="mt-0.5 mb-3 text-[13px] text-ink/55">Pick a calendar date and a 24-hour clock time.</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="campaign-send-at-input" className="mb-1.5 block text-xs font-semibold text-navy">
+                    Date
+                  </label>
+                  <div className="relative">
+                    <CalendarClock
+                      size={15}
+                      strokeWidth={2.1}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink/40"
+                    />
+                    <input
+                      id="campaign-send-at-input"
+                      type="date"
+                      name="sendAt"
+                      min={earliestDate}
+                      value={String(values.sendAt ?? '').slice(0, 10)}
+                      aria-invalid={errors.sendAt ? true : undefined}
+                      aria-describedby={errors.sendAt ? 'campaign-send-at-error' : undefined}
+                      onChange={(event) => onChange('sendAt', event.target.value)}
+                      className={`${field} h-12 bg-white pl-10`}
+                    />
+                  </div>
+                  <FieldError id="campaign-send-at-error">{errors.sendAt}</FieldError>
+                </div>
+                <div>
+                  <label htmlFor="campaign-send-time-input" className="mb-1.5 block text-xs font-semibold text-navy">
+                    Time
+                  </label>
+                  <div className="relative">
+                    <AlarmClock
+                      size={15}
+                      strokeWidth={2.1}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink/40"
+                    />
+                    <input
+                      id="campaign-send-time-input"
+                      type="time"
+                      name="sendTime"
+                      value={values.sendTime || ''}
+                      aria-invalid={errors.sendTime ? true : undefined}
+                      aria-describedby={errors.sendTime ? 'campaign-send-time-error' : undefined}
+                      onChange={(event) => onChange('sendTime', event.target.value)}
+                      className={`${field} h-12 bg-white pl-10`}
+                    />
+                  </div>
+                  <FieldError id="campaign-send-time-error">{errors.sendTime}</FieldError>
+                </div>
+              </div>
             </div>
           ) : null}
         </fieldset>

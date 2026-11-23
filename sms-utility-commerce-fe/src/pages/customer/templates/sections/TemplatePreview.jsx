@@ -1,8 +1,9 @@
-import { Check, MessageSquare, Smartphone, X } from 'lucide-react'
+import { Check, MessageSquare, PauseCircle, Pencil, PlayCircle, Smartphone, Trash2, X } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { IPhoneMockup } from 'react-device-mockup'
 import { Drawer } from '../../../../components/Drawer'
 import { TypeBadge } from '../../../../components/TypeBadge'
+import { displayTypeForBadge } from '../../../../features/templates/templateModel'
 import { sampleMessage } from '../../campaigns/model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -18,22 +19,55 @@ function MessagePanel({ template }) {
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className="text-xs text-ink/50">Type</dt>
-          <dd className="mt-1"><TypeBadge type={template.type} /></dd>
+          <dd className="mt-1">
+            <TypeBadge type={displayTypeForBadge(template.type)} />
+          </dd>
         </div>
         <div>
-          <dt className="text-xs text-ink/50">Sender</dt>
-          <dd className="mt-0.5 font-medium text-navy">{template.sender}</dd>
+          <dt className="text-xs text-ink/50">Category</dt>
+          <dd className="mt-0.5 font-medium text-navy">{template.category || '—'}</dd>
         </div>
       </dl>
+
+      {template.intro ? (
+        <div className="mt-5 rounded-xl border border-ink/10 px-4 py-4">
+          <p className="text-xs font-semibold tracking-wide text-ink/45">INTRO</p>
+          <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-ink">{template.intro}</p>
+        </div>
+      ) : null}
 
       <div className="mt-5 rounded-xl bg-canvas px-4 py-4">
         <p className="text-xs font-semibold tracking-wide text-ink/45">MESSAGE</p>
         <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-ink">{template.body}</p>
       </div>
 
+      {template.cta ? (
+        <div className="mt-3 rounded-xl border border-ink/10 px-4 py-4">
+          <p className="text-xs font-semibold tracking-wide text-ink/45">CTA</p>
+          <p className="mt-2 text-sm font-semibold text-navy">
+            {template.cta.label || template.cta.type}
+          </p>
+          <p className="mt-1 text-sm text-ink/70">{template.cta.url || template.cta.value || '—'}</p>
+        </div>
+      ) : null}
+
+      {template.questions?.length ? (
+        <div className="mt-3 rounded-xl border border-ink/10 px-4 py-4">
+          <p className="text-xs font-semibold tracking-wide text-ink/45">
+            QUESTIONS · {template.questions.length}
+          </p>
+          <ul className="mt-2 space-y-2">
+            {template.questions.map((question, index) => (
+              <li key={`${question.position}-${index}`} className="text-sm text-ink/75">
+                <span className="font-semibold text-navy">Q{index + 1}.</span> {question.prompt}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="mt-3 rounded-xl border border-ink/10 px-4 py-4">
         <p className="text-xs font-semibold tracking-wide text-ink/45">SAMPLE FOR AMA MENSAH</p>
-        <p className="mt-2 text-xs font-semibold tracking-wide text-navy">{template.sender}</p>
         <p className="mt-1 text-sm leading-6 text-ink">{sampleMessage(template.body)}</p>
       </div>
     </div>
@@ -89,7 +123,7 @@ function DevicePanel({ template }) {
           <div className="flex h-full flex-col bg-[#f2f4f7] text-left">
             <div className="border-b border-black/5 bg-white px-4 py-3">
               <p className="text-[11px] font-medium text-ink/45">Messages</p>
-              <p className="truncate text-sm font-bold text-navy">{template.sender}</p>
+              <p className="truncate text-sm font-bold text-navy">{template.name}</p>
             </div>
             <div className="flex-1 px-3 py-4">
               <p className="mb-2 text-center text-[10px] font-medium text-ink/40">Today</p>
@@ -106,7 +140,15 @@ function DevicePanel({ template }) {
   )
 }
 
-export function TemplatePreview({ template, onUse, onClose }) {
+export function TemplatePreview({
+  template,
+  onUse,
+  useHint,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+  onClose,
+}) {
   const [tab, setTab] = useState('message')
 
   function moveTab(event) {
@@ -122,7 +164,7 @@ export function TemplatePreview({ template, onUse, onClose }) {
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-wide text-ink/45">Preview</p>
             <h2 className="mt-1 text-base font-bold text-navy">{template.name}</h2>
-            <p className="mt-0.5 text-[13px] text-ink/60">{template.description}</p>
+            <p className="mt-0.5 text-[13px] text-ink/60">{template.description || template.category}</p>
           </div>
           <button
             type="button"
@@ -175,17 +217,66 @@ export function TemplatePreview({ template, onUse, onClose }) {
         </div>
 
         <footer className="border-t border-ink/10 px-5 py-4">
-          <button
-            type="button"
-            onClick={() => onUse(template)}
-            className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`}
-          >
-            <Check size={16} strokeWidth={2.4} aria-hidden="true" />
-            Use this template
-          </button>
-          <p className="mt-2 text-center text-xs leading-5 text-ink/55">
-            You can change the name, sender, and message before it sends.
-          </p>
+          <div className="flex flex-col gap-2">
+            {onUse ? (
+              <button
+                type="button"
+                onClick={() => onUse(template)}
+                className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`}
+              >
+                <Check size={16} strokeWidth={2.4} aria-hidden="true" />
+                Use this template
+              </button>
+            ) : null}
+            {onEdit || onToggleStatus || onDelete ? (
+              <div className="flex flex-wrap gap-2">
+                {onEdit ? (
+                  <button
+                    type="button"
+                    onClick={onEdit}
+                    className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-3 text-sm font-semibold text-navy hover:bg-canvas ${focusClass}`}
+                  >
+                    <Pencil size={15} strokeWidth={2.2} aria-hidden="true" />
+                    Edit
+                  </button>
+                ) : null}
+                {onToggleStatus ? (
+                  <button
+                    type="button"
+                    onClick={onToggleStatus}
+                    className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-3 text-sm font-semibold text-navy hover:bg-canvas ${focusClass}`}
+                  >
+                    {template.status === 'active' ? (
+                      <>
+                        <PauseCircle size={15} strokeWidth={2.2} aria-hidden="true" />
+                        Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle size={15} strokeWidth={2.2} aria-hidden="true" />
+                        Activate
+                      </>
+                    )}
+                  </button>
+                ) : null}
+                {onDelete ? (
+                  <button
+                    type="button"
+                    onClick={onDelete}
+                    className={`inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[#C21F2D]/25 bg-white px-3 text-sm font-semibold text-[#C21F2D] hover:bg-[#FDECEE] ${focusClass}`}
+                  >
+                    <Trash2 size={15} strokeWidth={2.2} aria-hidden="true" />
+                    Delete
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          {onUse ? (
+            <p className="mt-2 text-center text-xs leading-5 text-ink/55">
+              {useHint || 'You can change the name, sender, and message before it sends.'}
+            </p>
+          ) : null}
         </footer>
       </div>
     </Drawer>

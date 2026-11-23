@@ -24,6 +24,7 @@ import '../services/api/roles/rolesApi'
 import '../services/api/plans/plansApi'
 import '../services/api/sender-ids/senderIdsApi'
 import '../services/api/subscriptions/subscriptionsApi'
+import '../services/api/templates/templatesApi'
 
 const authPersistConfig = {
   key: 'admin-auth',

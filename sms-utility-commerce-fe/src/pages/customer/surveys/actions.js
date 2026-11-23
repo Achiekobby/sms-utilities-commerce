@@ -137,8 +137,10 @@ export function surveyLifecycleForStatus(status) {
   return byStatus[String(status ?? '').toLowerCase()] ?? []
 }
 
+const editableStatuses = new Set(['draft', 'failed'])
+
 export function canEditSurvey(status) {
-  return !['completed', 'cancelled'].includes(String(status ?? '').toLowerCase())
+  return editableStatuses.has(String(status ?? '').toLowerCase())
 }
 
 export function surveyMenuItems(survey, { archived = false, busy = false, onAction } = {}) {

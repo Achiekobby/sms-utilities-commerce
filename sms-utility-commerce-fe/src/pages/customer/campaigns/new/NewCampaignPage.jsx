@@ -88,14 +88,33 @@ function Stepper({ current }) {
   )
 }
 
+function ctaFromTemplate(template) {
+  const source = template?.cta
+  const type = source?.type === 'ussd' || source?.type === 'phone' || source?.type === 'link' ? source.type : ''
+  const value = String(source?.value || source?.url || '').trim()
+  if (!type || !value || source.enabled === false) return emptyCta()
+  return {
+    ...emptyCta(),
+    enabled: true,
+    placement: 'field',
+    type,
+    value,
+    label: source.label || '',
+  }
+}
+
 function fromTemplate(template, campaignType) {
   if (!template?.body) return null
+  const mapped =
+    template.type === 'campaign_occasion' || template.type === 'occasion'
+      ? 'occasion'
+      : template.type === 'campaign_promotion' || template.type === 'promotion' || template.type === 'promotional'
+        ? 'promotion'
+        : null
   const type =
     campaignType && campaignTypes.some((item) => item.id === campaignType)
       ? campaignType
-      : template.type === 'occasion' || template.type === 'promotion'
-        ? template.type
-        : 'promotion'
+      : mapped || 'promotion'
 
   // Templates may suggest a reward, but never silently enable financial disbursement.
   const suggested = template.suggestedReward
@@ -119,6 +138,7 @@ function fromTemplate(template, campaignType) {
     templateName: template.name ?? '',
     occasionType: type === 'occasion' ? template.occasionType || 'birthday' : '',
     repeatYearly: type === 'occasion',
+    cta: type === 'promotion' ? ctaFromTemplate(template) : emptyCta(),
     reward,
   }
 }

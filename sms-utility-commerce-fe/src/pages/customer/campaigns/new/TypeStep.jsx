@@ -1,4 +1,5 @@
 import { Cake, FileText, Megaphone, PenLine } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { paths } from '../../../../routes/paths'
 import { campaignTypes } from '../model'
@@ -45,6 +46,16 @@ const startChoices = [
 
 export function TypeStep({ values, error, onChange, onScratch, locked = false }) {
   const navigate = useNavigate()
+  const startRef = useRef(null)
+
+  useEffect(() => {
+    if (locked || !values.type || !startRef.current) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    startRef.current.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }, [locked, values.type])
 
   function chooseStart(id) {
     if (id === 'template') {
@@ -111,7 +122,7 @@ export function TypeStep({ values, error, onChange, onScratch, locked = false })
       </fieldset>
 
       {!locked && values.type ? (
-        <fieldset>
+        <fieldset ref={startRef}>
           <legend className="text-base font-bold text-navy">How do you want to start?</legend>
           <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
             A template fills the message for you. Starting from scratch leaves every field empty.

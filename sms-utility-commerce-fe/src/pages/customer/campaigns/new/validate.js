@@ -10,9 +10,10 @@ export function validateCta(values) {
   const errors = {}
 
   if (placement === 'field') {
-    const valueError = validateCtaValue({ ...cta, type: 'link' })
+    const type = cta?.type === 'ussd' || cta?.type === 'phone' ? cta.type : 'link'
+    const valueError = validateCtaValue({ ...cta, type })
     if (valueError) errors.ctaValue = valueError
-    else if (bodyHasWebLink(body) || bodyContainsLink(body, cta.value)) {
+    else if (type === 'link' && (bodyHasWebLink(body) || bodyContainsLink(body, cta.value))) {
       errors.ctaValue = 'Remove the link from the message, or switch to writing the link in the message.'
     } else if (bodyHasCtaToken(body)) {
       errors.body = 'Remove {link} and {ctaUrl}. The CTA is added at the end of the message.'

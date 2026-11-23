@@ -1,77 +1,127 @@
 export const emptyMessageFilters = {
   search: '',
-  types: [],
+  type: '',
+  status: '',
+  requestType: '',
+  mode: '',
+  contactGroupId: '',
   from: '',
   to: '',
-  sort: 'newest',
 }
 
 export const messageTypeOptions = [
-  { id: 'numbers', label: 'Quick', detail: 'To numbers' },
-  { id: 'groups', label: 'Bulk', detail: 'To groups' },
+  { id: 'quick', label: 'Quick', detail: 'To numbers', kind: 'numbers' },
+  { id: 'bulk', label: 'Bulk', detail: 'To groups', kind: 'groups' },
 ]
 
-export const messageSortOptions = [
-  { id: 'newest', label: 'Newest first' },
-  { id: 'oldest', label: 'Oldest first' },
+export const messageStatusOptions = [
+  { id: 'queued', label: 'Queued' },
+  { id: 'scheduled', label: 'Scheduled' },
+  { id: 'sending', label: 'Sending' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'failed', label: 'Failed' },
+  { id: 'cancelled', label: 'Cancelled' },
 ]
 
-export function messageTypeLabel(kind) {
-  return messageTypeOptions.find((item) => item.id === kind)?.label ?? kind
+export const messageRequestTypeOptions = [
+  { id: 'system', label: 'System' },
+  { id: 'campaign', label: 'Campaign' },
+]
+
+export const messageModeOptions = [
+  { id: 'send', label: 'Send' },
+  { id: 'resend', label: 'Resend' },
+  { id: 'reblast', label: 'Reblast' },
+]
+
+export function messageTypeLabel(value) {
+  if (value === 'numbers' || value === 'groups') {
+    return messageTypeOptions.find((item) => item.kind === value)?.label ?? value
+  }
+  return messageTypeOptions.find((item) => item.id === value)?.label ?? value
 }
 
 export function activeMessageFilterCount(filters) {
   return (
-    (filters.search.trim() ? 1 : 0) +
-    filters.types.length +
+    (filters.type ? 1 : 0) +
+    (filters.status ? 1 : 0) +
+    (filters.requestType ? 1 : 0) +
+    (filters.mode ? 1 : 0) +
+    (filters.contactGroupId ? 1 : 0) +
     (filters.from ? 1 : 0) +
-    (filters.to ? 1 : 0) +
-    (filters.sort !== 'newest' ? 1 : 0)
+    (filters.to ? 1 : 0)
   )
 }
 
-function dayKey(value) {
-  const match = String(value ?? '').match(/^(\d{4}-\d{2}-\d{2})/)
-  return match ? match[1] : ''
+export function messagesQueryParams(filters = emptyMessageFilters, { page = 1, perPage = 15 } = {}) {
+  const params = {
+    page,
+    per_page: perPage,
+  }
+
+  if (filters.contactGroupId) params.contact_group_id = filters.contactGroupId
+  if (filters.type) params.type = filters.type
+  if (filters.status) params.status = filters.status
+  if (filters.requestType) params.request_type = filters.requestType
+  if (filters.mode) params.mode = filters.mode
+  if (filters.from) params.from_date = filters.from
+  if (filters.to) params.to_date = filters.to
+
+  return params
 }
 
+/** Client-side search over the current API page (search is not a server param). */
 export function queryMessages(messages, filters = emptyMessageFilters) {
   const term = String(filters.search ?? '').trim().toLowerCase()
-  const types = Array.isArray(filters.types) ? filters.types : []
-  const from = filters.from || ''
-  const to = filters.to || ''
-  const sort = filters.sort === 'oldest' ? 'oldest' : 'newest'
+  if (!term) return messages
 
-  const rows = messages.filter((message) => {
-    if (types.length && !types.includes(message.kind)) return false
-
-    const created = dayKey(message.createdAt)
-    if (from && (!created || created < from)) return false
-    if (to && (!created || created > to)) return false
-
-    if (!term) return true
+  return messages.filter((message) => {
     const groupNames = (message.groups ?? []).map((group) => group.name).join(' ')
     const numbers = (message.numbers ?? []).join(' ')
-    const haystack = `${message.name} ${message.body} ${messageTypeLabel(message.kind)} ${message.sender} ${groupNames} ${numbers}`.toLowerCase()
+    const haystack =
+      `${message.name} ${message.body} ${messageTypeLabel(message.kind)} ${message.sender} ${groupNames} ${numbers}`.toLowerCase()
     return haystack.includes(term)
-  })
-
-  return rows.sort((left, right) => {
-    const compare = String(left.createdAt ?? '').localeCompare(String(right.createdAt ?? ''))
-    return sort === 'oldest' ? compare : -compare
   })
 }
 
-export function messageFilterChips(filters) {
+export function messageFilterChips(filters, groups = []) {
   const chips = []
-  const search = filters.search.trim()
-  if (search) chips.push({ key: 'search', group: 'search', id: 'search', label: `“${search}”` })
-  filters.types.forEach((id) => {
-    const option = messageTypeOptions.find((item) => item.id === id)
-    chips.push({ key: `type-${id}`, group: 'types', id, label: option?.label ?? id })
-  })
+  if (filters.type) {
+    const option = messageTypeOptions.find((item) => item.id === filters.type)
+    chips.push({ key: `type-${filters.type}`, group: 'type', id: filters.type, label: option?.label ?? filters.type })
+  }
+  if (filters.status) {
+    const option = messageStatusOptions.find((item) => item.id === filters.status)
+    chips.push({
+      key: `status-${filters.status}`,
+      group: 'status',
+      id: filters.status,
+      label: option?.label ?? filters.status,
+    })
+  }
+  if (filters.requestType) {
+    const option = messageRequestTypeOptions.find((item) => item.id === filters.requestType)
+    chips.push({
+      key: `request-${filters.requestType}`,
+      group: 'requestType',
+      id: filters.requestType,
+      label: option?.label ?? filters.requestType,
+    })
+  }
+  if (filters.mode) {
+    const option = messageModeOptions.find((item) => item.id === filters.mode)
+    chips.push({ key: `mode-${filters.mode}`, group: 'mode', id: filters.mode, label: option?.label ?? filters.mode })
+  }
+  if (filters.contactGroupId) {
+    const group = groups.find((item) => String(item.id) === String(filters.contactGroupId))
+    chips.push({
+      key: `group-${filters.contactGroupId}`,
+      group: 'contactGroupId',
+      id: filters.contactGroupId,
+      label: group?.name ? `Group · ${group.name}` : `Group ${filters.contactGroupId}`,
+    })
+  }
   if (filters.from) chips.push({ key: 'from', group: 'from', id: 'from', label: `From ${filters.from}` })
   if (filters.to) chips.push({ key: 'to', group: 'to', id: 'to', label: `To ${filters.to}` })
-  if (filters.sort === 'oldest') chips.push({ key: 'sort', group: 'sort', id: 'oldest', label: 'Oldest first' })
   return chips
 }

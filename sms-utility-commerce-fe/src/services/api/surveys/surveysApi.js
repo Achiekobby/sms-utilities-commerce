@@ -1,4 +1,5 @@
 import { pageResult } from '../../../features/contacts/contactImport'
+import { publicSurveyFromApi } from '../../../pages/public/publicSurvey'
 import { questionsFromApi, responseFromApi, surveyFromApi } from '../../../features/surveys/surveyRecord'
 import { surveyAnalyticsFromApi } from '../../../pages/customer/surveys/insights'
 import { baseApi } from '../baseApi'
@@ -149,6 +150,23 @@ export const surveysApi = baseApi.injectEndpoints({
         { type: 'Survey', id: String(id) },
       ],
     }),
+    getPublicSurvey: builder.query({
+      query: (id) => ({
+        url: `/api/public/surveys/${encodeURIComponent(id)}`,
+        method: 'GET',
+      }),
+      transformResponse: (envelope) => publicSurveyFromApi(envelope?.data),
+    }),
+    submitPublicSurvey: builder.mutation({
+      query: ({ id, answers }) => ({
+        url: `/api/public/surveys/${encodeURIComponent(id)}/responses`,
+        method: 'POST',
+        body: { answers },
+      }),
+      transformResponse: (envelope) => ({
+        message: envelope?.message || 'Thanks, your response was submitted.',
+      }),
+    }),
     forceDeleteSurvey: builder.mutation({
       query: (id) => ({
         url: `/api/client/surveys/${id}/force`,
@@ -178,3 +196,5 @@ export const useSurveyActionMutation = surveysApi.useSurveyActionMutation
 export const useArchiveSurveyMutation = surveysApi.useArchiveSurveyMutation
 export const useRestoreSurveyMutation = surveysApi.useRestoreSurveyMutation
 export const useForceDeleteSurveyMutation = surveysApi.useForceDeleteSurveyMutation
+export const useGetPublicSurveyQuery = surveysApi.useGetPublicSurveyQuery
+export const useSubmitPublicSurveyMutation = surveysApi.useSubmitPublicSurveyMutation

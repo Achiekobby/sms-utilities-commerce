@@ -1,4 +1,4 @@
-import { bodyHasWebLink, emptyCta } from '../cta'
+import { bodyHasWebLink, ctaTypes, emptyCta } from '../cta'
 import { normalizeTriggerOffset } from '../model'
 import { airtimePresets, dataBundles, emptyReward } from '../reward'
 
@@ -14,13 +14,22 @@ function promotionDay(value) {
 
 function promotionCta(values) {
   if (values.cta?.placement !== 'field') return {}
+  const type = values.cta.type === 'ussd' || values.cta.type === 'phone' ? values.cta.type : 'link'
   const raw = String(values.cta.value ?? '').trim()
-  const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
   const label = String(values.cta.label ?? '').trim()
+  if (type === 'link') {
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+    return {
+      enabled: true,
+      type: 'link',
+      url,
+      ...(label ? { label } : {}),
+    }
+  }
   return {
     enabled: true,
-    type: 'link',
-    url,
+    type,
+    value: type === 'ussd' ? raw.replace(/\s/g, '') : raw,
     ...(label ? { label } : {}),
   }
 }
@@ -97,11 +106,12 @@ function formCta(campaign) {
   const blank = emptyCta()
   const source = campaign.cta
   if (source?.enabled && source.value) {
+    const type = ctaTypes.some((item) => item.id === source.type) ? source.type : 'link'
     return {
       ...blank,
       enabled: true,
       placement: 'field',
-      type: 'link',
+      type,
       value: source.value,
       label: source.label || '',
     }

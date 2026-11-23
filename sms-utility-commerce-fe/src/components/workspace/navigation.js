@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ClipboardList,
   Code,
   FileText,
@@ -129,6 +130,12 @@ export function getNavigation({ isBusiness }) {
           icon: Code,
           to: paths.apiKeys,
           keywords: 'developer portal api keys credentials token regenerate sms api',
+        },
+        {
+          label: 'API docs',
+          icon: BookOpen,
+          to: paths.docs,
+          keywords: 'documentation sender ids sms api reference',
         },
       ],
     },

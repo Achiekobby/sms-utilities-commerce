@@ -1,14 +1,28 @@
+import { useState } from 'react'
 import { apiErrorMessage } from '../../../features/auth/client'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
+import { emptyMessageFilters } from './query'
 import { MessageList } from './sections/MessageList'
 import { MessagesHeader } from './sections/MessagesHeader'
 import { useMessages } from './useMessages'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
+const perPage = 15
 
 export function MessagesPage() {
   useDocumentTitle('Messages')
-  const { messages, isLoading, isFetching, isError, error, refetch } = useMessages({ page: 1, perPage: 100 })
+  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState(emptyMessageFilters)
+  const { messages, total, lastPage, isLoading, isFetching, isError, error, refetch } = useMessages({
+    page,
+    perPage,
+    filters,
+  })
+
+  function applyFilters(next) {
+    setFilters(next)
+    setPage(1)
+  }
 
   return (
     <div>
@@ -39,7 +53,19 @@ export function MessagesPage() {
           </div>
         ) : null}
 
-        {!isLoading && !(isError && !messages.length) ? <MessageList messages={messages} /> : null}
+        {!isLoading && !(isError && !messages.length) ? (
+          <MessageList
+            messages={messages}
+            filters={filters}
+            onFiltersChange={applyFilters}
+            page={page}
+            lastPage={lastPage}
+            total={total}
+            perPage={perPage}
+            onPageChange={setPage}
+            fetching={isFetching}
+          />
+        ) : null}
       </div>
     </div>
   )

@@ -1,8 +1,10 @@
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { GroupChoices } from '../../../components/form/GroupChoices'
+import { PlaceholderTextarea } from '../../../components/PlaceholderTextarea'
 import { apiErrorMessage, fieldErrors } from '../../../features/auth/client'
+import { surveyMessagePlaceholders } from '../../../features/templates/templateForm'
 import { paths } from '../../../routes/paths'
 import { useCreateSurveyMutation, useUpdateSurveyMutation } from '../../../services/api/surveys/surveysApi'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
@@ -12,7 +14,16 @@ import { approvedSenderNames } from '../sender-ids/model'
 import { useSenderIds } from '../sender-ids/useSenderIds'
 import { QuestionList } from './QuestionList'
 import { SurveyPhone } from './SurveyPhone'
-import { emptySurvey, formValuesFromSurvey, surveyLimits, surveyPayload, surveySendAt, validateSurvey } from './model'
+import { SurveyStartStep } from './SurveyStartStep'
+import {
+  emptySurvey,
+  formValuesFromSurvey,
+  formValuesFromTemplate,
+  surveyLimits,
+  surveyPayload,
+  surveySendAt,
+  validateSurvey,
+} from './model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const field =
@@ -32,16 +43,42 @@ export function NewSurveyPage({ survey = null }) {
   const editing = Boolean(survey)
   useDocumentTitle(editing ? `Edit ${survey.name}` : 'Create survey')
   const navigate = useNavigate()
+  const location = useLocation()
+  const seededTemplate =
+    !editing && location.state?.template?.type === 'survey' ? location.state.template : null
+  const seededValues = seededTemplate ? formValuesFromTemplate(seededTemplate) : null
   const { groups } = useGroups()
   const senders = approvedSenderNames(useSenderIds())
   const [createSurvey, createState] = useCreateSurveyMutation()
   const [updateSurvey, updateState] = useUpdateSurveyMutation()
   const saving = createState.isLoading || updateState.isLoading
+  const [started, setStarted] = useState(() => editing || Boolean(seededValues))
+  const [templateName] = useState(() => seededTemplate?.name ?? '')
   const [step, setStep] = useState(0)
   const [previewKey, setPreviewKey] = useState(0)
-  const [values, setValues] = useState(() => (survey ? formValuesFromSurvey(survey) : emptySurvey))
+  const [values, setValues] = useState(() =>
+    survey ? formValuesFromSurvey(survey) : seededValues ?? emptySurvey,
+  )
   const [mirror, setMirror] = useState('welcome')
   const [errors, setErrors] = useState({})
+  const bodyRef = useRef(null)
+
+  function insertPlaceholder(token) {
+    const field = bodyRef.current
+    const body = values.body ?? ''
+    const start = field?.selectionStart ?? body.length
+    const end = field?.selectionEnd ?? body.length
+    const before = body.slice(0, start)
+    const gap = before.length > 0 && !/\s$/.test(before) ? ' ' : ''
+    const insert = `${gap}${token}`
+    const next = `${before}${insert}${body.slice(end)}`.slice(0, surveyLimits.body)
+    patch({ body: next })
+    const cursor = Math.min(start + insert.length, next.length)
+    requestAnimationFrame(() => {
+      field?.focus()
+      field?.setSelectionRange(cursor, cursor)
+    })
+  }
 
   function showQuestion(id, list = values.questions) {
     if (!id) {
@@ -137,10 +174,23 @@ export function NewSurveyPage({ survey = null }) {
         <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink/60">
           {editing
             ? 'Update the details and questions. Move questions up or down to change their order.'
-            : 'Name the survey, write the invitation, add the questions, then save it as a draft.'}
+            : started
+              ? 'Name the survey, write the invitation, add the questions, then save it as a draft.'
+              : 'Start from a survey template or build one from scratch.'}
         </p>
       </header>
 
+      {!editing && !started ? <SurveyStartStep onScratch={() => setStarted(true)} /> : null}
+
+      {started && templateName && !editing ? (
+        <p className="mt-5 rounded-xl border border-green/20 bg-[#E8F8EF] px-4 py-3 text-sm text-navy">
+          Using <span className="font-semibold">{templateName}</span>. Change anything that should not go out as
+          written.
+        </p>
+      ) : null}
+
+      {started ? (
+        <>
       <ol className="mt-5 flex gap-2" aria-label={editing ? 'Edit survey' : 'Create survey'}>
         {['Build', 'Try it'].map((label, index) => (
           <li key={label}>
@@ -212,12 +262,32 @@ export function NewSurveyPage({ survey = null }) {
               <label htmlFor="survey-body" className="mt-4 mb-1.5 block text-sm font-medium text-navy">
                 Message <span className="font-normal text-ink/45">optional</span>
               </label>
-              <textarea
+              <div className="mb-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="Insert a placeholder">
+                {surveyMessagePlaceholders.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => insertPlaceholder(item.token)}
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg border border-ink/15 bg-white px-2.5 text-xs font-semibold text-navy transition-colors hover:border-blue/40 hover:bg-canvas ${focusClass}`}
+                  >
+                    {item.label}
+                    <span className="font-mono text-[11px] font-medium text-ink/45">{item.token}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mb-2 text-xs leading-5 text-ink/55">
+                Each contact gets their own value. A missing field is left blank. The survey link is added automatically when the survey is saved.
+              </p>
+              <PlaceholderTextarea
+                ref={bodyRef}
                 id="survey-body"
                 value={values.body}
                 rows={3}
                 maxLength={surveyLimits.body}
-                placeholder="Hello! We would love to hear your feedback."
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                placeholder="Hello {firstName}! We would love to hear your feedback."
                 onChange={(event) => patch({ body: event.target.value })}
                 className={`${field} resize-none py-2.5`}
               />
@@ -400,6 +470,8 @@ export function NewSurveyPage({ survey = null }) {
           </section>
         </div>
       )}
+        </>
+      ) : null}
     </div>
   )
 }

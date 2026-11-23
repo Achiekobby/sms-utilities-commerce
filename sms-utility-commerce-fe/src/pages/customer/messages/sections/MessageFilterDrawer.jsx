@@ -1,13 +1,13 @@
 import { Check, Hash, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Drawer } from '../../../../components/Drawer'
-import { formatCount } from '../../dashboard/format'
 import {
   activeMessageFilterCount,
   emptyMessageFilters,
-  messageSortOptions,
+  messageModeOptions,
+  messageRequestTypeOptions,
+  messageStatusOptions,
   messageTypeOptions,
-  queryMessages,
 } from '../query'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -15,20 +15,16 @@ const field =
   'h-11 w-full rounded-xl border border-ink/15 bg-white px-3.5 text-sm text-navy outline-none transition-colors placeholder:text-ink/35 focus:border-blue focus:ring-4 focus:ring-blue/15'
 
 const typeIcons = {
-  numbers: Hash,
-  groups: Users,
+  quick: Hash,
+  bulk: Users,
 }
 
-export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
+export function MessageFilterDrawer({ filters, groups = [], onApply, onClose }) {
   const [draft, setDraft] = useState(filters)
-  const count = queryMessages(messages, draft).length
   const filterCount = activeMessageFilterCount(draft)
 
-  function toggleType(id) {
-    setDraft((current) => {
-      const next = current.types.includes(id) ? current.types.filter((item) => item !== id) : [...current.types, id]
-      return { ...current, types: next }
-    })
+  function setField(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }))
   }
 
   return (
@@ -44,7 +40,7 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
         <header className="flex items-start justify-between gap-3 border-b border-ink/10 px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-base font-bold text-navy">Filter messages</h2>
-            <p className="mt-0.5 text-[13px] text-ink/60">Search, dates, type, and sort order.</p>
+            <p className="mt-0.5 text-[13px] text-ink/60">Type, status, group, dates, and mode.</p>
           </div>
           <button
             type="button"
@@ -57,19 +53,119 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-4">
+          <fieldset>
+            <legend className="mb-2 text-sm font-semibold text-navy">Message type</legend>
+            <div className="grid gap-2">
+              {messageTypeOptions.map((option) => {
+                const checked = draft.type === option.id
+                const Icon = typeIcons[option.id]
+                return (
+                  <label
+                    key={option.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+                      checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="message-type"
+                      checked={checked}
+                      onChange={() => setField('type', option.id)}
+                      className="size-4 accent-blue"
+                    />
+                    <Icon size={15} strokeWidth={2.2} aria-hidden="true" className="text-blue" />
+                    <span className="min-w-0">
+                      <span className="block">{option.label}</span>
+                      <span className="block text-xs font-medium text-ink/50">{option.detail}</span>
+                    </span>
+                  </label>
+                )
+              })}
+              <button
+                type="button"
+                onClick={() => setField('type', '')}
+                className={`text-left text-[13px] font-semibold text-blue ${focusClass}`}
+              >
+                Any type
+              </button>
+            </div>
+          </fieldset>
+
           <div>
-            <label htmlFor="message-filter-search" className="mb-2 block text-sm font-semibold text-navy">
-              Search
+            <label htmlFor="message-filter-status" className="mb-2 block text-sm font-semibold text-navy">
+              Status
             </label>
-            <input
-              id="message-filter-search"
-              data-autofocus
-              type="search"
-              value={draft.search}
-              placeholder="Message, sender, group, or number"
-              onChange={(event) => setDraft((current) => ({ ...current, search: event.target.value }))}
+            <select
+              id="message-filter-status"
+              value={draft.status}
+              onChange={(event) => setField('status', event.target.value)}
               className={field}
-            />
+            >
+              <option value="">Any status</option>
+              {messageStatusOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="message-filter-group" className="mb-2 block text-sm font-semibold text-navy">
+              Contact group
+            </label>
+            <select
+              id="message-filter-group"
+              value={draft.contactGroupId}
+              onChange={(event) => setField('contactGroupId', event.target.value)}
+              className={field}
+            >
+              <option value="">Any group</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="message-filter-request-type" className="mb-2 block text-sm font-semibold text-navy">
+                Request type
+              </label>
+              <select
+                id="message-filter-request-type"
+                value={draft.requestType}
+                onChange={(event) => setField('requestType', event.target.value)}
+                className={field}
+              >
+                <option value="">Any</option>
+                {messageRequestTypeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="message-filter-mode" className="mb-2 block text-sm font-semibold text-navy">
+                Mode
+              </label>
+              <select
+                id="message-filter-mode"
+                value={draft.mode}
+                onChange={(event) => setField('mode', event.target.value)}
+                className={field}
+              >
+                <option value="">Any</option>
+                {messageModeOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <fieldset>
@@ -84,7 +180,7 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
                   type="date"
                   value={draft.from}
                   max={draft.to || undefined}
-                  onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))}
+                  onChange={(event) => setField('from', event.target.value)}
                   className={field}
                 />
               </div>
@@ -97,67 +193,10 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
                   type="date"
                   value={draft.to}
                   min={draft.from || undefined}
-                  onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))}
+                  onChange={(event) => setField('to', event.target.value)}
                   className={field}
                 />
               </div>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-navy">Message type</legend>
-            <div className="grid gap-2">
-              {messageTypeOptions.map((option) => {
-                const checked = draft.types.includes(option.id)
-                const Icon = typeIcons[option.id]
-                return (
-                  <label
-                    key={option.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                      checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleType(option.id)}
-                      className="size-4 accent-blue"
-                    />
-                    <Icon size={15} strokeWidth={2.2} aria-hidden="true" className="text-blue" />
-                    <span className="min-w-0">
-                      <span className="block">{option.label}</span>
-                      <span className="block text-xs font-medium text-ink/50">{option.detail}</span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-            <p className="mt-2 text-[13px] leading-5 text-ink/55">Leave empty to include every type.</p>
-          </fieldset>
-
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-navy">Sort order</legend>
-            <div className="grid gap-2">
-              {messageSortOptions.map((option) => {
-                const checked = draft.sort === option.id
-                return (
-                  <label
-                    key={option.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                      checked ? 'border-blue bg-blue/[0.04] text-navy' : 'border-ink/12 text-navy hover:border-blue/40'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="message-sort"
-                      checked={checked}
-                      onChange={() => setDraft((current) => ({ ...current, sort: option.id }))}
-                      className="size-4 accent-blue"
-                    />
-                    {option.label}
-                  </label>
-                )
-              })}
             </div>
           </fieldset>
         </div>
@@ -165,7 +204,7 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
         <footer className="flex items-center justify-between gap-3 border-t border-ink/10 px-5 py-4">
           <button
             type="button"
-            onClick={() => setDraft(emptyMessageFilters)}
+            onClick={() => setDraft({ ...emptyMessageFilters, search: draft.search })}
             disabled={!filterCount}
             className={`inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-ink/70 transition-colors hover:text-navy disabled:opacity-40 ${focusClass}`}
           >
@@ -177,7 +216,7 @@ export function MessageFilterDrawer({ messages, filters, onApply, onClose }) {
             className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_1px_2px_rgba(11,31,91,0.25)] transition-colors hover:bg-[#006B46] ${focusClass}`}
           >
             <Check size={16} strokeWidth={2.4} aria-hidden="true" />
-            Show {formatCount(count)} {count === 1 ? 'message' : 'messages'}
+            Apply filters
           </button>
         </footer>
       </form>

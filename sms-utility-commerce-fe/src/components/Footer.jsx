@@ -15,6 +15,7 @@ const company = [
   { label: 'Home', to: paths.home },
   { label: 'Pricing', to: paths.pricing },
   { label: 'Help', to: paths.help },
+  { label: 'API docs', to: paths.docs },
   { label: 'Terms', to: paths.terms },
 ]
 

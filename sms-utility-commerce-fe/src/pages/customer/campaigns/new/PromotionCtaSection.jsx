@@ -1,5 +1,5 @@
-import { Link2, MessageSquareText, Minus } from 'lucide-react'
-import { bodyContainsLink, bodyHasCtaToken, bodyHasWebLink } from '../cta'
+import { Hash, Link2, MessageSquareText, Minus, Phone } from 'lucide-react'
+import { bodyContainsLink, bodyHasCtaToken, bodyHasWebLink, ctaTypeMeta } from '../cta'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const field =
@@ -8,9 +8,15 @@ const labelClass = 'mb-2 block text-sm font-medium text-navy'
 const errorColor = '#E0232E'
 
 const modes = [
-  { id: 'none', title: 'No link', detail: 'Send the message as written.', icon: Minus },
+  { id: 'none', title: 'No CTA', detail: 'Send the message as written.', icon: Minus },
   { id: 'message', title: 'Link in the message', detail: 'Paste the address in the SMS.', icon: MessageSquareText },
-  { id: 'field', title: 'CTA', detail: 'Add the link at the end of the SMS.', icon: Link2 },
+  { id: 'field', title: 'CTA', detail: 'Add a link, USSD code, or phone number.', icon: Link2 },
+]
+
+const ctaChoices = [
+  { id: 'link', label: 'Web link', icon: Link2 },
+  { id: 'ussd', label: 'USSD code', icon: Hash },
+  { id: 'phone', label: 'Phone number', icon: Phone },
 ]
 
 function FieldError({ id, children }) {
@@ -27,12 +33,25 @@ export function PromotionCtaSection({ values, errors, onChange }) {
   const body = values.body ?? ''
   const linkInBody = bodyHasWebLink(body) || bodyContainsLink(body, cta.value)
 
+  const ctaType = cta.type === 'ussd' || cta.type === 'phone' ? cta.type : 'link'
+  const typeMeta = ctaTypeMeta(ctaType)
+
   function choose(next) {
     onChange('cta', {
       ...cta,
       placement: next,
       enabled: next === 'field',
-      type: 'link',
+      type: ctaType,
+    })
+  }
+
+  function chooseType(type) {
+    onChange('cta', {
+      ...cta,
+      type,
+      value: type === ctaType ? cta.value : '',
+      enabled: true,
+      placement: 'field',
     })
   }
 
@@ -74,24 +93,54 @@ export function PromotionCtaSection({ values, errors, onChange }) {
 
       {placement === 'field' ? (
         <div className="mt-4 space-y-4">
+          <fieldset>
+            <legend className={labelClass}>CTA type</legend>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="CTA type">
+              {ctaChoices.map((choice) => {
+                const selected = ctaType === choice.id
+                const Icon = choice.icon
+                return (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => chooseType(choice.id)}
+                    className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold ${focusClass} ${
+                      selected ? 'border-blue bg-[#F3F8FE] text-navy' : 'border-ink/15 bg-white text-navy hover:border-blue/40'
+                    }`}
+                  >
+                    <Icon size={15} strokeWidth={2.2} aria-hidden="true" className={selected ? 'text-blue' : 'text-ink/45'} />
+                    {choice.label}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
           <div>
             <label htmlFor="cta-value" className={labelClass}>
-              CTA
+              {typeMeta?.label || 'CTA'}
             </label>
             <input
               id="cta-value"
-              inputMode="url"
+              inputMode={typeMeta?.inputMode || 'text'}
               value={cta.value}
-              onChange={(event) => onChange('cta', { ...cta, value: event.target.value, enabled: true, placement: 'field', type: 'link' })}
-              placeholder="https://example.com/offer"
+              onChange={(event) =>
+                onChange('cta', { ...cta, value: event.target.value, enabled: true, placement: 'field', type: ctaType })
+              }
+              placeholder={typeMeta?.placeholder || ''}
               aria-invalid={Boolean(errors.ctaValue)}
               aria-describedby={errors.ctaValue ? 'cta-value-error' : 'cta-value-hint'}
               className={`${field} h-11`}
             />
             <p id="cta-value-hint" className="mt-1.5 text-[13px] leading-5 text-ink/55">
               {cta.label?.trim()
-                ? `Added at the end as “${cta.label.trim()}: ${cta.value.trim() || 'https://…'}”.`
-                : 'Added at the end of the message. An optional label becomes “Label: https://…”.'}
+                ? `Added at the end as “${cta.label.trim()}: ${cta.value.trim() || typeMeta?.placeholder || '…'}”.`
+                : ctaType === 'ussd'
+                  ? 'Added at the end as “Dial *714*20#”, or with a label as “Label: *714*20#”.'
+                  : ctaType === 'phone'
+                    ? 'Added at the end as “Call 024…”, or with a label as “Label: 024…”.'
+                    : 'Added at the end of the message. An optional label becomes “Label: https://…”.'}
             </p>
             <FieldError id="cta-value-error">{errors.ctaValue}</FieldError>
           </div>
@@ -102,12 +151,14 @@ export function PromotionCtaSection({ values, errors, onChange }) {
             <input
               id="cta-label"
               value={cta.label}
-              onChange={(event) => onChange('cta', { ...cta, label: event.target.value, enabled: true, placement: 'field', type: 'link' })}
-              placeholder="Open"
+              onChange={(event) =>
+                onChange('cta', { ...cta, label: event.target.value, enabled: true, placement: 'field', type: ctaType })
+              }
+              placeholder={ctaType === 'ussd' ? 'Dial' : ctaType === 'phone' ? 'Call' : 'Open'}
               className={`${field} h-11`}
             />
           </div>
-          {linkInBody ? (
+          {ctaType === 'link' && linkInBody ? (
             <p className="text-[13px] leading-5 text-[#9F1C26]">
               The message already contains a link. Remove it to use this field, or switch to “Link in the message”.
             </p>

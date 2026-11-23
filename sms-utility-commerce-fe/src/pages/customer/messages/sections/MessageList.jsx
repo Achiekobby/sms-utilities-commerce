@@ -1,10 +1,10 @@
-import { ChevronLeft, ChevronRight, Eye, RefreshCw, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
-import { usePagination } from '../../../../utils/hooks/usePagination'
 import { formatCount } from '../../dashboard/format'
 import { CampaignStatus } from '../../campaigns/sections/CampaignStatus'
 import { formatCreated, messageCount } from '../../campaigns/model'
+import { useGroups } from '../../contacts/useGroups'
 import { messageDeliveryRate } from '../model'
 import {
   activeMessageFilterCount,
@@ -13,17 +13,19 @@ import {
   queryMessages,
 } from '../query'
 import { KindBadge } from './KindBadge'
+import { MessageActions } from './MessageActions'
 import { MessageDetailsDrawer } from './MessageDetailsDrawer'
 import { MessageFilterDrawer } from './MessageFilterDrawer'
 import { MessagesEmpty } from './MessagesEmpty'
 import { useMessageActions } from './useMessageActions'
 
 const messagePreview =
-  'block max-w-[16rem] truncate text-left sm:max-w-[20rem] lg:max-w-[24rem]'
+  'block w-full min-w-0 max-w-full truncate text-left'
 
 const head =
   'bg-[#F3F6FB] px-3 py-2.5 text-xs font-medium whitespace-nowrap text-ink/50 first:rounded-l-lg last:rounded-r-lg'
 const cell = 'border-b border-ink/[0.06] px-3 py-3.5 text-sm whitespace-nowrap text-ink/75'
+const messageCell = `${cell} max-w-[14rem] overflow-hidden sm:max-w-[18rem] lg:max-w-[22rem]`
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
 const pageButton =
   'flex size-8 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/80 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue disabled:cursor-not-allowed disabled:opacity-40'
@@ -35,8 +37,8 @@ function pageList(current, count) {
   return [1, 'gap-start', current - 1, current, current + 1, 'gap-end', count]
 }
 
-function FilterChips({ filters, onRemove }) {
-  const chips = messageFilterChips(filters)
+function FilterChips({ filters, groups, onRemove }) {
+  const chips = messageFilterChips(filters, groups)
   if (!chips.length) return null
 
   return (
@@ -58,19 +60,37 @@ function FilterChips({ filters, onRemove }) {
   )
 }
 
-function Pagination({ pager, total }) {
-  if (!total) return null
+function Pagination({ page, lastPage, total, perPage, onPageChange }) {
+  if (!total || lastPage < 2) {
+    if (!total) return null
+    return (
+      <div className="mt-4 border-t border-ink/[0.06] pt-4">
+        <p className="text-[13px] text-ink/60 tabular-nums">
+          Showing {formatCount(1)}–{formatCount(Math.min(perPage, total))} of {formatCount(total)}
+        </p>
+      </div>
+    )
+  }
+
+  const rangeStart = (page - 1) * perPage + 1
+  const rangeEnd = Math.min(page * perPage, total)
 
   return (
     <div className="mt-4 flex flex-col gap-3 border-t border-ink/[0.06] pt-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-[13px] text-ink/60 tabular-nums">
-        Showing {formatCount(pager.rangeStart)}–{formatCount(pager.rangeEnd)} of {formatCount(total)}
+        Showing {formatCount(rangeStart)}–{formatCount(rangeEnd)} of {formatCount(total)}
       </p>
       <nav aria-label="Message pages" className="flex flex-wrap items-center gap-1.5">
-        <button type="button" aria-label="Previous page" disabled={pager.page <= 1} onClick={pager.previous} className={`${pageButton} ${focusClass}`}>
+        <button
+          type="button"
+          aria-label="Previous page"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+          className={`${pageButton} ${focusClass}`}
+        >
           <ChevronLeft size={16} strokeWidth={2.2} aria-hidden="true" />
         </button>
-        {pageList(pager.page, pager.pageCount).map((item) =>
+        {pageList(page, lastPage).map((item) =>
           typeof item === 'string' ? (
             <span key={item} aria-hidden="true" className="px-1 text-ink/40">
               …
@@ -80,10 +100,10 @@ function Pagination({ pager, total }) {
               key={item}
               type="button"
               aria-label={`Page ${item}`}
-              aria-current={item === pager.page ? 'page' : undefined}
-              onClick={() => pager.setPage(item)}
+              aria-current={item === page ? 'page' : undefined}
+              onClick={() => onPageChange(item)}
               className={`flex h-8 min-w-8 cursor-pointer items-center justify-center rounded-lg px-2 text-[13px] font-semibold tabular-nums transition-colors ${focusClass} ${
-                item === pager.page
+                item === page
                   ? 'border border-blue bg-blue text-white'
                   : 'border border-ink/15 bg-white text-navy hover:border-blue/40 hover:bg-canvas'
               }`}
@@ -95,8 +115,8 @@ function Pagination({ pager, total }) {
         <button
           type="button"
           aria-label="Next page"
-          disabled={pager.page >= pager.pageCount}
-          onClick={pager.next}
+          disabled={page >= lastPage}
+          onClick={() => onPageChange(page + 1)}
           className={`${pageButton} ${focusClass}`}
         >
           <ChevronRight size={16} strokeWidth={2.2} aria-hidden="true" />
@@ -106,137 +126,107 @@ function Pagination({ pager, total }) {
   )
 }
 
-function ActionIconButton({ label, icon: Icon, onClick, disabled = false, className = '' }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      className={`inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-ink/15 bg-white text-navy/70 transition-colors hover:border-blue/40 hover:bg-canvas hover:text-blue disabled:cursor-not-allowed disabled:opacity-45 ${focusClass} ${className}`}
-    >
-      <Icon size={15} strokeWidth={2.2} aria-hidden="true" />
-    </button>
-  )
-}
-
-function MessageActions({ message, onOpen, actions, busy }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <ActionIconButton label="View details" icon={Eye} onClick={() => onOpen(message)} disabled={busy} />
-      {actions.canResend(message) ? (
-        <ActionIconButton
-          label="Resend"
-          icon={RefreshCw}
-          disabled={busy}
-          onClick={() => actions.ask('resend', message)}
-        />
-      ) : null}
-      {actions.canReblast(message) ? (
-        <ActionIconButton
-          label="Reblast failed"
-          icon={RotateCcw}
-          disabled={busy}
-          onClick={() => actions.ask('reblast', message)}
-        />
-      ) : null}
-    </div>
-  )
-}
-
-export function MessageList({ messages }) {
-  const [filters, setFilters] = useState(emptyMessageFilters)
+export function MessageList({
+  messages,
+  filters,
+  onFiltersChange,
+  page,
+  lastPage,
+  total,
+  perPage,
+  onPageChange,
+  fetching = false,
+}) {
   const [selected, setSelected] = useState(null)
   const drawer = useDisclosure()
+  const { groups } = useGroups()
   const actions = useMessageActions({
     onDone: () => setSelected(null),
   })
   const filterCount = activeMessageFilterCount(filters)
+  const hasSearch = Boolean(filters.search.trim())
   const results = useMemo(() => queryMessages(messages, filters), [messages, filters])
-  const pager = usePagination({ total: results.length, pageSize: 10 })
-  const page = results.slice(Math.max(pager.rangeStart - 1, 0), pager.rangeEnd)
-  const narrowed = filterCount > 0
-
-  function resetPage() {
-    pager.setPage(1)
-  }
-
-  function removeFilter(group) {
-    setFilters((current) => {
-      if (group === 'search') return { ...current, search: '' }
-      if (group === 'from') return { ...current, from: '' }
-      if (group === 'to') return { ...current, to: '' }
-      if (group === 'sort') return { ...current, sort: 'newest' }
-      if (group === 'types') return { ...current, types: [] }
-      return current
-    })
-    resetPage()
-  }
+  const narrowed = filterCount > 0 || hasSearch
+  const emptyWorkspace = !total && !narrowed
 
   function clearAll() {
-    setFilters(emptyMessageFilters)
-    resetPage()
+    onFiltersChange(emptyMessageFilters)
   }
 
-  if (!messages.length) return <MessagesEmpty />
+  if (emptyWorkspace) return <MessagesEmpty />
 
   return (
     <section aria-label="Messages" className="mt-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-ink/60 tabular-nums" aria-live="polite">
-          {formatCount(results.length)} {results.length === 1 ? 'report' : 'reports'}
+          {formatCount(hasSearch ? results.length : total)}{' '}
+          {(hasSearch ? results.length : total) === 1 ? 'report' : 'reports'}
           {narrowed ? ' match' : ''}
+          {fetching ? ' · Updating…' : ''}
         </p>
-        <button
-          type="button"
-          onClick={drawer.open}
-          aria-haspopup="dialog"
-          aria-expanded={drawer.isOpen}
-          className={`inline-flex h-9 shrink-0 items-center justify-center gap-2 self-start rounded-lg border px-3 text-[13px] font-semibold transition-colors sm:self-auto ${focusClass} ${
-            filterCount
-              ? 'border-blue bg-blue/[0.06] text-navy'
-              : 'border-ink/15 bg-white text-navy hover:border-blue/40 hover:bg-canvas'
-          }`}
-        >
-          <SlidersHorizontal size={15} strokeWidth={2.2} aria-hidden="true" />
-          Filters
-          {filterCount ? (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue px-1.5 text-[11px] font-bold text-white tabular-nums">
-              {filterCount}
-            </span>
-          ) : null}
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <label className="relative w-full min-w-48 flex-1 sm:max-w-sm">
+            <span className="sr-only">Search messages</span>
+            <Search
+              size={15}
+              strokeWidth={2}
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink/45"
+            />
+            <input
+              type="search"
+              value={filters.search}
+              placeholder="Search message, sender, group…"
+              onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
+              className={`h-9 w-full rounded-lg border border-ink/15 bg-white pr-3 pl-9 text-[13px] text-navy placeholder:text-ink/45 focus-visible:border-blue/50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue ${focusClass}`}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={drawer.open}
+            aria-haspopup="dialog"
+            aria-expanded={drawer.isOpen}
+            className={`inline-flex h-9 shrink-0 items-center justify-center gap-2 self-start rounded-lg border px-3 text-[13px] font-semibold transition-colors sm:self-auto ${focusClass} ${
+              filterCount
+                ? 'border-blue bg-blue/[0.06] text-navy'
+                : 'border-ink/15 bg-white text-navy hover:border-blue/40 hover:bg-canvas'
+            }`}
+          >
+            <SlidersHorizontal size={15} strokeWidth={2.2} aria-hidden="true" />
+            Filters
+            {filterCount ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue px-1.5 text-[11px] font-bold text-white tabular-nums">
+                {filterCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
       </div>
 
-      {narrowed ? (
+      {filterCount > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <FilterChips
             filters={filters}
-            onRemove={(group, id) => {
-              if (group === 'types') {
-                setFilters((current) => ({ ...current, types: current.types.filter((item) => item !== id) }))
-                resetPage()
-                return
-              }
-              removeFilter(group)
+            groups={groups}
+            onRemove={(group) => {
+              onFiltersChange({ ...filters, [group]: '' })
             }}
           />
           <button
             type="button"
-            onClick={clearAll}
+            onClick={() => onFiltersChange({ ...emptyMessageFilters, search: filters.search })}
             className={`inline-flex items-center gap-1 rounded-sm text-[13px] font-semibold text-blue hover:text-blue/80 ${focusClass}`}
           >
             <X size={14} strokeWidth={2.2} aria-hidden="true" />
-            Clear all
+            Clear filters
           </button>
         </div>
       ) : null}
 
-      {page.length ? (
+      {results.length ? (
         <>
           <ul className="mt-4 space-y-3 md:hidden">
-            {page.map((message) => (
+            {results.map((message) => (
               <li
                 key={message.id}
                 className="rounded-xl border border-[#D8E7FA] bg-white p-4 shadow-[0_1px_2px_rgba(20,115,230,0.06),0_8px_22px_-14px_rgba(20,115,230,0.35)]"
@@ -247,7 +237,7 @@ export function MessageList({ messages }) {
                       type="button"
                       title={message.body || message.name}
                       onClick={() => setSelected(message)}
-                      className={`max-w-full truncate text-left text-[15px] font-bold text-navy hover:text-blue ${focusClass}`}
+                      className={`block w-full min-w-0 truncate text-left text-[15px] font-bold text-navy hover:text-blue ${focusClass}`}
                     >
                       {message.name}
                     </button>
@@ -272,7 +262,13 @@ export function MessageList({ messages }) {
                   </div>
                 </dl>
                 <div className="mt-4">
-                  <MessageActions message={message} onOpen={setSelected} actions={actions} busy={actions.busy} />
+                  <MessageActions
+                    message={message}
+                    actions={actions}
+                    includeView
+                    onView={setSelected}
+                    iconOnly
+                  />
                 </div>
               </li>
             ))}
@@ -292,12 +288,12 @@ export function MessageList({ messages }) {
                 </tr>
               </thead>
               <tbody className="[&>tr:last-child>*]:border-b-0">
-                {page.map((message) => (
+                {results.map((message) => (
                   <tr key={message.id}>
-                    <th scope="row" className={`${cell} max-w-[28rem] text-left font-medium text-navy`}>
+                    <th scope="row" className={`${messageCell} text-left font-medium text-navy`}>
                       <button
                         type="button"
-                        title={message.body || message.name}
+                        title={String(message.body || message.name || '').trim() || undefined}
                         onClick={() => setSelected(message)}
                         className={`${messagePreview} rounded-sm hover:text-blue ${focusClass}`}
                       >
@@ -315,17 +311,35 @@ export function MessageList({ messages }) {
                     </td>
                     <td className={cell}>{formatCreated(message.createdAt)}</td>
                     <td className={cell}>
-                      <MessageActions message={message} onOpen={setSelected} actions={actions} busy={actions.busy} />
+                      <MessageActions
+                        message={message}
+                        actions={actions}
+                        includeView
+                        onView={setSelected}
+                        iconOnly
+                      />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <Pagination pager={pager} total={results.length} />
+            <Pagination
+              page={page}
+              lastPage={lastPage}
+              total={total}
+              perPage={perPage}
+              onPageChange={onPageChange}
+            />
           </div>
 
           <div className="md:hidden">
-            <Pagination pager={pager} total={results.length} />
+            <Pagination
+              page={page}
+              lastPage={lastPage}
+              total={total}
+              perPage={perPage}
+              onPageChange={onPageChange}
+            />
           </div>
         </>
       ) : (
@@ -349,26 +363,15 @@ export function MessageList({ messages }) {
 
       {drawer.isOpen ? (
         <MessageFilterDrawer
-          messages={messages}
           filters={filters}
-          onApply={(next) => {
-            setFilters(next)
-            resetPage()
-          }}
+          groups={groups}
+          onApply={(draft) => onFiltersChange({ ...draft, search: filters.search })}
           onClose={drawer.close}
         />
       ) : null}
 
       {selected ? (
-        <MessageDetailsDrawer
-          message={selected}
-          onClose={() => setSelected(null)}
-          onResend={() => actions.ask('resend', selected)}
-          onReblast={() => actions.ask('reblast', selected)}
-          canResend={actions.canResend(selected)}
-          canReblast={actions.canReblast(selected)}
-          busy={actions.busy}
-        />
+        <MessageDetailsDrawer message={selected} onClose={() => setSelected(null)} actions={actions} />
       ) : null}
 
       {actions.dialog}

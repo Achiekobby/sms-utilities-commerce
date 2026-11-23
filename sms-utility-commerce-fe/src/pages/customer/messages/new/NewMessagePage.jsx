@@ -42,6 +42,8 @@ const errorFields = [
   ['groupIds', 'Groups', 'message-groups'],
   ['sender', 'Sender', 'campaign-sender'],
   ['body', 'Message', 'campaign-body-input'],
+  ['sendAt', 'Date', 'campaign-send-at-input'],
+  ['sendTime', 'Time', 'campaign-send-time-input'],
   ['submit', 'Send', 'message-submit'],
 ]
 
@@ -56,6 +58,7 @@ const empty = {
   body: '',
   when: 'now',
   sendAt: '',
+  sendTime: '',
 }
 
 function Stepper({ current }) {
@@ -129,6 +132,7 @@ export function NewMessagePage() {
       if (key === 'kind') {
         next.when = 'now'
         next.sendAt = ''
+        next.sendTime = ''
       }
       return next
     })
@@ -138,6 +142,12 @@ export function NewMessagePage() {
       if (key === 'kind') {
         next.numbers = undefined
         next.groupIds = undefined
+        next.sendAt = undefined
+        next.sendTime = undefined
+      }
+      if (key === 'when' || key === 'sendAt' || key === 'sendTime') {
+        next.sendAt = key === 'sendAt' ? undefined : next.sendAt
+        next.sendTime = key === 'sendTime' ? undefined : next.sendTime
       }
       return next
     })
@@ -171,15 +181,11 @@ export function NewMessagePage() {
   }
 
   function messageErrors() {
-    const found = validateMessage(
-      { ...values, when: 'now', sendAt: '' },
-      new Date(),
-      {
-        senders: approved,
-        requireName: false,
-        requireType: false,
-      },
-    )
+    const found = validateMessage(values, new Date(), {
+      senders: approved,
+      requireName: false,
+      requireType: false,
+    })
     if (!approved.length) found.sender = 'Approve a sender ID before sending.'
     return found
   }
@@ -246,6 +252,7 @@ export function NewMessagePage() {
 
     const body = values.body.trim()
     const segments = trimmedUnitsPerMessage
+    const scheduling = values.when === 'later'
     setSendStage('sending')
 
     try {
@@ -255,9 +262,12 @@ export function NewMessagePage() {
             from: values.sender,
             numbers: parsed.valid,
             message: body,
+            when: scheduling ? 'later' : 'now',
+            sendAt: values.sendAt,
+            sendTime: values.sendTime,
           }),
         ).unwrap()
-        notify.success(result.message || 'Message sent.')
+        notify.success(result.message || (scheduling ? 'Message scheduled.' : 'Message sent.'))
         finishLocalMessage(
           messageFromQuickSend({
             values,
@@ -274,9 +284,12 @@ export function NewMessagePage() {
           from: values.sender,
           groups: selectedGroups,
           message: body,
+          when: scheduling ? 'later' : 'now',
+          sendAt: values.sendAt,
+          sendTime: values.sendTime,
         }),
       ).unwrap()
-      notify.success(result.message || 'Message queued for sending.')
+      notify.success(result.message || (scheduling ? 'Message scheduled.' : 'Message queued for sending.'))
       finishLocalMessage(
         messageFromBulkSend({
           values,
@@ -326,7 +339,7 @@ export function NewMessagePage() {
               sendersError={sendersQuery.isError ? apiErrorMessage(sendersQuery.error) : ''}
               onRetrySenders={sendersQuery.refetch}
               onRequestSender={openSenderRequest}
-              allowSchedule={false}
+              allowSchedule
               showPlaceholders={!toNumbers}
               showName={false}
               showType={false}
@@ -382,11 +395,11 @@ export function NewMessagePage() {
                 <ArrowRight size={16} strokeWidth={2.3} aria-hidden="true" />
               </>
             ) : busy ? (
-              'Sending…'
+              values.when === 'later' ? 'Scheduling…' : 'Sending…'
             ) : (
               <>
                 <Send size={16} strokeWidth={2.3} aria-hidden="true" />
-                Send message
+                {values.when === 'later' ? 'Schedule message' : 'Send message'}
               </>
             )}
           </button>
@@ -419,6 +432,7 @@ export function NewMessagePage() {
         kind={values.kind}
         recipientCount={recipients}
         unitCost={cost}
+        scheduled={values.when === 'later'}
       />
     </div>
   )

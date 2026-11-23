@@ -25,6 +25,7 @@ import { DashboardPage } from '../pages/customer/dashboard/DashboardPage'
 import { ActivityLogsPage } from '../pages/customer/activity/ActivityLogsPage'
 import { ApiKeysPage } from '../pages/customer/api-keys/ApiKeysPage'
 import { ProfilePage } from '../pages/customer/profile/ProfilePage'
+import { NewTemplatePage } from '../pages/customer/templates/NewTemplatePage'
 import { TemplatesPage } from '../pages/customer/templates/TemplatesPage'
 import { RequestSenderPage } from '../pages/customer/sender-ids/RequestSenderPage'
 import { SenderIdsPage } from '../pages/customer/sender-ids/SenderIdsPage'
@@ -39,11 +40,13 @@ import { UtilitiesPage } from '../pages/customer/utilities/UtilitiesPage'
 import { UtilityServicePage } from '../pages/customer/utilities/UtilityServicePage'
 import { TopUpPage } from '../pages/customer/wallet/TopUpPage'
 import { WalletPage } from '../pages/customer/wallet/WalletPage'
+import { ApiDocsPage } from '../pages/guest/docs/ApiDocsPage'
 import { HelpPage } from '../pages/guest/HelpPage'
 import { HomePage } from '../pages/guest/HomePage'
 import { PricingPage } from '../pages/guest/PricingPage'
 import { TermsPage } from '../pages/guest/TermsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
+import { PublicSurveyPage } from '../pages/public/PublicSurveyPage'
 import { AuthGuard, CustomerGuard, GuestGuard, VerifyGuard } from './guards'
 
 export const router = createBrowserRouter([
@@ -63,6 +66,11 @@ export const router = createBrowserRouter([
           {
             path: 'help',
             element: <HelpPage />,
+            handle: { allowAuthenticated: true },
+          },
+          {
+            path: 'docs',
+            element: <ApiDocsPage />,
             handle: { allowAuthenticated: true },
           },
           {
@@ -116,6 +124,8 @@ export const router = createBrowserRouter([
           { path: 'campaigns/:campaignId/edit', element: <EditCampaignPage /> },
           { path: 'campaigns/:campaignId', element: <CampaignDetailPage /> },
           { path: 'templates', element: <TemplatesPage /> },
+          { path: 'templates/new', element: <NewTemplatePage /> },
+          { path: 'templates/:templateId/edit', element: <NewTemplatePage /> },
           { path: 'sender-ids', element: <SenderIdsPage /> },
           { path: 'sender-ids/new', element: <RequestSenderPage /> },
           { path: 'scheduled', element: <ScheduledSmsPage /> },
@@ -141,6 +151,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  { path: 's/:surveyId', element: <PublicSurveyPage /> },
   {
     element: <SiteLayout />,
     children: [{ path: '*', element: <NotFoundPage /> }],

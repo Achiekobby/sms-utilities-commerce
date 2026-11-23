@@ -2,7 +2,7 @@ import { Gauge, Layers, Send } from 'lucide-react'
 import { Link } from 'react-router'
 import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
-import { formatSendAt, sampleMessage, typeLabel } from '../../campaigns/model'
+import { formatSendAt, formatSendTime, sampleMessage, typeLabel } from '../../campaigns/model'
 import { activeRecipients, formatStoredNumber, kindLabel, resolvedMessageType, smsUnitCount } from '../model'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
@@ -104,18 +104,23 @@ export function ReviewFields({
 }) {
   const body = values.body.trim()
   const unitsPerMessage = smsUnitCount(body)
-  const when = immediate || values.when !== 'later' ? 'Sending now' : formatSendAt(values.sendAt)
+  const scheduled = values.when === 'later'
+  const when = scheduled
+    ? values.sendAt && values.sendTime
+      ? `${formatSendAt(String(values.sendAt).slice(0, 10))} at ${formatSendTime(values.sendTime)}`
+      : formatSendAt(values.sendAt)
+    : 'Sending now'
   const recipients = values.kind === 'numbers' ? numbers.length : activeRecipients(groups)
 
   return (
     <div>
       <h2 className="text-base font-bold text-navy">Review</h2>
       <p className="mt-1 max-w-2xl text-sm leading-6 text-ink/60">
-        {immediate
-          ? values.kind === 'groups'
+        {scheduled
+          ? 'This is scheduled for the date and time below. A report is saved under Messages.'
+          : values.kind === 'groups'
             ? 'This is queued to the selected groups. A report is saved under Messages.'
-            : 'This goes out now to the numbers below. A report is saved under Messages.'
-          : 'This is saved under Messages. Delivery is reported after the messages leave.'}
+            : 'This goes out now to the numbers below. A report is saved under Messages.'}
       </p>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,18.5rem)] lg:items-start">

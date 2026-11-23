@@ -58,6 +58,7 @@ export function campaignFromApi(data) {
     id: String(data.id),
     name: text(data.name) || 'Campaign',
     type: text(data.type),
+    source: text(data.source).toLowerCase(),
     status: text(data.status) || 'draft',
     occasionType: text(data.occasion_type),
     triggerOffset: normalizeTriggerOffset(data.trigger_offset),

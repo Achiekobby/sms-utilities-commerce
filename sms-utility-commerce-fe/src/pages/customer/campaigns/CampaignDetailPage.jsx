@@ -31,6 +31,7 @@ import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { formatCount } from '../dashboard/format'
 import { withGroupNames } from './fromApi'
 import { CampaignActions } from './sections/CampaignActions'
+import { CampaignSourceBadge, campaignSourceMeta } from './sections/CampaignSourceBadge'
 import { CampaignInsights } from './sections/CampaignInsights'
 import { PhonePreview } from './sections/PhonePreview'
 import {
@@ -198,7 +199,11 @@ export function CampaignDetailPage() {
             <p className="text-[11px] font-medium text-ink/45">Campaign</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-navy">{campaign.name}</h1>
-              <TypeBadge type={campaign.type} />
+              {campaignSourceMeta(campaign.source) ? (
+                <CampaignSourceBadge source={campaign.source} />
+              ) : (
+                <TypeBadge type={campaign.type} />
+              )}
             </div>
           </div>
         </div>

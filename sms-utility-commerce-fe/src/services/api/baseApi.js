@@ -22,6 +22,7 @@ export const baseApi = createApi({
     'Campaign',
     'Reward',
     'Survey',
+    'Template',
   ],
   endpoints: () => ({}),
 })
