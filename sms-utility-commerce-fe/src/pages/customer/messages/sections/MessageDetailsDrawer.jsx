@@ -1,6 +1,7 @@
 import { ArrowUpRight, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { Drawer } from '../../../../components/Drawer'
+import { TypeBadge } from '../../../../components/TypeBadge'
 import { formatStamp } from '../../../../features/contacts/contactImport'
 import { paths } from '../../../../routes/paths'
 import { formatCount } from '../../dashboard/format'
@@ -99,6 +100,7 @@ export function MessageDetailsDrawer({ message: seed, onClose, actions }) {
               <Fact label="Type">
                 <KindBadge kind={message.kind} />
               </Fact>
+              <Fact label="Source">{message.source ? <TypeBadge type={message.source} /> : '—'}</Fact>
               <Fact label="Request type">{message.requestType || '—'}</Fact>
               <Fact label="Mode">{message.mode || '—'}</Fact>
               <Fact label="Recipients">{formatCount(message.recipients)}</Fact>

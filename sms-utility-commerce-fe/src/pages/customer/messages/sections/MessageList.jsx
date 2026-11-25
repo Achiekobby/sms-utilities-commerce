@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-
 import { useMemo, useState } from 'react'
 import { useDisclosure } from '../../../../utils/hooks/useDisclosure'
 import { formatCount } from '../../dashboard/format'
+import { TypeBadge } from '../../../../components/TypeBadge'
 import { CampaignStatus } from '../../campaigns/sections/CampaignStatus'
 import { formatCreated, messageCount } from '../../campaigns/model'
 import { useGroups } from '../../contacts/useGroups'
@@ -176,7 +177,7 @@ export function MessageList({
             <input
               type="search"
               value={filters.search}
-              placeholder="Search message, sender, group…"
+              placeholder="Search message, source, sender, group…"
               onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
               className={`h-9 w-full rounded-lg border border-ink/15 bg-white pr-3 pl-9 text-[13px] text-navy placeholder:text-ink/45 focus-visible:border-blue/50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue ${focusClass}`}
             />
@@ -241,8 +242,9 @@ export function MessageList({
                     >
                       {message.name}
                     </button>
-                    <div className="mt-1.5">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                       <KindBadge kind={message.kind} />
+                      {message.source ? <TypeBadge type={message.source} /> : null}
                     </div>
                   </div>
                   <CampaignStatus status={message.status} />
@@ -275,10 +277,10 @@ export function MessageList({
           </ul>
 
           <div className="mt-4 hidden overflow-x-auto rounded-xl border border-ink/[0.06] bg-white p-4 shadow-[0_1px_2px_rgba(16,33,61,0.04),0_12px_28px_-18px_rgba(11,31,91,0.45)] md:block sm:p-5">
-            <table className="w-full min-w-[56rem] border-separate border-spacing-0 text-left">
+            <table className="w-full min-w-[64rem] border-separate border-spacing-0 text-left">
               <thead>
                 <tr>
-                  {['Message', 'Message type', 'Recipients', 'Messages', 'Delivery', 'Status', 'Created', 'Actions'].map(
+                  {['Message', 'Message type', 'Source', 'Recipients', 'Messages', 'Delivery', 'Status', 'Created', 'Actions'].map(
                     (label) => (
                       <th key={label} scope="col" className={head}>
                         {label}
@@ -302,6 +304,9 @@ export function MessageList({
                     </th>
                     <td className={cell}>
                       <KindBadge kind={message.kind} />
+                    </td>
+                    <td className={cell}>
+                      {message.source ? <TypeBadge type={message.source} /> : <span className="text-ink/40">—</span>}
                     </td>
                     <td className={`${cell} tabular-nums`}>{formatCount(message.recipients)}</td>
                     <td className={`${cell} tabular-nums`}>{formatCount(messageCount(message))}</td>

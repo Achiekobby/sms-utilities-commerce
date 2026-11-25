@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router'
+import { TypeBadge } from '../../../components/TypeBadge'
 import { KindBadge } from './sections/KindBadge'
 import { paths } from '../../../routes/paths'
 import { formatStamp } from '../../../features/contacts/contactImport'
@@ -137,6 +138,7 @@ export function MessageDetailPage() {
           <h2 className="text-base font-bold text-navy">Send</h2>
           <dl className="mt-2">
             <Fact label="Audience" value={<KindBadge kind={message.kind} />} />
+            <Fact label="Source" value={message.source ? <TypeBadge type={message.source} /> : '—'} />
             <Fact label="Recipients" value={formatCount(message.recipients)} />
             <Fact label="Messages" value={formatCount(messageCount(message))} />
             <Fact label="Sender" value={message.sender || '—'} />

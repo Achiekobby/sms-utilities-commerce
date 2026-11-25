@@ -1,3 +1,5 @@
+import { templateTypeLabel } from '../../../features/templates/templateModel'
+
 export const emptyMessageFilters = {
   search: '',
   type: '',
@@ -78,8 +80,9 @@ export function queryMessages(messages, filters = emptyMessageFilters) {
   return messages.filter((message) => {
     const groupNames = (message.groups ?? []).map((group) => group.name).join(' ')
     const numbers = (message.numbers ?? []).join(' ')
+    const sourceLabel = message.source ? templateTypeLabel(message.source) : ''
     const haystack =
-      `${message.name} ${message.body} ${messageTypeLabel(message.kind)} ${message.sender} ${groupNames} ${numbers}`.toLowerCase()
+      `${message.name} ${message.body} ${messageTypeLabel(message.kind)} ${sourceLabel} ${message.source ?? ''} ${message.sender} ${groupNames} ${numbers}`.toLowerCase()
     return haystack.includes(term)
   })
 }
