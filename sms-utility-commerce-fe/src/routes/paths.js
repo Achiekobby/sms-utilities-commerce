@@ -32,6 +32,7 @@ export const paths = {
   planCheckoutFor: (planId, months) =>
     `/app/plans/checkout?plan=${encodeURIComponent(String(planId))}&months=${encodeURIComponent(String(months))}`,
   payments: '/app/payments',
+  paymentSuccess: '/app/payments/success',
   payment: (paymentId) => `/app/payments/${paymentId}`,
   orders: '/app/orders',
   order: (orderId) => `/app/orders/${orderId}`,

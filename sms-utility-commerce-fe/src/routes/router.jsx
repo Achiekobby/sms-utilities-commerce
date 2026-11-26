@@ -33,6 +33,7 @@ import { ScheduledSmsPage } from '../pages/customer/scheduled/ScheduledSmsPage'
 import { OrderDetailPage } from '../pages/customer/orders/OrderDetailPage'
 import { OrdersPage } from '../pages/customer/orders/OrdersPage'
 import { PaymentDetailPage } from '../pages/customer/payments/PaymentDetailPage'
+import { PaymentSuccessPage } from '../pages/customer/payments/PaymentSuccessPage'
 import { PaymentsPage } from '../pages/customer/payments/PaymentsPage'
 import { PlanCheckoutPage } from '../pages/customer/pricing/PlanCheckoutPage'
 import { PricingPage as CustomerPricingPage } from '../pages/customer/pricing/PricingPage'
@@ -137,6 +138,7 @@ export const router = createBrowserRouter([
           { path: 'plans', element: <CustomerPricingPage /> },
           { path: 'plans/checkout', element: <PlanCheckoutPage /> },
           { path: 'payments', element: <PaymentsPage /> },
+          { path: 'payments/success', element: <PaymentSuccessPage /> },
           { path: 'payments/:paymentId', element: <PaymentDetailPage /> },
           { path: 'orders', element: <OrdersPage /> },
           { path: 'orders/:orderId', element: <OrderDetailPage /> },

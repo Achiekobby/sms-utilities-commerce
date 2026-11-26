@@ -20,44 +20,50 @@ function useCurrentSection() {
   )
 }
 
-export function AppNavbar({ menuOpen, onMenu, collapsed, onToggleCollapse }) {
-  const section = useCurrentSection()
+export function AppNavbar({ menuOpen = false, onMenu, collapsed = false, onToggleCollapse, title = '' }) {
+  const section = useCurrentSection() || title
+  const showMenu = typeof onMenu === 'function'
+  const showCollapse = typeof onToggleCollapse === 'function'
   const CollapseIcon = collapsed ? PanelLeftOpen : PanelLeftClose
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-[0_1px_0_rgba(16,33,61,0.04),0_14px_32px_-14px_rgba(11,31,91,0.26)]">
       <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-6">
-        <button
-          type="button"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-controls="workspace-nav"
-          onClick={onMenu}
-          className={`-ml-2 lg:hidden ${iconButton}`}
-        >
-          {menuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
-        </button>
+        {showMenu ? (
+          <button
+            type="button"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="workspace-nav"
+            onClick={onMenu}
+            className={`-ml-2 lg:hidden ${iconButton}`}
+          >
+            {menuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
+          </button>
+        ) : null}
 
-        <button
-          type="button"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-expanded={!collapsed}
-          aria-controls="workspace-nav"
-          onClick={onToggleCollapse}
-          className={`-ml-2 hidden lg:flex ${iconButton}`}
-        >
-          <CollapseIcon size={18} strokeWidth={1.8} aria-hidden="true" />
-        </button>
+        {showCollapse ? (
+          <button
+            type="button"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!collapsed}
+            aria-controls="workspace-nav"
+            onClick={onToggleCollapse}
+            className={`-ml-2 hidden lg:flex ${iconButton}`}
+          >
+            <CollapseIcon size={18} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+        ) : null}
 
         <NavLink
           to={paths.dashboard}
-          className="shrink-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue lg:hidden"
+          className={`shrink-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue ${showMenu ? 'lg:hidden' : ''}`}
         >
           <img src={Images.logo} alt="UtiliSMS" className="h-8 w-auto" />
         </NavLink>
 
         {section ? (
-          <nav aria-label="Breadcrumb" className="hidden shrink-0 items-center gap-1.5 text-[13px] xl:flex">
+          <nav aria-label="Breadcrumb" className={`hidden shrink-0 items-center gap-1.5 text-[13px] ${showMenu ? 'xl:flex' : 'sm:flex'}`}>
             <span className="text-ink/45">Workspace</span>
             <span aria-hidden="true" className="text-ink/25">
               /

@@ -432,16 +432,38 @@
 
 @media (width >= 64rem) {
   .docs-shell {
-    grid-template-columns: 16.5rem minmax(0, 1fr) 15.5rem;
+    grid-template-columns: minmax(0, 1fr) 15.5rem;
+  }
+
+  .docs-shell > .docs-side {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: 16.5rem;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    border-radius: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-right-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
+    box-shadow: none;
+  }
+
+  .docs-shell > .docs-side::-webkit-scrollbar {
+    display: none;
   }
 
   .docs-shell > .docs-main {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
   }
 
   .docs-shell > .docs-rail {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 1;
   }
 }

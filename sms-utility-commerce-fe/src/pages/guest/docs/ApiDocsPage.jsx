@@ -3,11 +3,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { env } from '../../../config/env'
 import { paths } from '../../../routes/paths'
+import { useAuth } from '../../../utils/hooks/useAuth'
 import { useDocumentTitle } from '../../../utils/hooks/useDocumentTitle'
 import { docGroups } from './apiDocs'
 
 const focusClass = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue'
-const languages = ['cURL', 'JavaScript', 'PHP', 'Python']
+const languages = ['cURL', 'JavaScript', 'Node', 'PHP', 'Laravel', 'Python', 'Java']
 
 const navIcon = {
   'sender-ids': Radio,
@@ -17,6 +18,7 @@ const navIcon = {
 export function ApiDocsPage() {
   useDocumentTitle('API documentation')
   const searchRef = useRef(null)
+  const navRef = useRef(null)
   const [query, setQuery] = useState('')
   const [closed, setClosed] = useState(() => new Set(docGroups.filter((group) => !group.endpoints.length).map((group) => group.id)))
   const filtered = useMemo(() => filterGroups(docGroups, query), [query])
@@ -26,9 +28,12 @@ export function ApiDocsPage() {
   const activeGroup = groupFor(filtered, currentId) ?? filtered[0]
   const endpointCount = docGroups.reduce((total, group) => total + group.endpoints.length, 0)
   const baseUrl = docsBaseUrl()
+  const { isAuthenticated, isVerified } = useAuth()
   const shortcut = isMac() ? '⌘ K' : 'Ctrl K'
 
   useEffect(() => {
+    if (isAuthenticated && isVerified) return undefined
+
     function onKeyDown(event) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
@@ -39,7 +44,7 @@ export function ApiDocsPage() {
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [isAuthenticated, isVerified])
 
   useEffect(() => {
     const group = groupFor(filtered, currentId)
@@ -53,6 +58,18 @@ export function ApiDocsPage() {
     return undefined
   }, [currentId, filtered])
 
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || !currentId) return undefined
+    const link = nav.querySelector(`a[href="#${CSS.escape(currentId)}"]`)
+    if (!(link instanceof HTMLElement)) return undefined
+    const navBox = nav.getBoundingClientRect()
+    const linkBox = link.getBoundingClientRect()
+    const hidden = linkBox.top < navBox.top + 8 || linkBox.bottom > navBox.bottom - 8
+    if (hidden) nav.scrollTop += linkBox.top - navBox.top - nav.clientHeight / 2 + linkBox.height / 2
+    return undefined
+  }, [currentId])
+
   function toggleGroup(id) {
     setClosed((current) => {
       const next = new Set(current)
@@ -64,59 +81,69 @@ export function ApiDocsPage() {
 
   return (
     <div className="bg-[#F4F7FB]">
-      <section className="relative overflow-hidden bg-[#062047] text-white">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_380px_at_92%_120%,rgba(11,99,246,0.55),transparent_58%),linear-gradient(180deg,#0A3A86_0%,#062047_68%)]" />
-        <div className="relative mx-auto max-w-8xl px-4 pt-10 pb-16 sm:px-6 sm:pt-12">
-          <p className="text-xs font-semibold tracking-[0.18em] text-white/70 uppercase">API documentation</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">UtiliSMS API</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-white/80">
-            Sender ID and SMS APIs for building reliable, scalable messaging in Ghana.
-          </p>
-          <label className="relative mt-8 block max-w-3xl">
-            <span className="sr-only">Search the documentation</span>
-            <Search className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink/40" size={18} aria-hidden="true" />
-            <input
-              ref={searchRef}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') setQuery('')
-              }}
-              placeholder='Search the documentation (e.g. "create sender ID", "endpoints")'
-              className={`h-12 w-full rounded-xl bg-white pr-20 pl-11 text-sm text-navy shadow-[0_12px_30px_-18px_rgba(0,0,0,0.45)] placeholder:text-ink/40 ${focusClass}`}
-            />
-            <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded-md border border-[#E1EAF6] bg-[#F7FAFD] px-1.5 py-1 font-sans text-[11px] font-semibold text-ink/55">
-              {shortcut}
-            </kbd>
-          </label>
+      <section className="relative overflow-hidden border-b border-white/10 bg-[#062047] text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(480px_160px_at_100%_0%,rgba(11,99,246,0.42),transparent_62%)]" />
+        <div className="relative mx-auto max-w-8xl px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-8">
+            <div className="min-w-0 lg:w-[22rem] lg:shrink-0">
+              <p className="text-[11px] font-semibold tracking-[0.16em] text-white/55 uppercase">API documentation</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight">UtiliSMS API</h1>
+              <p className="mt-1 text-sm leading-5 text-white/70">Sender IDs, contact groups, and SMS for Ghana.</p>
+            </div>
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Search the documentation</span>
+              <Search className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink/40" size={16} aria-hidden="true" />
+              <input
+                ref={searchRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') setQuery('')
+                }}
+                placeholder="Search endpoints"
+                className={`h-10 w-full rounded-lg bg-white pr-16 pl-9 text-sm text-navy shadow-[0_8px_20px_-16px_rgba(0,0,0,0.6)] placeholder:text-ink/40 ${focusClass}`}
+              />
+              <kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded-md border border-[#E1EAF6] bg-[#F7FAFD] px-1.5 py-0.5 font-sans text-[11px] font-semibold text-ink/55">
+                {shortcut}
+              </kbd>
+            </label>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <a href="#sender-ids" className={`flex min-w-0 items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 px-3 py-2 hover:bg-white/15 ${focusClass}`}>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/10">
+                <Layers size={15} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-semibold tracking-wide text-white/55 uppercase">Endpoints</span>
+                <span className="block truncate text-[13px] font-semibold">{endpointCount} routes</span>
+              </span>
+            </a>
+            <div id="authentication" className="flex scroll-mt-24 items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 px-3 py-2">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/10">
+                <Shield size={15} aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] font-semibold tracking-wide text-white/55 uppercase">Authentication</span>
+                <span className="block truncate text-[13px] font-semibold">Bearer API key</span>
+              </span>
+            </div>
+            <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-white/10 bg-white/10 px-3 py-2">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/10">
+                <Link2 size={15} aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-semibold tracking-wide text-white/55 uppercase">Base URL</span>
+                <span className="block truncate font-mono text-[12px] text-white/90" title={baseUrl || 'Configured API host'}>{baseUrl || 'Configured API host'}</span>
+              </span>
+              <CopyButton text={baseUrl || 'Configured API host'} label="Copy base URL" compact tone="dark" />
+            </div>
+          </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-8xl px-4 pb-16 sm:px-6">
-        <div className="docs-cards relative z-10 -mt-8">
-          <a href="#sender-ids" className={`flex items-center gap-3 rounded-2xl border border-[#E6EDF5] bg-white px-4 py-4 shadow-[0_10px_28px_-20px_rgba(6,32,71,0.7)] hover:border-blue/30 ${focusClass}`}>
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#E7F1FC] text-blue">
-              <Layers size={18} aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-sm font-bold text-navy">{endpointCount} Endpoints</span>
-              <span className="mt-0.5 block text-[13px] text-ink/60">Sender ID management</span>
-            </span>
-          </a>
-          <div id="authentication" className="flex scroll-mt-24 items-center gap-3 rounded-2xl border border-[#E6EDF5] bg-white px-4 py-4 shadow-[0_10px_28px_-20px_rgba(6,32,71,0.7)]">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#E7F1FC] text-blue">
-              <Shield size={18} aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-sm font-bold text-navy">Authentication</span>
-              <span className="mt-0.5 block text-[13px] text-ink/60">Bearer token (API Key)</span>
-            </span>
-          </div>
-          <BaseUrlCard baseUrl={baseUrl} />
-        </div>
-
-        <div className="docs-shell mt-8">
-          <nav aria-label="API sections" className="rounded-2xl border border-[#E6EDF5] bg-white p-3 shadow-[0_1px_2px_rgba(16,33,61,0.04)] lg:sticky lg:top-20">
+      <div className="mx-auto max-w-8xl px-4 py-6 pb-16 sm:px-6 sm:py-8">
+        <div className="docs-shell">
+          <nav ref={navRef} aria-label="API sections" className={`docs-side rounded-2xl border border-[#E6EDF5] bg-white p-3 shadow-[0_1px_2px_rgba(16,33,61,0.04)] ${isAuthenticated && isVerified ? 'lg:top-14' : 'lg:top-16'}`}>
             <p className="flex items-center gap-2 px-2 py-2 text-sm font-bold text-navy">
               <BookOpen size={16} className="text-blue" aria-hidden="true" />
               UtiliSMS API Docs
@@ -268,6 +295,11 @@ export function ApiDocsPage() {
                   </Link>
                 </li>
                 <li>
+                  <a href="#contact-groups" className={`block rounded-lg px-2 py-1.5 text-[13px] text-ink/70 hover:bg-[#F4F7FB] hover:text-navy ${focusClass}`}>
+                    Contact groups
+                  </a>
+                </li>
+                <li>
                   <a href="#sms" className={`block rounded-lg px-2 py-1.5 text-[13px] text-ink/70 hover:bg-[#F4F7FB] hover:text-navy ${focusClass}`}>
                     SMS management
                   </a>
@@ -300,22 +332,6 @@ export function ApiDocsPage() {
   )
 }
 
-function BaseUrlCard({ baseUrl }) {
-  const value = baseUrl || 'Configured API host'
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#E6EDF5] bg-white px-4 py-4 shadow-[0_10px_28px_-20px_rgba(6,32,71,0.7)]">
-      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#E7F1FC] text-blue">
-        <Link2 size={18} aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-navy">Base URL</span>
-        <span className="mt-0.5 block truncate font-mono text-[12px] text-ink/60" title={value}>{value}</span>
-      </span>
-      <CopyButton text={baseUrl || value} label="Copy base URL" compact />
-    </div>
-  )
-}
-
 function Endpoint({ endpoint, baseUrl }) {
   const requestFields = endpoint.body ? endpoint.fields : null
   const responseFields = endpoint.body ? null : endpoint.fields
@@ -332,16 +348,14 @@ function Endpoint({ endpoint, baseUrl }) {
       <h3 className="mt-4 text-lg font-bold text-navy">{endpoint.name}</h3>
       <p className="mt-1.5 max-w-3xl text-sm leading-6 text-ink/70">{endpoint.description}</p>
 
-      <div className="mt-5 grid items-start gap-5 lg:grid-cols-2">
-        <div className="min-w-0 space-y-5">
-          {endpoint.params?.length ? <ParamTable title="Path parameter" items={endpoint.params} /> : null}
-          {endpoint.query?.length ? <ParamTable title="Parameters" items={endpoint.query} /> : null}
-          {requestFields?.length ? <ParamTable title="Request body" items={requestFields} showRequired /> : null}
-          {endpoint.rules?.length ? <RuleList rules={endpoint.rules} /> : null}
-          {!endpoint.params?.length && !endpoint.query?.length && !requestFields?.length && !endpoint.rules?.length ? (
-            <p className="text-sm leading-6 text-ink/60">This route takes no parameters. The sample on the right is the request.</p>
-          ) : null}
-        </div>
+      <div className="mt-5 space-y-5">
+        {endpoint.params?.length ? <ParamTable title="Path parameter" items={endpoint.params} /> : null}
+        {endpoint.query?.length ? <ParamTable title="Parameters" items={endpoint.query} /> : null}
+        {requestFields?.length ? <ParamTable title="Request body" items={requestFields} showRequired /> : null}
+        {endpoint.rules?.length ? <RuleList rules={endpoint.rules} /> : null}
+        {!endpoint.params?.length && !endpoint.query?.length && !requestFields?.length && !endpoint.rules?.length ? (
+          <p className="text-sm leading-6 text-ink/60">This route takes no parameters. The sample below is the request.</p>
+        ) : null}
         <ExampleRequest endpoint={endpoint} baseUrl={baseUrl} />
       </div>
 
@@ -352,6 +366,7 @@ function Endpoint({ endpoint, baseUrl }) {
 }
 
 function ParamTable({ title, items, showRequired = false }) {
+  const showExample = items.some((item) => item.example)
   return (
     <div>
       {title ? <h4 className="text-sm font-semibold text-navy">{title}</h4> : null}
@@ -362,6 +377,7 @@ function ParamTable({ title, items, showRequired = false }) {
               <th className="pr-3 pb-2 font-semibold">{showRequired ? 'Field' : 'Name'}</th>
               <th className="pr-3 pb-2 font-semibold">Type</th>
               {showRequired ? <th className="pr-3 pb-2 font-semibold">Required</th> : null}
+              {showExample ? <th className="pr-3 pb-2 font-semibold">Example</th> : null}
               <th className="pb-2 font-semibold">Description</th>
             </tr>
           </thead>
@@ -374,6 +390,9 @@ function ParamTable({ title, items, showRequired = false }) {
                   <td className={`py-3 pr-3 align-top text-[13px] font-semibold ${item.required ? 'text-navy' : 'text-ink/45'}`}>
                     {item.required ? 'Yes' : 'No'}
                   </td>
+                ) : null}
+                {showExample ? (
+                  <td className="py-3 pr-3 align-top font-mono text-[13px] text-navy">{item.example || '—'}</td>
                 ) : null}
                 <td className="py-3 align-top text-[13px] leading-5 text-ink/70">{item.detail}</td>
               </tr>
@@ -416,11 +435,41 @@ function RuleList({ rules }) {
 
 function ExampleRequest({ endpoint, baseUrl }) {
   const [language, setLanguage] = useState(languages[0])
-  const sample = requestSample(endpoint, baseUrl, language)
+  const [variant, setVariant] = useState(0)
+  const variants = endpoint.samples?.length ? endpoint.samples : null
+  const active = variants ? variants[variant] ?? variants[0] : null
+  const sample = requestSample(
+    {
+      ...endpoint,
+      body: active && Object.hasOwn(active, 'body') ? active.body : endpoint.body,
+      query: active?.query ?? endpoint.query,
+    },
+    baseUrl,
+    language,
+  )
 
   return (
     <div className="min-w-0">
       <h4 className="text-sm font-semibold text-navy">Example request</h4>
+      {variants ? (
+        <div className="mt-3 flex flex-wrap gap-1.5" role="tablist" aria-label="Request example">
+          {variants.map((item, index) => {
+            const selected = index === variant
+            return (
+              <button
+                key={item.label}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setVariant(index)}
+                className={`inline-flex cursor-pointer items-center rounded-lg px-2.5 py-1.5 font-mono text-xs font-semibold ${selected ? 'bg-navy text-white' : 'bg-[#F4F7FB] text-navy hover:bg-[#E7F1FC]'} ${focusClass}`}
+              >
+                {item.label}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
       <CodeBlock
         className="mt-3"
         sample={sample}
@@ -462,23 +511,28 @@ function ResponsePanel({ responses }) {
         {status ? <span className={`rounded-full px-2.5 py-1 font-mono text-[11px] font-bold ${statusTone(status, true)}`}>{status}</span> : null}
       </div>
       {responses.length > 1 ? (
-        <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Response samples">
-          {responses.map((item, itemIndex) => {
-            const selected = itemIndex === index
-            return (
-              <button
-                key={`${item.status}-${item.title}`}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setIndex(itemIndex)}
-                className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${selected ? statusTone(item.status, true) : 'bg-[#F4F7FB] text-navy hover:bg-[#E7F1FC]'} ${focusClass}`}
-              >
-                <span className="font-mono">{item.status}</span>
-                <span>{item.title}</span>
-              </button>
-            )
-          })}
+        <div className="mt-3 space-y-1.5" role="tablist" aria-label="Response samples">
+          {[responses.slice(0, Math.ceil(responses.length / 2)), responses.slice(Math.ceil(responses.length / 2))].map((row) => (
+            <div key={row[0]?.status + row[0]?.title} className="flex flex-wrap gap-1.5">
+              {row.map((item) => {
+                const itemIndex = responses.indexOf(item)
+                const selected = itemIndex === index
+                return (
+                  <button
+                    key={`${item.status}-${item.title}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setIndex(itemIndex)}
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap ${selected ? statusTone(item.status, true) : 'bg-[#F4F7FB] text-navy hover:bg-[#E7F1FC]'} ${focusClass}`}
+                  >
+                    <span className="font-mono">{item.status}</span>
+                    <span>{item.title}</span>
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </div>
       ) : null}
       {current?.detail ? <p className="mt-2 text-[13px] leading-5 text-ink/65">{current.detail}</p> : null}
@@ -580,18 +634,35 @@ function useActiveSection(ids) {
     const nodes = ids.map((id) => document.getElementById(id)).filter(Boolean)
     if (!nodes.length) return undefined
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible?.target?.id) setActiveId(visible.target.id)
-      },
-      { rootMargin: '-20% 0px -60% 0px', threshold: [0.15, 0.4, 0.7] },
-    )
+    let frame = 0
+    function update() {
+      frame = 0
+      const line = 160
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4
+      let current = atBottom ? nodes[nodes.length - 1].id : nodes[0].id
+      if (!atBottom) {
+        for (const node of nodes) {
+          if (node.getBoundingClientRect().top <= line) current = node.id
+        }
+      }
+      setActiveId((prev) => (prev === current ? prev : current))
+    }
 
-    nodes.forEach((node) => observer.observe(node))
-    return () => observer.disconnect()
+    function onScroll() {
+      if (frame) return
+      frame = requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    window.addEventListener('hashchange', onScroll)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('hashchange', onScroll)
+    }
   }, [ids])
 
   return activeId
@@ -617,10 +688,12 @@ function endpointMatches(endpoint, words) {
     endpoint.method,
     endpoint.path,
     endpoint.description,
-    ...(endpoint.query ?? []).flatMap((item) => [item.name, item.detail]),
-    ...(endpoint.params ?? []).flatMap((item) => [item.name, item.detail]),
+    ...(endpoint.query ?? []).flatMap((item) => [item.name, item.detail, item.example]),
+    ...(endpoint.params ?? []).flatMap((item) => [item.name, item.detail, item.example]),
     ...(endpoint.fields ?? []).flatMap((item) => [item.name, item.detail]),
     ...(endpoint.rules ?? []).map((item) => item.rule),
+    endpoint.body ? JSON.stringify(endpoint.body) : '',
+    ...(endpoint.samples ?? []).flatMap((item) => [item.label, JSON.stringify(item.body)]),
   ].join(' ').toLowerCase()
   return words.every((word) => hasWord(haystack, word))
 }
@@ -655,17 +728,27 @@ function endpointLink(id) {
 function requestSample(endpoint, baseUrl, language) {
   const url = sampleUrl(endpoint, baseUrl)
   if (language === 'JavaScript') return javaScriptSample(url, endpoint)
+  if (language === 'Node') return nodeSample(url, endpoint)
   if (language === 'PHP') return phpSample(url, endpoint)
+  if (language === 'Laravel') return laravelSample(url, endpoint)
   if (language === 'Python') return pythonSample(url, endpoint)
+  if (language === 'Java') return javaSample(url, endpoint)
   return curlSample(url, endpoint)
 }
 
 function sampleUrl(endpoint, baseUrl) {
-  const path = endpoint.path.replaceAll('{id}', '2')
-  const query = endpoint.method === 'GET' && endpoint.query?.length
-    ? `?${endpoint.query.map((item) => `${encodeURIComponent(item.name)}=${item.name === 'per_page' ? '15' : '1'}`).join('&')}`
-    : ''
-  return `${baseUrl}${path}${query}`
+  const path = endpoint.path.replace(/\{([^}]+)\}/g, (_, name) => {
+    const param = (endpoint.params ?? []).find((item) => item.name === name)
+    if (param?.example) return String(param.example)
+    return name === 'id' ? '2' : `{${name}}`
+  })
+  if (endpoint.method !== 'GET' || !endpoint.query?.length) return `${baseUrl}${path}`
+  const pairs = endpoint.query.flatMap((item) => {
+    const value = Object.hasOwn(item, 'example') ? item.example : item.name === 'per_page' ? '15' : '1'
+    if (value == null) return []
+    return [`${encodeURIComponent(item.name)}=${encodeURIComponent(value)}`]
+  })
+  return pairs.length ? `${baseUrl}${path}?${pairs.join('&')}` : `${baseUrl}${path}`
 }
 
 function curlSample(url, endpoint) {
@@ -696,6 +779,63 @@ function javaScriptSample(url, endpoint) {
   return lines.join('\n')
 }
 
+function nodeSample(url, endpoint) {
+  const lines = [
+    "import axios from 'axios'",
+    '',
+    'const response = await axios.request({',
+    `  method: ${JSON.stringify(endpoint.method)},`,
+    `  url: ${JSON.stringify(url)},`,
+    '  headers: {',
+    '    Accept: "application/json",',
+    '    Authorization: "Bearer YOUR_API_KEY",',
+    '  },',
+  ]
+  if (endpoint.body) lines.push(`  data: ${inlineJson(endpoint.body, '  ')},`)
+  lines.push('})', '', 'console.log(response.data)')
+  return lines.join('\n')
+}
+
+function javaSample(url, endpoint) {
+  const method = String(endpoint.method ?? 'GET').toUpperCase()
+  const publisher = endpoint.body
+    ? `HttpRequest.BodyPublishers.ofString(${javaString(JSON.stringify(endpoint.body))})`
+    : 'HttpRequest.BodyPublishers.noBody()'
+  const verb = javaVerb(method, publisher)
+
+  return [
+    'import java.net.URI;',
+    'import java.net.http.HttpClient;',
+    'import java.net.http.HttpRequest;',
+    'import java.net.http.HttpResponse;',
+    '',
+    'HttpClient client = HttpClient.newHttpClient();',
+    '',
+    'HttpRequest request = HttpRequest.newBuilder()',
+    `    .uri(URI.create(${javaString(url)}))`,
+    '    .header("Accept", "application/json")',
+    '    .header("Authorization", "Bearer YOUR_API_KEY")',
+    ...(endpoint.body ? ['    .header("Content-Type", "application/json")'] : []),
+    `    ${verb}`,
+    '    .build();',
+    '',
+    'HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());',
+    'System.out.println(response.body());',
+  ].join('\n')
+}
+
+function javaVerb(method, publisher) {
+  if (method === 'GET') return '.GET()'
+  if (method === 'DELETE' && publisher.endsWith('noBody()')) return '.DELETE()'
+  if (method === 'POST') return `.POST(${publisher})`
+  if (method === 'PUT') return `.PUT(${publisher})`
+  return `.method(${javaString(method)}, ${publisher})`
+}
+
+function javaString(value) {
+  return `"${String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"').replaceAll('\n', '\\n').replaceAll('\r', '\\r')}"`
+}
+
 function phpSample(url, endpoint) {
   const headers = [
     '        "Accept: application/json",',
@@ -716,6 +856,45 @@ function phpSample(url, endpoint) {
   if (endpoint.body) lines.push(`    CURLOPT_POSTFIELDS => '${JSON.stringify(endpoint.body).replaceAll("'", `'\\''`)}',`)
   lines.push(']);', '', '$response = curl_exec($ch);', '$data = json_decode($response, true);')
   return lines.join('\n')
+}
+
+function laravelSample(url, endpoint) {
+  const method = String(endpoint.method ?? 'GET').toLowerCase()
+  const call = endpoint.body
+    ? `    ->${method}(${phpString(url)}, ${phpValue(endpoint.body, 4)});`
+    : `    ->${method}(${phpString(url)});`
+
+  return [
+    'use Illuminate\\Support\\Facades\\Http;',
+    '',
+    "$response = Http::withToken('YOUR_API_KEY')",
+    '    ->acceptJson()',
+    call,
+    '',
+    '$data = $response->json();',
+  ].join('\n')
+}
+
+function phpString(value) {
+  return `'${String(value).replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
+}
+
+function phpValue(value, indent) {
+  const pad = ' '.repeat(indent)
+  const inner = ' '.repeat(indent + 4)
+  if (value == null) return 'null'
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'string') return phpString(value)
+  if (Array.isArray(value)) {
+    if (!value.length) return '[]'
+    const items = value.map((item) => `${inner}${phpValue(item, indent + 4)},`)
+    return `[\n${items.join('\n')}\n${pad}]`
+  }
+  const entries = Object.entries(value)
+  if (!entries.length) return '[]'
+  const items = entries.map(([key, item]) => `${inner}${phpString(key)} => ${phpValue(item, indent + 4)},`)
+  return `[\n${items.join('\n')}\n${pad}]`
 }
 
 function pythonSample(url, endpoint) {
